@@ -80,7 +80,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="w-px h-8 bg-white/10"></div>
           
           <button 
-            onClick={() => onNavigate('auth-recruiter')}
+            onClick={() => onNavigate('recruiter-flow')}
             aria-label="Start Interview" 
             className="group nav-btn rounded-full px-5 py-2.5 flex items-center gap-3 relative overflow-hidden"
           >
