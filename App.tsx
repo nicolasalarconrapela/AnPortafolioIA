@@ -3,6 +3,7 @@ import { Background } from './components/Background';
 import { LandingView } from './components/LandingView';
 import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
+import { RecruiterFlow } from './components/RecruiterFlow';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -10,21 +11,26 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Background />
+      {/* Background is hidden on recruiter flow to use specific background/layout */}
+      {view !== 'recruiter-flow' && <Background />}
       
       {view === 'landing' && (
         <LandingView onNavigate={(nextView) => setView(nextView)} />
       )}
       
-      {(view === 'login' || view === 'signup') && (
+      {(view === 'auth-candidate' || view === 'auth-recruiter') && (
         <AuthView 
-            initialState={view} 
+            userType={view === 'auth-recruiter' ? 'recruiter' : 'candidate'}
             onNavigate={setView} 
         />
       )}
 
-      {view === 'onboarding' && (
+      {view === 'candidate-onboarding' && (
         <OnboardingView onComplete={() => setView('landing')} />
+      )}
+
+      {view === 'recruiter-flow' && (
+        <RecruiterFlow />
       )}
     </>
   );

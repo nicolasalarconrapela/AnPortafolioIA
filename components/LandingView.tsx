@@ -1,9 +1,10 @@
 import React from 'react';
 import { FloatingNode } from './FloatingNode';
 import { AvatarScanner } from './AvatarScanner';
+import { ViewState } from '../types';
 
 interface LandingViewProps {
-  onNavigate: (view: 'login' | 'signup') => void;
+  onNavigate: (view: ViewState) => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
@@ -64,7 +65,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       <nav className="absolute bottom-12 z-50 animate-fade-in">
         <div className="glass-panel rounded-full p-2 px-3 flex items-center gap-4">
           <button 
-            onClick={() => onNavigate('login')}
+            onClick={() => onNavigate('auth-candidate')}
             aria-label="View Full CV" 
             className="group nav-btn rounded-full px-5 py-2.5 flex items-center gap-3 relative overflow-hidden"
           >
@@ -79,7 +80,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="w-px h-8 bg-white/10"></div>
           
           <button 
-            onClick={() => onNavigate('signup')}
+            onClick={() => onNavigate('auth-recruiter')}
             aria-label="Start Interview" 
             className="group nav-btn rounded-full px-5 py-2.5 flex items-center gap-3 relative overflow-hidden"
           >

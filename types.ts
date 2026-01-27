@@ -1,4 +1,4 @@
-export type ViewState = 'landing' | 'login' | 'signup' | 'onboarding';
+export type ViewState = 'landing' | 'auth-candidate' | 'auth-recruiter' | 'candidate-onboarding' | 'recruiter-flow';
 
 export interface FloatingNodeProps {
   title: string;
