@@ -3,14 +3,14 @@ import { RecruiterSidebar } from './RecruiterSidebar';
 
 export const RecruiterFlow: React.FC = () => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   // Auto-advance simulation for step 3
   useEffect(() => {
     if (step === 3) {
       const timer = setTimeout(() => {
-        setAnalyzing(true);
-      }, 500);
+        setAnalysisComplete(true);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [step]);
@@ -20,18 +20,20 @@ export const RecruiterFlow: React.FC = () => {
       <RecruiterSidebar />
       
       <main className="flex-1 relative flex flex-col">
-        {/* Top Header / Breadcrumbs */}
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#050b14]/50 backdrop-blur-sm z-30">
-             <div className="flex items-center gap-4">
-                <StepIndicator step={1} current={step} label="Language" />
-                <div className="w-8 h-px bg-white/10"></div>
-                <StepIndicator step={2} current={step} label="Job Context" />
-                <div className="w-8 h-px bg-white/10"></div>
-                <StepIndicator step={3} current={step} label="Interview Start" />
-             </div>
-        </header>
+        {/* Top Header / Breadcrumbs - Only show when not complete to maximize space for dashboard view */}
+        {!analysisComplete && (
+            <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#050b14]/50 backdrop-blur-sm z-30 transition-all duration-500">
+                <div className="flex items-center gap-4">
+                    <StepIndicator step={1} current={step} label="Language" />
+                    <div className="w-8 h-px bg-white/10"></div>
+                    <StepIndicator step={2} current={step} label="Job Context" />
+                    <div className="w-8 h-px bg-white/10"></div>
+                    <StepIndicator step={3} current={step} label="Interview Start" />
+                </div>
+            </header>
+        )}
 
-        <div className="flex-1 relative p-8 flex items-center justify-center overflow-hidden">
+        <div className="flex-1 relative p-8 flex items-center justify-center overflow-y-auto">
              {/* Background Ambience */}
              <div className="absolute inset-0 pointer-events-none">
                  <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-900/10 blur-[100px] rounded-full"></div>
@@ -39,7 +41,7 @@ export const RecruiterFlow: React.FC = () => {
              </div>
 
              {/* Steps Content */}
-             <div className="relative z-10 w-full max-w-5xl h-full flex flex-col items-center justify-center">
+             <div className="relative z-10 w-full max-w-6xl h-full flex flex-col items-center justify-center">
                 
                 {step === 1 && (
                     <div className="w-full animate-fade-in flex flex-col items-center">
@@ -142,7 +144,7 @@ export const RecruiterFlow: React.FC = () => {
                     </div>
                 )}
 
-                {step === 3 && (
+                {step === 3 && !analysisComplete && (
                     <div className="w-full flex flex-col items-center animate-fade-in relative">
                         <div className="absolute inset-0 bg-radial-glow pointer-events-none"></div>
 
@@ -231,6 +233,116 @@ export const RecruiterFlow: React.FC = () => {
                             <span className="material-symbols-outlined text-sm">info</span>
                             The AI is mapping roles to technical benchmarks and culture pillars.
                         </p>
+                    </div>
+                )}
+
+                {step === 3 && analysisComplete && (
+                    <div className="w-full animate-fade-in flex flex-col h-full justify-center">
+                        <div className="mb-8">
+                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/30 border border-cyan-500/30 text-cyan-400 text-xs font-bold tracking-wider uppercase mb-4">
+                                <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                AI Scan Complete
+                             </div>
+                             <h1 className="text-4xl font-bold text-white mb-2">Job Analysis Complete</h1>
+                             <p className="text-xl text-slate-400">
+                                Lead Software Engineer <span className="text-cyan-400 font-medium">@ TechFlow Systems</span>
+                             </p>
+                        </div>
+
+                        <div className="w-full rounded-3xl border border-slate-700/50 bg-[#0a101f]/80 p-8 lg:p-10 backdrop-blur-xl mb-8 relative overflow-hidden">
+                             {/* Content Grid */}
+                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative z-10">
+                                 {/* Left Column - Details */}
+                                 <div className="lg:col-span-2 space-y-10">
+                                     
+                                     {/* Item 1 */}
+                                     <div className="flex gap-6">
+                                         <div className="w-12 h-12 rounded-xl bg-slate-800/50 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-lg shrink-0">
+                                            <span className="material-symbols-outlined">code</span>
+                                         </div>
+                                         <div>
+                                             <h3 className="text-lg font-bold text-white mb-3">Must-have Skills</h3>
+                                             <div className="flex flex-wrap gap-2">
+                                                 {['React.js', 'Node.js', 'System Design', 'GraphQL'].map(skill => (
+                                                     <span key={skill} className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium">
+                                                         {skill}
+                                                     </span>
+                                                 ))}
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     {/* Item 2 */}
+                                     <div className="flex gap-6">
+                                         <div className="w-12 h-12 rounded-xl bg-slate-800/50 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-lg shrink-0">
+                                            <span className="material-symbols-outlined">business_center</span>
+                                         </div>
+                                         <div>
+                                             <h3 className="text-lg font-bold text-white mb-2">Experience Required</h3>
+                                             <p className="text-slate-400 leading-relaxed">
+                                                 5+ Years in Fintech, leading high-performance remote engineering teams through rapid scale-up phases.
+                                             </p>
+                                         </div>
+                                     </div>
+
+                                     {/* Item 3 */}
+                                     <div className="flex gap-6">
+                                         <div className="w-12 h-12 rounded-xl bg-slate-800/50 border border-slate-700 flex items-center justify-center text-cyan-400 shadow-lg shrink-0">
+                                            <span className="material-symbols-outlined">track_changes</span>
+                                         </div>
+                                         <div>
+                                             <h3 className="text-lg font-bold text-white mb-2">Key Responsibilities</h3>
+                                             <p className="text-slate-400 leading-relaxed">
+                                                 Architecting scalable APIs, mentoring junior engineers, and defining the long-term technical roadmap for FlowCore.
+                                             </p>
+                                         </div>
+                                     </div>
+
+                                 </div>
+
+                                 {/* Right Column - Score */}
+                                 <div className="lg:col-span-1">
+                                     <div className="h-full rounded-2xl bg-[#0f1623] border border-slate-700/50 p-8 flex flex-col items-center justify-center relative overflow-hidden group">
+                                         <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                         
+                                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 z-10">Match Preview</h4>
+                                         
+                                         <div className="relative w-48 h-48 flex items-center justify-center z-10">
+                                             {/* Radial Progress SVG */}
+                                             <svg className="w-full h-full transform -rotate-90">
+                                                 <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-800" />
+                                                 <circle cx="96" cy="96" r="88" stroke="url(#score-gradient)" strokeWidth="12" fill="transparent" strokeDasharray="552" strokeDashoffset="82" strokeLinecap="round" className="drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
+                                                 <defs>
+                                                     <linearGradient id="score-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                         <stop offset="0%" stopColor="#06b6d4" />
+                                                         <stop offset="100%" stopColor="#22d3ee" />
+                                                     </linearGradient>
+                                                 </defs>
+                                             </svg>
+                                             <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                 <span className="text-6xl font-bold text-white tracking-tighter">85<span className="text-3xl text-cyan-400">%</span></span>
+                                                 <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider mt-1">High Alignment</span>
+                                             </div>
+                                         </div>
+
+                                         <p className="text-center text-xs text-slate-500 mt-8 z-10 px-4">
+                                             Your profile closely aligns with the core requirements of this role.
+                                         </p>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+
+                        <div className="flex items-center gap-6 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                            <button className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-bold rounded-xl shadow-[0_0_40px_rgba(34,211,238,0.3)] transition-all transform hover:scale-105 flex items-center gap-3 text-lg">
+                                Confirm & Start Interview
+                                <span className="material-symbols-outlined">arrow_forward</span>
+                            </button>
+                            <button className="text-slate-500 hover:text-white transition-colors text-sm font-medium">
+                                Go back to job list
+                            </button>
+                        </div>
+
                     </div>
                 )}
 
