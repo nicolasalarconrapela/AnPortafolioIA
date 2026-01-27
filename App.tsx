@@ -8,6 +8,7 @@ import { ViewState } from './types';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('landing');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
     <>
@@ -15,13 +16,21 @@ const App: React.FC = () => {
       {view !== 'recruiter-flow' && <Background />}
       
       {view === 'landing' && (
-        <LandingView onNavigate={(nextView) => setView(nextView)} />
+        <LandingView onNavigate={(nextView) => {
+            // Reset auth when navigating from landing (assuming demo mode for direct access)
+            if (nextView === 'recruiter-flow') setIsAuthenticated(false);
+            setView(nextView);
+        }} />
       )}
       
       {(view === 'auth-candidate' || view === 'auth-recruiter') && (
         <AuthView 
             userType={view === 'auth-recruiter' ? 'recruiter' : 'candidate'}
-            onNavigate={setView} 
+            onNavigate={(nextView) => {
+                // Set authenticated if coming from recruiter login
+                if (view === 'auth-recruiter') setIsAuthenticated(true);
+                setView(nextView);
+            }} 
         />
       )}
 
@@ -30,7 +39,7 @@ const App: React.FC = () => {
       )}
 
       {view === 'recruiter-flow' && (
-        <RecruiterFlow />
+        <RecruiterFlow isAuthenticated={isAuthenticated} />
       )}
     </>
   );

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { RecruiterSidebar } from './RecruiterSidebar';
 
-export const RecruiterFlow: React.FC = () => {
+interface RecruiterFlowProps {
+    isAuthenticated?: boolean;
+}
+
+export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = false }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [interviewStarted, setInterviewStarted] = useState(false);
 
   // Auto-advance simulation for step 3
   useEffect(() => {
@@ -17,11 +22,11 @@ export const RecruiterFlow: React.FC = () => {
 
   return (
     <div className="flex w-full h-screen bg-[#020408] overflow-hidden font-display relative z-20">
-      <RecruiterSidebar />
+      {isAuthenticated && <RecruiterSidebar isAuthenticated={true} />}
       
-      <main className="flex-1 relative flex flex-col">
-        {/* Top Header / Breadcrumbs - Only show when not complete to maximize space for dashboard view */}
-        {!analysisComplete && (
+      <main className="flex-1 relative flex flex-col transition-all duration-500">
+        {/* Top Header / Breadcrumbs - Only show during setup phase */}
+        {!analysisComplete && !interviewStarted && (
             <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#050b14]/50 backdrop-blur-sm z-30 transition-all duration-500">
                 <div className="flex items-center gap-4">
                     <StepIndicator step={1} current={step} label="Language" />
@@ -33,7 +38,129 @@ export const RecruiterFlow: React.FC = () => {
             </header>
         )}
 
-        <div className="flex-1 relative p-8 flex items-center justify-center overflow-y-auto">
+        {/* INTERVIEW ROOM UI */}
+        {interviewStarted ? (
+            <div className="flex-1 relative overflow-hidden bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center">
+                <div className="absolute inset-0 bg-[#020408]/80 backdrop-blur-[2px]"></div>
+                
+                {/* Decorative Elements */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#020408] via-transparent to-[#020408] pointer-events-none"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent opacity-50 pointer-events-none"></div>
+
+                {/* Top Bar */}
+                <div className="absolute top-8 left-0 right-0 flex justify-center z-40">
+                    <div className="glass-panel rounded-full p-1.5 pl-6 pr-1.5 flex items-center gap-4 max-w-2xl w-full mx-4 border border-cyan-500/30 shadow-[0_0_30px_rgba(34,211,238,0.1)]">
+                         <span className="material-symbols-outlined text-cyan-400 text-sm">link</span>
+                         <span className="text-sm text-slate-300 font-mono truncate flex-1">https://tech-corp.com/careers/lead-designer</span>
+                         <button className="px-6 py-2 bg-green-500/10 border border-green-500/50 hover:bg-green-500/20 text-green-400 rounded-full text-xs font-bold tracking-widest uppercase transition-all">
+                            Start
+                         </button>
+                    </div>
+                </div>
+
+                {/* Main Interaction Area */}
+                <div className="relative w-full h-full flex items-end justify-center pb-32">
+                    
+                    {/* Candidate Avatar (Central) */}
+                    <div className="relative z-10 w-[600px] h-[700px] flex items-end justify-center">
+                         <img 
+                            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop" 
+                            alt="Candidate" 
+                            className="h-[85%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] mask-linear-fade"
+                         />
+                    </div>
+
+                    {/* Candidate Info Card (Left Floating) */}
+                    <div className="absolute top-32 left-12 w-80 glass-panel p-5 rounded-2xl border border-white/10 animate-float">
+                        <div className="flex items-center gap-4 mb-6">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" className="w-12 h-12 rounded-xl object-cover border border-white/20" alt="Liam" />
+                            <div>
+                                <h3 className="text-white font-bold text-lg leading-none">Liam Chen</h3>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                    <span className="text-[10px] font-bold text-green-500 tracking-wider uppercase">Online</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">
+                                    <span>Culture Fit</span>
+                                    <span>98%</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                                    <div className="h-full bg-green-400 w-[98%] shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">
+                                    <span>Technical</span>
+                                    <span>94%</span>
+                                </div>
+                                <div className="h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 w-[94%] shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Speech Bubble (Right Floating) */}
+                    <div className="absolute top-48 right-12 max-w-md animate-float-delayed">
+                         <div className="glass-panel p-6 rounded-3xl rounded-tl-sm border border-cyan-500/20 shadow-[0_0_40px_rgba(0,0,0,0.3)] relative">
+                            <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                                <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">graphic_eq</span>
+                                    Speaking...
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">00:42</span>
+                            </div>
+                            <p className="text-lg text-slate-200 leading-relaxed font-light">
+                                "I noticed your job description emphasizes <strong className="text-white font-medium">WebGL</strong>. In my last project, I built a custom renderer that improved load times by 40% while maintaining visual fidelity."
+                            </p>
+                         </div>
+                    </div>
+
+                    {/* Bottom Controls */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 z-50">
+                        {/* Quick Actions */}
+                        <div className="flex justify-center gap-3 mb-4">
+                             {['Ask about experience', 'Technical challenge', 'Salary expectations'].map((action, i) => (
+                                 <button key={i} className="px-4 py-2 rounded-full glass-panel border border-white/10 hover:border-cyan-400/50 hover:bg-cyan-500/10 text-slate-300 text-sm transition-all hover:-translate-y-0.5">
+                                     {action}
+                                 </button>
+                             ))}
+                        </div>
+
+                        {/* Input Bar */}
+                        <div className="glass-panel p-2 rounded-2xl border border-white/10 flex items-center gap-3 relative shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                             <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-cyan-500/20 rounded-2xl blur opacity-50"></div>
+                             
+                             <button className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-slate-700 text-white flex items-center justify-center relative z-10 transition-colors">
+                                <span className="material-symbols-outlined">add_circle</span>
+                             </button>
+                             
+                             <input 
+                                type="text" 
+                                placeholder="Type your question to Liam..." 
+                                className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-lg relative z-10"
+                             />
+
+                             <div className="flex items-center gap-2 relative z-10">
+                                 <button className="w-10 h-10 rounded-xl hover:bg-slate-800/50 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                                    <span className="material-symbols-outlined">mic</span>
+                                 </button>
+                                 <button className="w-10 h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.4)] transition-colors">
+                                    <span className="material-symbols-outlined">arrow_upward</span>
+                                 </button>
+                             </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        ) : (
+            <div className="flex-1 relative p-8 flex items-center justify-center overflow-y-auto">
              {/* Background Ambience */}
              <div className="absolute inset-0 pointer-events-none">
                  <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-900/10 blur-[100px] rounded-full"></div>
@@ -334,7 +461,10 @@ export const RecruiterFlow: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-6 animate-fade-in" style={{animationDelay: '0.2s'}}>
-                            <button className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-bold rounded-xl shadow-[0_0_40px_rgba(34,211,238,0.3)] transition-all transform hover:scale-105 flex items-center gap-3 text-lg">
+                            <button 
+                                onClick={() => setInterviewStarted(true)}
+                                className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-cyan-400 hover:from-cyan-400 hover:to-cyan-300 text-black font-bold rounded-xl shadow-[0_0_40px_rgba(34,211,238,0.3)] transition-all transform hover:scale-105 flex items-center gap-3 text-lg"
+                            >
                                 Confirm & Start Interview
                                 <span className="material-symbols-outlined">arrow_forward</span>
                             </button>
@@ -347,7 +477,8 @@ export const RecruiterFlow: React.FC = () => {
                 )}
 
              </div>
-        </div>
+            </div>
+        )}
       </main>
     </div>
   );
