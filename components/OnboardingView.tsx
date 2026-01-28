@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AvatarCreator } from './AvatarCreator';
 
 interface OnboardingViewProps {
   onComplete: () => void;
@@ -121,7 +122,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
             </div>
         ) : (
             // WIZARD FLOW
-            <div className="glass-panel w-full max-w-5xl min-h-[600px] rounded-3xl border border-slate-700/50 flex overflow-hidden shadow-2xl relative animate-fade-in">
+            <div className="glass-panel w-full max-w-6xl min-h-[650px] rounded-3xl border border-slate-700/50 flex overflow-hidden shadow-2xl relative animate-fade-in">
                  {/* Progress Bar */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-slate-800 z-20">
                     <div 
@@ -131,7 +132,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 </div>
 
                 {/* Steps Sidebar - Only showing SELECTED items */}
-                <div className="w-1/3 border-r border-slate-700/50 p-8 hidden md:block bg-slate-900/30">
+                <div className="w-64 border-r border-slate-700/50 p-8 hidden lg:block bg-slate-900/30 shrink-0">
                     <h3 className="text-xl font-bold text-white mb-2">Setup Progress</h3>
                     <p className="text-slate-400 text-sm mb-8">Your personalized setup plan.</p>
 
@@ -150,27 +151,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 p-8 md:p-12 flex flex-col items-center justify-center relative">
+                <div className="flex-1 p-6 lg:p-10 flex flex-col items-center justify-center relative overflow-y-auto">
                     
                     {/* DYNAMIC CONTENT SWITCHER */}
                     {currentStep?.id === 'avatar' && (
-                        <div className="text-center animate-fade-in max-w-md w-full flex flex-col items-center">
-                            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 rounded-full flex items-center justify-center mb-6 relative group cursor-pointer border border-cyan-500/30 hover:border-cyan-400 transition-colors">
-                                <span className="material-symbols-outlined text-4xl text-cyan-400">add_a_photo</span>
-                                <div className="absolute inset-0 rounded-full animate-pulse-slow bg-cyan-400/5"></div>
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-3">Create Your Digital Twin</h2>
-                            <p className="text-slate-400 mb-8">Upload a selfie to generate your AI avatar. This will be your face during automated screening interviews.</p>
-                            
-                            <div className="w-full flex flex-col gap-3 max-w-xs">
-                                <button onClick={handleNext} className="w-full px-8 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all">
-                                    Upload Photo & Generate
-                                </button>
-                                <button onClick={handleBack} className="text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors">
-                                    Back
-                                </button>
-                            </div>
-                        </div>
+                        <AvatarCreator onBack={handleBack} onComplete={handleNext} />
                     )}
 
                     {currentStep?.id === 'linkedin' && (
