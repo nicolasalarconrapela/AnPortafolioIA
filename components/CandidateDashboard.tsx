@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { AvatarCreator } from './AvatarCreator';
 import { AITrainingView } from './AITrainingView';
+import { InterviewSimulator } from './InterviewSimulator';
 
-type DashboardView = 'profile' | 'avatar-studio' | 'ai-training' | 'settings';
+type DashboardView = 'profile' | 'avatar-studio' | 'ai-training' | 'settings' | 'interview-simulator';
+type SettingsTab = 'account' | 'privacy' | 'notifications' | 'avatar-prefs' | 'training-data';
 
 export const CandidateDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<DashboardView>('profile');
@@ -28,6 +30,7 @@ export const CandidateDashboard: React.FC = () => {
                 <nav className="hidden md:flex items-center gap-2">
                     <NavButton label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
                     <NavButton label="Avatar Studio" active={activeView === 'avatar-studio'} onClick={() => handleViewChange('avatar-studio')} icon="face" />
+                    <NavButton label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
                     <NavButton label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
                     <NavButton label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
                 </nav>
@@ -63,55 +66,65 @@ export const CandidateDashboard: React.FC = () => {
 
         {/* MAIN SCROLLABLE AREA */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#020408] to-[#020408]">
-            <div className="max-w-7xl mx-auto flex flex-col gap-6 p-6 lg:p-10 min-h-full">
-                
-                {/* VIEW: PROFILE (DEFAULT) */}
-                {activeView === 'profile' && <ProfileView />}
+            {activeView === 'settings' ? (
+                // Settings has its own layout structure
+                <div className="w-full min-h-full">
+                    <SettingsView />
+                </div>
+            ) : activeView === 'interview-simulator' ? (
+                // Interview Simulator takes full height
+                <div className="w-full h-full">
+                    <InterviewSimulator onBack={() => setActiveView('profile')} />
+                </div>
+            ) : (
+                // Other views use the standard centered container
+                <div className="max-w-7xl mx-auto flex flex-col gap-6 p-6 lg:p-10 min-h-full">
+                    
+                    {/* VIEW: PROFILE (DEFAULT) */}
+                    {activeView === 'profile' && <ProfileView />}
 
-                {/* VIEW: AVATAR STUDIO */}
-                {activeView === 'avatar-studio' && (
-                    <div className="flex-1 flex flex-col h-full animate-fade-in">
-                        <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-white mb-2">Avatar Studio</h1>
-                            <p className="text-slate-400 text-sm">Design and update your digital twin for interview simulations.</p>
+                    {/* VIEW: AVATAR STUDIO */}
+                    {activeView === 'avatar-studio' && (
+                        <div className="flex-1 flex flex-col h-full animate-fade-in">
+                            <div className="mb-6">
+                                <h1 className="text-2xl font-bold text-white mb-2">Avatar Studio</h1>
+                                <p className="text-slate-400 text-sm">Design and update your digital twin for interview simulations.</p>
+                            </div>
+                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
+                                <AvatarCreator 
+                                    onBack={() => setActiveView('profile')} 
+                                    onComplete={() => {
+                                        // Could show a toast here
+                                        setActiveView('profile');
+                                    }} 
+                                    isDashboard={true}
+                                />
+                            </div>
                         </div>
-                        <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
-                            <AvatarCreator 
-                                onBack={() => setActiveView('profile')} 
-                                onComplete={() => {
-                                    // Could show a toast here
-                                    setActiveView('profile');
-                                }} 
-                                isDashboard={true}
-                            />
-                        </div>
-                    </div>
-                )}
+                    )}
 
-                {/* VIEW: AI TRAINING */}
-                {activeView === 'ai-training' && (
-                    <div className="flex-1 flex flex-col h-full animate-fade-in">
-                        <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-white mb-2">AI Neural Core</h1>
-                            <p className="text-slate-400 text-sm">Re-calibrate your agent's responses and personality traits.</p>
+                    {/* VIEW: AI TRAINING */}
+                    {activeView === 'ai-training' && (
+                        <div className="flex-1 flex flex-col h-full animate-fade-in">
+                            <div className="mb-6">
+                                <h1 className="text-2xl font-bold text-white mb-2">AI Neural Core</h1>
+                                <p className="text-slate-400 text-sm">Re-calibrate your agent's responses and personality traits.</p>
+                            </div>
+                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
+                                <AITrainingView 
+                                    onBack={() => setActiveView('profile')} 
+                                    onComplete={() => {
+                                        // Could show a toast here
+                                        setActiveView('profile');
+                                    }} 
+                                    isDashboard={true}
+                                />
+                            </div>
                         </div>
-                         <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
-                            <AITrainingView 
-                                onBack={() => setActiveView('profile')} 
-                                onComplete={() => {
-                                    // Could show a toast here
-                                    setActiveView('profile');
-                                }} 
-                                isDashboard={true}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* VIEW: SETTINGS */}
-                {activeView === 'settings' && <SettingsView />}
-                
-            </div>
+                    )}
+                    
+                </div>
+            )}
         </main>
     </div>
   )
@@ -306,56 +319,212 @@ const ProfileView: React.FC = () => (
     </>
 )
 
-const SettingsView: React.FC = () => (
-    <div className="animate-fade-in">
-        <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
-            <p className="text-slate-400 text-sm">Manage your account preferences and privacy.</p>
-        </div>
-        <div className="bg-[#0f1623]/50 border border-slate-800/50 rounded-3xl p-6 lg:p-10 space-y-8">
-            {/* Account */}
-            <section>
-                <h3 className="text-lg font-bold text-white mb-4 border-b border-slate-700 pb-2">Account</h3>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between py-2">
-                        <div>
-                            <p className="text-sm font-bold text-slate-200">Email Address</p>
-                            <p className="text-xs text-slate-500">alex.chen@design.co</p>
-                        </div>
-                        <button className="text-cyan-400 text-xs font-bold hover:text-cyan-300">Change</button>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                        <div>
-                            <p className="text-sm font-bold text-slate-200">Password</p>
-                            <p className="text-xs text-slate-500">Last changed 3 months ago</p>
-                        </div>
-                        <button className="text-cyan-400 text-xs font-bold hover:text-cyan-300">Update</button>
-                    </div>
-                </div>
-            </section>
+const SettingsView: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
-             {/* Privacy */}
-             <section>
-                <h3 className="text-lg font-bold text-white mb-4 border-b border-slate-700 pb-2">Privacy & Visibility</h3>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between py-2">
-                        <div>
-                            <p className="text-sm font-bold text-slate-200">Public Profile</p>
-                            <p className="text-xs text-slate-500">Allow recruiters to find you</p>
-                        </div>
-                        <div className="w-10 h-6 bg-purple-600 rounded-full relative cursor-pointer"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
+    return (
+        <div className="flex w-full h-full animate-fade-in relative">
+            {/* Settings Sidebar */}
+            <aside className="w-64 flex-col border-r border-slate-800 hidden lg:flex bg-[#050b14]/50">
+                <div className="p-6">
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Settings</h2>
+                    <nav className="space-y-1">
+                        <SettingsNavItem label="Account" icon="person" active={activeTab === 'account'} onClick={() => setActiveTab('account')} />
+                        <SettingsNavItem label="Privacy" icon="lock" active={activeTab === 'privacy'} onClick={() => setActiveTab('privacy')} />
+                        <SettingsNavItem label="Notifications" icon="notifications" active={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} />
+                    </nav>
+
+                    <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-8 mb-4">AI & Avatar</h2>
+                    <nav className="space-y-1">
+                        <SettingsNavItem label="Avatar Preferences" icon="face" active={activeTab === 'avatar-prefs'} onClick={() => setActiveTab('avatar-prefs')} />
+                        <SettingsNavItem label="AI Training Data" icon="model_training" active={activeTab === 'training-data'} onClick={() => setActiveTab('training-data')} />
+                    </nav>
+                </div>
+                
+                <div className="mt-auto p-6 border-t border-slate-800">
+                     <button className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2">
+                        <span className="material-symbols-outlined text-xl">logout</span>
+                        <span className="text-sm font-bold">Log Out</span>
+                     </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-white mb-2">Account Settings</h1>
+                    <p className="text-slate-400 text-sm mb-8">Manage your profile details and AI preferences.</p>
+
+                    {/* Profile Banner */}
+                    <div className="relative overflow-hidden rounded-3xl border border-slate-700/50 bg-[#0a101f] p-8 mb-8 flex flex-col md:flex-row items-center gap-8 shadow-2xl">
+                         {/* Background Effects */}
+                         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-cyan-900/20 to-indigo-900/20 blur-[80px] rounded-full pointer-events-none"></div>
+                         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+
+                         {/* Avatar */}
+                         <div className="relative shrink-0">
+                             <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-br from-cyan-500 to-indigo-600 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+                                 <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full rounded-full object-cover border-4 border-[#0a101f]" alt="Profile" />
+                             </div>
+                             <button className="absolute bottom-1 right-1 p-2 bg-slate-800 rounded-full border border-slate-700 text-white hover:bg-slate-700 transition-colors shadow-lg">
+                                <span className="material-symbols-outlined text-sm block">edit</span>
+                             </button>
+                         </div>
+
+                         {/* Info */}
+                         <div className="flex-1 text-center md:text-left z-10">
+                             <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                                 <h2 className="text-3xl font-bold text-white">Alex Chen</h2>
+                                 <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">Premium Member</span>
+                             </div>
+                             <p className="text-slate-400 text-sm leading-relaxed max-w-lg mb-6">
+                                Senior Product Designer specializing in AI interfaces. Located in San Francisco, CA.
+                             </p>
+                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                 <button className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                                     <span className="material-symbols-outlined text-lg">visibility</span>
+                                     Public View
+                                 </button>
+                                 <button className="px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-cyan-400 font-bold text-sm flex items-center gap-2 hover:bg-slate-700 transition-all">
+                                     <span className="material-symbols-outlined text-lg">smart_toy</span>
+                                     Retrain Avatar
+                                 </button>
+                             </div>
+                         </div>
                     </div>
-                    <div className="flex items-center justify-between py-2">
-                        <div>
-                            <p className="text-sm font-bold text-slate-200">AI Data Training</p>
-                            <p className="text-xs text-slate-500">Allow anonymized data for AI improvements</p>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Personal Information */}
+                        <div className="bg-[#0a101f]/50 border border-slate-700/50 rounded-3xl p-6 lg:p-8 flex flex-col shadow-lg">
+                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                                <div className="w-10 h-10 rounded-lg bg-cyan-900/20 flex items-center justify-center text-cyan-400">
+                                    <span className="material-symbols-outlined">person</span>
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Personal Information</h3>
+                            </div>
+
+                            <div className="space-y-5 flex-1">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-400 ml-1">Full Name</label>
+                                        <input type="text" defaultValue="Alex Chen" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500 outline-none transition-colors" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-400 ml-1">Job Title</label>
+                                        <input type="text" defaultValue="Product Designer" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500 outline-none transition-colors" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 ml-1">Portfolio URL</label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-lg">link</span>
+                                        <input type="text" defaultValue="https://alexchen.design" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-white text-sm focus:border-cyan-500 outline-none transition-colors" />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-400 ml-1">Bio</label>
+                                    <textarea defaultValue="Passionate about building accessible and inclusive digital products." className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500 outline-none transition-colors h-32 resize-none" />
+                                </div>
+                            </div>
+                            
+                            <div className="mt-8 flex justify-end">
+                                <button className="px-6 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-all active:scale-95">Save Changes</button>
+                            </div>
                         </div>
-                         <div className="w-10 h-6 bg-slate-700 rounded-full relative cursor-pointer"><div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
+
+                        {/* Avatar Settings & Danger Zone */}
+                        <div className="space-y-8">
+                            {/* Avatar Settings */}
+                            <div className="bg-[#0a101f]/50 border border-slate-700/50 rounded-3xl p-6 lg:p-8 shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none"></div>
+                                
+                                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800 relative z-10">
+                                    <div className="w-10 h-10 rounded-lg bg-indigo-900/20 flex items-center justify-center text-indigo-400">
+                                        <span className="material-symbols-outlined">face</span>
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white">Avatar Settings</h3>
+                                </div>
+
+                                <div className="space-y-6 relative z-10">
+                                    {/* Mini Preview */}
+                                    <div className="w-full h-32 rounded-xl bg-slate-900 relative overflow-hidden border border-slate-700 group">
+                                        <img src="https://www.shutterstock.com/image-illustration/animated-young-business-man-avatar-260nw-2574951157.jpg" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Avatar Model" />
+                                        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                            <span className="text-[10px] font-bold text-white tracking-wider">AI ACTIVE</span>
+                                        </div>
+                                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent flex justify-between items-end">
+                                            <div>
+                                                <p className="text-[10px] text-slate-400">Model</p>
+                                                <p className="text-xs font-bold text-white">v2.4</p>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Preview Mode</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Toggles */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-slate-200">Publicly Visible</span>
+                                            <div className="w-12 h-6 bg-cyan-500 rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+                                                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-slate-200">Allow AI Scouting</span>
+                                            <div className="w-12 h-6 bg-cyan-500 rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+                                                <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Slider */}
+                                    <div>
+                                        <div className="flex justify-between text-xs font-bold text-slate-400 mb-2">
+                                            <span>Voice Pitch</span>
+                                            <span className="text-cyan-400">Medium</span>
+                                        </div>
+                                        <input type="range" className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" />
+                                        <div className="flex justify-between text-[8px] text-slate-600 mt-1 font-bold uppercase tracking-widest">
+                                            <span>Deep</span>
+                                            <span>High</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Danger Zone */}
+                            <div className="bg-[#0a101f]/50 border border-red-500/20 rounded-3xl p-6 flex items-center justify-between group hover:border-red-500/40 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <span className="material-symbols-outlined text-red-500">warning</span>
+                                    <span className="text-sm font-bold text-red-400">Danger Zone</span>
+                                </div>
+                                <button className="text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
+                                    Delete Account
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
-    </div>
+    );
+}
+
+const SettingsNavItem: React.FC<{label: string, icon: string, active: boolean, onClick: () => void}> = ({label, icon, active, onClick}) => (
+    <button 
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+            active 
+            ? 'bg-gradient-to-r from-cyan-500/10 to-transparent border-l-2 border-cyan-400 text-white' 
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border-l-2 border-transparent'
+        }`}
+    >
+        <span className={`material-symbols-outlined text-xl ${active ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]' : ''}`}>{icon}</span>
+        {label}
+    </button>
 )
 
 const ExperienceCard: React.FC<{role: string, company: string, period: string, desc: string, logo: string, color: string, active: boolean}> = ({role, company, period, desc, logo, color, active}) => (
