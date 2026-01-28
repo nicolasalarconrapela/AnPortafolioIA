@@ -4,6 +4,7 @@ import { LandingView } from './components/LandingView';
 import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
 import { RecruiterFlow } from './components/RecruiterFlow';
+import { CandidateDashboard } from './components/CandidateDashboard';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -35,7 +36,11 @@ const App: React.FC = () => {
       )}
 
       {view === 'candidate-onboarding' && (
-        <OnboardingView onComplete={() => setView('landing')} />
+        <OnboardingView onComplete={() => setView('candidate-dashboard')} />
+      )}
+
+      {view === 'candidate-dashboard' && (
+        <CandidateDashboard />
       )}
 
       {view === 'recruiter-flow' && (

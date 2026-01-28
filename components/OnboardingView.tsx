@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AvatarCreator } from './AvatarCreator';
 import { LinkedinSyncView } from './LinkedinSyncView';
+import { AITrainingView } from './AITrainingView';
 
 interface OnboardingViewProps {
   onComplete: () => void;
@@ -197,22 +198,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     )}
 
                     {currentStep?.id === 'ai' && (
-                        <div className="text-center animate-fade-in max-w-md w-full flex flex-col items-center">
-                             <div className="w-32 h-32 mx-auto bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/30">
-                                <span className="material-symbols-outlined text-5xl text-purple-400">psychology</span>
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-3">AI Personality Calibration</h2>
-                            <p className="text-slate-400 mb-8">We are initializing your AI agent based on the provided data. This creates a voice that sounds like you.</p>
-                            
-                            <div className="w-full flex flex-col gap-3 max-w-xs">
-                                <button onClick={handleNext} className="w-full px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all">
-                                    {currentStepIndex === activeSteps.length - 1 ? 'Finish Setup' : 'Continue'}
-                                </button>
-                                <button onClick={handleBack} className="text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors">
-                                    Back
-                                </button>
-                            </div>
-                        </div>
+                        <AITrainingView onBack={handleBack} onComplete={() => {
+                            // If this is the last step, finish onboarding
+                            if (currentStepIndex === activeSteps.length - 1) {
+                                onComplete();
+                            } else {
+                                handleNext();
+                            }
+                        }} />
                     )}
                 </div>
             </div>

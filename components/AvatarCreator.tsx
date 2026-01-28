@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 interface AvatarCreatorProps {
   onBack: () => void;
   onComplete: () => void;
+  isDashboard?: boolean;
 }
 
-export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete }) => {
+export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete, isDashboard = false }) => {
   const [activeTab, setActiveTab] = useState<'base' | 'hair' | 'style'>('base');
   const [isGenerating, setIsGenerating] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -76,7 +77,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
         {/* RIGHT: Controls */}
         <div className="flex-1 bg-slate-900/30 border border-slate-700/50 rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-white">Customization</h3>
+                <h3 className="text-xl font-bold text-white">{isDashboard ? 'Avatar Studio' : 'Customization'}</h3>
                 <button className="text-xs flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors">
                     <span className="material-symbols-outlined text-sm">casino</span>
                     Randomize
@@ -182,11 +183,13 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
 
             {/* Footer Actions */}
             <div className="mt-6 pt-6 border-t border-slate-700/50 flex items-center gap-4">
-                <button onClick={onBack} className="px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-400 text-sm font-bold transition-all">
-                    Back
-                </button>
+                {!isDashboard && (
+                    <button onClick={onBack} className="px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-400 text-sm font-bold transition-all">
+                        Back
+                    </button>
+                )}
                 <button onClick={handleGenerate} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-bold text-sm shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                    {isGenerating ? 'Generating...' : 'Save Avatar'}
+                    {isGenerating ? 'Processing...' : (isDashboard ? 'Update Avatar' : 'Save Avatar')}
                     {!isGenerating && <span className="material-symbols-outlined text-lg">arrow_forward</span>}
                 </button>
             </div>
