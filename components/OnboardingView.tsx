@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AvatarCreator } from './AvatarCreator';
+import { LinkedinSyncView } from './LinkedinSyncView';
 
 interface OnboardingViewProps {
   onComplete: () => void;
@@ -33,6 +34,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
   const [isWelcome, setIsWelcome] = useState(true);
   const [selectedItems, setSelectedItems] = useState<string[]>(['avatar', 'linkedin', 'ai']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [linkedinConnected, setLinkedinConnected] = useState(false);
 
   // Determine which steps are active based on user selection
   const activeSteps = STEPS_CONFIG.filter(step => selectedItems.includes(step.id));
@@ -56,8 +58,18 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
   };
 
   const handleBack = () => {
+      // If we are in LinkedIn step and connected, go back to connect button state
+      if (currentStep?.id === 'linkedin' && linkedinConnected) {
+          setLinkedinConnected(false);
+          return;
+      }
+
       if (currentStepIndex > 0) {
           setCurrentStepIndex(prev => prev - 1);
+          // Reset linkedIn state if we move back from a future step (though logic above handles intra-step back)
+          if (activeSteps[currentStepIndex - 1]?.id === 'linkedin') {
+              setLinkedinConnected(true); // Keep it connected if we go back TO it? Or reset? Let's keep state.
+          }
       } else {
           // If on the first step, go back to Welcome screen to change selection
           setIsWelcome(true);
@@ -159,25 +171,29 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                     )}
 
                     {currentStep?.id === 'linkedin' && (
-                        <div className="text-center animate-fade-in max-w-md w-full flex flex-col items-center">
-                            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[#0077b5]/20 to-slate-500/20 rounded-xl flex items-center justify-center mb-6 border border-[#0077b5]/30">
-                                <span className="font-bold text-5xl text-[#0077b5]">in</span>
+                        !linkedinConnected ? (
+                            <div className="text-center animate-fade-in max-w-md w-full flex flex-col items-center">
+                                <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[#0077b5]/20 to-slate-500/20 rounded-xl flex items-center justify-center mb-6 border border-[#0077b5]/30">
+                                    <span className="font-bold text-5xl text-[#0077b5]">in</span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-3">Import Professional Data</h2>
+                                <p className="text-slate-400 mb-8">Connect your LinkedIn profile to automatically populate your experience, education, and skills timeline.</p>
+                                
+                                <div className="w-full flex flex-col gap-3 max-w-xs">
+                                    <button onClick={() => setLinkedinConnected(true)} className="w-full px-8 py-3 bg-[#0077b5] hover:bg-[#006097] text-white font-bold rounded-xl shadow-lg transition-all">
+                                        Connect LinkedIn
+                                    </button>
+                                    <button onClick={handleNext} className="w-full py-2 text-slate-500 hover:text-white text-sm font-medium">
+                                        Skip for now
+                                    </button>
+                                    <button onClick={handleBack} className="text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors border-t border-slate-700/50 mt-2">
+                                        Back
+                                    </button>
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-bold text-white mb-3">Import Professional Data</h2>
-                            <p className="text-slate-400 mb-8">Connect your LinkedIn profile to automatically populate your experience, education, and skills timeline.</p>
-                            
-                            <div className="w-full flex flex-col gap-3 max-w-xs">
-                                <button onClick={handleNext} className="w-full px-8 py-3 bg-[#0077b5] hover:bg-[#006097] text-white font-bold rounded-xl shadow-lg transition-all">
-                                    Connect LinkedIn
-                                </button>
-                                <button onClick={handleNext} className="w-full py-2 text-slate-500 hover:text-white text-sm font-medium">
-                                    Skip for now
-                                </button>
-                                <button onClick={handleBack} className="text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors border-t border-slate-700/50 mt-2">
-                                    Back
-                                </button>
-                            </div>
-                        </div>
+                        ) : (
+                            <LinkedinSyncView onBack={() => setLinkedinConnected(false)} onComplete={handleNext} />
+                        )
                     )}
 
                     {currentStep?.id === 'ai' && (
