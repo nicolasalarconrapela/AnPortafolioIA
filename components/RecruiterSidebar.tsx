@@ -7,6 +7,8 @@ interface RecruiterSidebarProps {
 }
 
 export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthenticated = false, isOpen = true, onClose }) => {
+  const [activeItem, setActiveItem] = useState("Interview Room");
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -29,13 +31,13 @@ export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthentica
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-          <NavItem icon="video_camera_front" label="Interview Room" active={true} />
-          <NavItem icon="group_search" label="Candidates" active={false} />
-          <NavItem icon="query_stats" label="AI Insights" active={false} />
+          <NavItem icon="video_camera_front" label="Interview Room" active={activeItem === "Interview Room"} onClick={() => setActiveItem("Interview Room")} />
+          <NavItem icon="group_search" label="Candidates" active={activeItem === "Candidates"} onClick={() => setActiveItem("Candidates")} />
+          <NavItem icon="query_stats" label="AI Insights" active={activeItem === "AI Insights"} onClick={() => setActiveItem("AI Insights")} />
           <div className="pt-4 pb-2">
               <div className="h-px bg-white/5 mx-2"></div>
           </div>
-          <NavItem icon="settings" label="Settings" active={false} />
+          <NavItem icon="settings" label="Settings" active={activeItem === "Settings"} onClick={() => setActiveItem("Settings")} />
         </nav>
 
         {isAuthenticated && (
@@ -54,8 +56,8 @@ export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthentica
   );
 };
 
-const NavItem: React.FC<{icon: string, label: string, active: boolean}> = ({icon, label, active}) => (
-    <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${active ? 'bg-gradient-to-r from-indigo-500/20 to-transparent border-l-2 border-indigo-400 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+const NavItem: React.FC<{icon: string, label: string, active: boolean, onClick: () => void}> = ({icon, label, active, onClick}) => (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${active ? 'bg-gradient-to-r from-indigo-500/20 to-transparent border-l-2 border-indigo-400 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
         <span className={`material-symbols-outlined ${active ? 'text-indigo-400' : 'group-hover:text-white'}`}>{icon}</span>
         <span className="font-medium text-sm">{label}</span>
     </button>

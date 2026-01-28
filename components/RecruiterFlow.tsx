@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RecruiterSidebar } from './RecruiterSidebar';
 
 interface RecruiterFlowProps {
@@ -25,6 +25,23 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
   const [currentPrepMsg, setCurrentPrepMsg] = useState(0);
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'es'>('en');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [candidateSpeaking, setCandidateSpeaking] = useState(false);
+
+  const handleSendMessage = (text: string) => {
+      if (!text.trim()) return;
+      setChatMessages(prev => [...prev, text]);
+      setChatInput("");
+      
+      // Simulate Candidate Response
+      setCandidateSpeaking(true);
+      setTimeout(() => {
+          setCandidateSpeaking(false);
+      }, 3000);
+  };
 
   // Auto-advance simulation for step 3 analysis
   useEffect(() => {
@@ -178,7 +195,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                              <span className="material-symbols-outlined text-cyan-400 text-sm hidden sm:block">link</span>
                              <span className="text-xs text-slate-300 font-mono truncate flex-1">tech-corp.com/careers/lead-designer</span>
                              <button className="px-4 py-1.5 bg-green-500/10 border border-green-500/50 hover:bg-green-500/20 text-green-400 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all">
-                                Start
+                                Active
                              </button>
                         </div>
                     </div>
@@ -188,8 +205,14 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                          <img 
                             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop" 
                             alt="Candidate" 
-                            className="h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] mask-linear-fade"
+                            className={`h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)] mask-linear-fade transition-transform duration-500 ${candidateSpeaking ? 'scale-105 brightness-110' : ''}`}
                          />
+                         
+                         {candidateSpeaking && (
+                             <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white text-xs font-bold animate-pulse">
+                                 Liam is speaking...
+                             </div>
+                         )}
                     </div>
 
                     {/* Stats Card (Floating/Static on mobile) */}
@@ -210,36 +233,48 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                         </div>
                     </div>
 
-                    {/* Transcript Bubble */}
-                    <div className="absolute top-48 right-4 lg:right-12 max-w-[280px] lg:max-w-md animate-float-delayed z-20 scale-90 lg:scale-100 origin-top-right">
-                         <div className="glass-panel p-4 lg:p-6 rounded-2xl lg:rounded-3xl rounded-tr-sm border border-cyan-500/20 shadow-[0_0_40px_rgba(0,0,0,0.3)]">
-                            <p className="text-sm lg:text-lg text-slate-200 leading-relaxed font-light">
-                                "I noticed your job description emphasizes <strong className="text-white font-medium">WebGL</strong>. In my last project..."
-                            </p>
-                         </div>
-                    </div>
+                    {/* Transcript Bubble (Most recent user message) */}
+                    {chatMessages.length > 0 && (
+                        <div className="absolute top-48 right-4 lg:right-12 max-w-[280px] lg:max-w-md animate-fade-in z-20 scale-90 lg:scale-100 origin-top-right">
+                             <div className="glass-panel p-4 lg:p-6 rounded-2xl lg:rounded-3xl rounded-tr-sm border border-cyan-500/20 shadow-[0_0_40px_rgba(0,0,0,0.3)]">
+                                <p className="text-sm lg:text-lg text-slate-200 leading-relaxed font-light">
+                                    "{chatMessages[chatMessages.length - 1]}"
+                                </p>
+                             </div>
+                        </div>
+                    )}
 
                     {/* Controls */}
                     <div className="absolute bottom-4 lg:bottom-8 left-0 right-0 px-4 z-50">
                         <div className="max-w-4xl mx-auto">
                             <div className="hidden sm:flex justify-center gap-2 mb-4">
-                                {['Ask about experience', 'Technical challenge'].map((action, i) => (
-                                    <button key={i} className="px-4 py-2 rounded-full glass-panel border border-white/10 hover:border-cyan-400/50 hover:bg-cyan-500/10 text-slate-300 text-xs transition-all">
+                                {['Ask about experience', 'Technical challenge', 'Soft skills check'].map((action, i) => (
+                                    <button 
+                                        key={i} 
+                                        onClick={() => handleSendMessage(action)}
+                                        className="px-4 py-2 rounded-full glass-panel border border-white/10 hover:border-cyan-400/50 hover:bg-cyan-500/10 text-slate-300 text-xs transition-all"
+                                    >
                                         {action}
                                     </button>
                                 ))}
                             </div>
 
                             <div className="glass-panel p-2 rounded-xl lg:rounded-2xl border border-white/10 flex items-center gap-2 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                                 <button className="w-10 h-10 rounded-lg bg-slate-800/50 text-white flex items-center justify-center shrink-0">
+                                 <button className="w-10 h-10 rounded-lg bg-slate-800/50 text-white flex items-center justify-center shrink-0 hover:bg-slate-700">
                                     <span className="material-symbols-outlined text-sm">add_circle</span>
                                  </button>
                                  <input 
                                     type="text" 
                                     placeholder="Type question..." 
                                     className="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 text-sm lg:text-lg min-w-0"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(chatInput)}
                                  />
-                                 <button className="w-10 h-10 rounded-lg bg-cyan-500 text-black flex items-center justify-center shrink-0">
+                                 <button 
+                                    onClick={() => handleSendMessage(chatInput)}
+                                    className="w-10 h-10 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shrink-0 transition-colors"
+                                 >
                                     <span className="material-symbols-outlined text-sm">arrow_upward</span>
                                  </button>
                             </div>

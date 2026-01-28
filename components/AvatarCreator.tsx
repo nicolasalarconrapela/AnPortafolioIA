@@ -19,6 +19,14 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
     }, 1500);
   };
 
+  const handleRandomize = () => {
+    setIsGenerating(true);
+    // Simulate randomization delay
+    setTimeout(() => {
+        setIsGenerating(false);
+    }, 1000);
+  };
+
   const tabs = [
     { id: 'base', icon: 'face', label: 'Face & Skin' },
     { id: 'hair', icon: 'face_3', label: 'Hair' },
@@ -56,10 +64,10 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
 
                 {/* Floating Controls for Preview */}
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20">
-                     <button className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
+                     <button onClick={() => setRotation(r => r + 45)} className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
                         <span className="material-symbols-outlined text-sm">360</span>
                      </button>
-                     <button className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
+                     <button onClick={() => alert("Zoom feature ready.")} className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
                         <span className="material-symbols-outlined text-sm">zoom_in</span>
                      </button>
                 </div>
@@ -68,7 +76,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
                 {isGenerating && (
                     <div className="absolute inset-0 bg-[#020408]/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                         <div className="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                        <span className="text-cyan-400 font-bold tracking-widest text-xs uppercase animate-pulse">Processing Biometrics...</span>
+                        <span className="text-cyan-400 font-bold tracking-widest text-xs uppercase animate-pulse">Processing...</span>
                     </div>
                 )}
             </div>
@@ -78,7 +86,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
         <div className="flex-1 bg-slate-900/30 border border-slate-700/50 rounded-2xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-white">{isDashboard ? 'Avatar Studio' : 'Customization'}</h3>
-                <button className="text-xs flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors">
+                <button onClick={handleRandomize} className="text-xs flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors">
                     <span className="material-symbols-outlined text-sm">casino</span>
                     Randomize
                 </button>

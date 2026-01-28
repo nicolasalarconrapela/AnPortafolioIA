@@ -1,32 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AvatarCreator } from './AvatarCreator';
 import { AITrainingView } from './AITrainingView';
 import { InterviewSimulator } from './InterviewSimulator';
 
 type DashboardView = 'profile' | 'avatar-studio' | 'ai-training' | 'settings' | 'interview-simulator';
 type SettingsTab = 'account' | 'privacy' | 'notifications' | 'avatar-prefs' | 'training-data';
+type AIChatMode = 'optimizer' | 'interviewer' | 'market';
 
 export const CandidateDashboard: React.FC = () => {
   const [activeView, setActiveView] = useState<DashboardView>('profile');
+  const [showNotification, setShowNotification] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Navigation Logic
   const handleViewChange = (view: DashboardView) => {
     setActiveView(view);
+    setIsMobileMenuOpen(false);
+  };
+
+  const toggleNotifications = () => {
+      setShowNotification(!showNotification);
+      if (!showNotification) {
+          setTimeout(() => setShowNotification(false), 3000);
+      }
   };
 
   return (
     <div className="relative z-20 flex flex-col w-full h-screen bg-[#020408] overflow-hidden animate-fade-in">
         
         {/* APP HEADER */}
-        <header className="h-16 border-b border-slate-800 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-between px-6 lg:px-10 shrink-0 z-30">
-            <div className="flex items-center gap-12">
+        <header className="h-16 border-b border-slate-800 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-10 shrink-0 z-30 relative">
+            <div className="flex items-center gap-4 lg:gap-12">
+                {/* Mobile Menu Button */}
+                <button 
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="md:hidden text-slate-400 hover:text-white p-1"
+                >
+                    <span className="material-symbols-outlined">{isMobileMenuOpen ? 'close' : 'menu'}</span>
+                </button>
+
                 {/* Logo */}
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveView('profile')}>
                     <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg">A</div>
-                    <span className="text-xl font-bold text-white tracking-tight">AnPortafolioIA</span>
+                    <span className="text-xl font-bold text-white tracking-tight hidden sm:block">AnPortafolioIA</span>
                 </div>
 
-                {/* Navigation */}
+                {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center gap-2">
                     <NavButton label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
                     <NavButton label="Avatar Studio" active={activeView === 'avatar-studio'} onClick={() => handleViewChange('avatar-studio')} icon="face" />
@@ -36,8 +55,8 @@ export const CandidateDashboard: React.FC = () => {
                 </nav>
             </div>
 
-            <div className="flex items-center gap-6">
-                {/* Profile Completion */}
+            <div className="flex items-center gap-3 lg:gap-6">
+                {/* Profile Completion - Desktop Only */}
                 <div className="hidden lg:flex items-center gap-3">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Completion</span>
                     <span className="text-[10px] font-bold text-purple-400">65%</span>
@@ -49,20 +68,46 @@ export const CandidateDashboard: React.FC = () => {
                 <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
 
                 {/* User Actions */}
-                <div className="flex items-center gap-4">
-                    <button className="text-slate-400 hover:text-white relative">
-                        <span className="material-symbols-outlined">notifications</span>
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-[#050b14]"></span>
+                <div className="flex items-center gap-3 lg:gap-4">
+                    <button onClick={toggleNotifications} className="text-slate-400 hover:text-white relative p-2 rounded-full hover:bg-slate-800 transition-colors">
+                        <span className="material-symbols-outlined text-xl">notifications</span>
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#050b14]"></span>
                     </button>
                     <img 
                         onClick={() => handleViewChange('settings')}
                         src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" 
-                        className="w-9 h-9 rounded-full border border-slate-600 object-cover cursor-pointer hover:border-purple-500 transition-colors" 
+                        className="w-8 h-8 lg:w-9 lg:h-9 rounded-full border border-slate-600 object-cover cursor-pointer hover:border-purple-500 transition-colors" 
                         alt="User" 
                     />
                 </div>
             </div>
+
+            {/* Notification Toast */}
+            {showNotification && (
+                <div className="absolute top-16 right-4 lg:right-6 w-72 lg:w-80 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl animate-fade-in z-50">
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-sm">campaign</span>
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-white">New Interview Invite</h4>
+                            <p className="text-xs text-slate-400 mt-1">TechCorp Inc. has invited you to a technical screening.</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </header>
+
+        {/* MOBILE MENU OVERLAY */}
+        {isMobileMenuOpen && (
+            <div className="absolute top-16 left-0 right-0 bg-[#050b14]/95 backdrop-blur-xl border-b border-slate-800 z-40 p-4 md:hidden animate-fade-in flex flex-col gap-2 shadow-2xl">
+                <MobileNavItem label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
+                <MobileNavItem label="Avatar Studio" active={activeView === 'avatar-studio'} onClick={() => handleViewChange('avatar-studio')} icon="face" />
+                <MobileNavItem label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
+                <MobileNavItem label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
+                <MobileNavItem label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
+            </div>
+        )}
 
         {/* MAIN SCROLLABLE AREA */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-[#020408] to-[#020408]">
@@ -78,7 +123,7 @@ export const CandidateDashboard: React.FC = () => {
                 </div>
             ) : (
                 // Other views use the standard centered container
-                <div className="max-w-7xl mx-auto flex flex-col gap-6 p-6 lg:p-10 min-h-full">
+                <div className="max-w-7xl mx-auto flex flex-col gap-6 p-4 lg:p-10 min-h-full pb-20">
                     
                     {/* VIEW: PROFILE (DEFAULT) */}
                     {activeView === 'profile' && <ProfileView />}
@@ -90,7 +135,7 @@ export const CandidateDashboard: React.FC = () => {
                                 <h1 className="text-2xl font-bold text-white mb-2">Avatar Studio</h1>
                                 <p className="text-slate-400 text-sm">Design and update your digital twin for interview simulations.</p>
                             </div>
-                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
+                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 lg:p-6">
                                 <AvatarCreator 
                                     onBack={() => setActiveView('profile')} 
                                     onComplete={() => {
@@ -110,7 +155,7 @@ export const CandidateDashboard: React.FC = () => {
                                 <h1 className="text-2xl font-bold text-white mb-2">AI Neural Core</h1>
                                 <p className="text-slate-400 text-sm">Re-calibrate your agent's responses and personality traits.</p>
                             </div>
-                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-6">
+                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 lg:p-6">
                                 <AITrainingView 
                                     onBack={() => setActiveView('profile')} 
                                     onComplete={() => {
@@ -142,7 +187,125 @@ const NavButton: React.FC<{label: string, active: boolean, onClick: () => void, 
     </button>
 )
 
-const ProfileView: React.FC = () => (
+const MobileNavItem: React.FC<{label: string, active: boolean, onClick: () => void, icon: string}> = ({label, active, onClick, icon}) => (
+    <button 
+        onClick={onClick}
+        className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3 ${active ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:bg-slate-800/30'}`}
+    >
+        <span className={`material-symbols-outlined text-xl ${active ? 'text-purple-400' : ''}`}>{icon}</span>
+        {label}
+    </button>
+)
+
+const ProfileView: React.FC = () => {
+    const [isSyncing, setIsSyncing] = useState(false);
+    
+    // Chat & Logic State
+    const [messages, setMessages] = useState([
+        { id: 1, sender: 'ai', text: "Hi Alex! I've analyzed your TechFlow experience. Your leadership on the Design System is a strong asset. Shall we optimize your profile description?" }
+    ]);
+    const [inputText, setInputText] = useState("");
+    const [isThinking, setIsThinking] = useState(false);
+    const [chatMode, setChatMode] = useState<AIChatMode>('optimizer');
+    const [quickReplies, setQuickReplies] = useState<string[]>(["Yes, optimize it", "Analyze my skills", "Not now"]);
+    const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // AI Logic Engine
+    const generateAIResponse = (input: string, mode: AIChatMode): { text: string, replies: string[] } => {
+        const lowerInput = input.toLowerCase();
+
+        // 1. Check for specific keywords
+        if (lowerInput.includes('salary') || lowerInput.includes('rate') || lowerInput.includes('money')) {
+            return {
+                text: "Based on recent placements for Senior Product Designers in SF, the base salary range is $165k - $195k. Your current profile suggests you could target the upper end due to your System Design experience.",
+                replies: ["How do I negotiate?", "Show market data", "Update my expected salary"]
+            };
+        }
+
+        if (lowerInput.includes('optimize') || lowerInput.includes('improve') || lowerInput.includes('better')) {
+            return {
+                text: "I've rephrased your 'TechFlow' description to emphasize impact: 'Architected a scalable Design System reducing dev handoff time by 40%'. Would you like to apply this change?",
+                replies: ["Apply changes", "Try another variation", "Keep original"]
+            };
+        }
+
+        if (lowerInput.includes('skill') || lowerInput.includes('react') || lowerInput.includes('figma')) {
+            return {
+                text: "React and Figma are your top-performing keywords. Adding 'Prototyping' or 'Motion Design' could increase your match rate for Senior roles by 12%.",
+                replies: ["Add Prototyping", "Analyze gaps", "I'm not a motion designer"]
+            };
+        }
+
+        if (lowerInput.includes('interview') || lowerInput.includes('practice')) {
+            return {
+                text: "I can simulate a Behavioral Interview right now. I'll act as a Recruiter from a Fintech company. Ready to start?",
+                replies: ["Start Simulation", "What questions will they ask?", "Maybe later"]
+            };
+        }
+
+        // 2. Mode-specific fallbacks
+        if (mode === 'interviewer') {
+            return {
+                text: "Let's focus on your STAR method. Can you describe a time you disagreed with a Product Manager?",
+                replies: ["I have an example", "Give me a tip first", "Skip question"]
+            };
+        }
+        
+        if (mode === 'market') {
+            return {
+                text: "The job market for Designers is active. I see 14 open roles matching your profile today. Most require Design System experience.",
+                replies: ["Show roles", "Auto-apply to top 3", "Refine criteria"]
+            };
+        }
+
+        // 3. Generic Fallback
+        return {
+            text: "I understand. Is there anything specific about your profile, skills, or upcoming interviews you'd like to discuss?",
+            replies: ["Analyze my resume", "Mock Interview", "Market Trends"]
+        };
+    };
+
+    const handleSendMessage = (text: string = inputText) => {
+        if (!text.trim()) return;
+        
+        // Add User Message
+        setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text: text }]);
+        setInputText("");
+        setIsThinking(true);
+        setQuickReplies([]); // Clear old replies while thinking
+
+        // Simulate AI Latency
+        const thinkingTime = Math.random() * 1000 + 1000; // 1-2 seconds
+
+        setTimeout(() => {
+            const response = generateAIResponse(text, chatMode);
+            setIsThinking(false);
+            setMessages(prev => [...prev, { 
+                id: Date.now() + 1, 
+                sender: 'ai', 
+                text: response.text 
+            }]);
+            setQuickReplies(response.replies);
+        }, thinkingTime);
+    };
+
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, isThinking]);
+
+    const handleSync = () => {
+        setIsSyncing(true);
+        setTimeout(() => setIsSyncing(false), 2000);
+    };
+
+    const handleAddSkill = () => {
+        const result = window.prompt("Enter new skill:");
+        if (result) {
+            handleSendMessage(`I just added the skill: ${result}`);
+        }
+    };
+
+    return (
     <>
         {/* Profile Header Card */}
         <div className="flex flex-col md:flex-row gap-6 p-6 rounded-3xl bg-[#0a101f] border border-slate-700/50 items-start md:items-center shadow-2xl relative overflow-hidden group animate-fade-in">
@@ -150,32 +313,37 @@ const ProfileView: React.FC = () => (
                 <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-900/20 blur-[100px] rounded-full pointer-events-none group-hover:bg-indigo-900/30 transition-all duration-1000"></div>
 
                 {/* Avatar & Info */}
-                <div className="relative shrink-0">
-                    <div className="p-1 rounded-[1.2rem] bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-700/50">
-                    <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" alt="Profile" className="w-24 h-24 rounded-2xl object-cover" />
+                <div className="relative shrink-0 flex flex-row md:flex-col items-center gap-4 md:gap-0">
+                    <div className="p-1 rounded-[1.2rem] bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-700/50 relative">
+                        <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" alt="Profile" className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover" />
+                        <button className="absolute bottom-[-6px] right-[-6px] p-2 bg-slate-800 rounded-full border border-slate-700 hover:border-slate-500 hover:bg-slate-700 transition-colors cursor-pointer shadow-lg z-10" onClick={() => alert("Edit Profile Modal")}>
+                            <span className="material-symbols-outlined text-[14px] text-white block">edit</span>
+                        </button>
                     </div>
-                    <button className="absolute bottom-[-6px] right-[-6px] p-2 bg-slate-800 rounded-full border border-slate-700 hover:border-slate-500 hover:bg-slate-700 transition-colors cursor-pointer shadow-lg z-10">
-                    <span className="material-symbols-outlined text-[14px] text-white block">edit</span>
-                    </button>
+                    {/* Mobile Only Name shows here for better spacing if needed, but keeping unified for now */}
                 </div>
 
                 <div className="flex-1 min-w-0 relative z-10">
-                    <h1 className="text-3xl font-bold text-white leading-tight mb-2">Alex Chen</h1>
-                    <div className="flex items-center gap-3 text-sm mb-4">
+                    <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-2">Alex Chen</h1>
+                    <div className="flex flex-wrap items-center gap-3 text-sm mb-4">
                     <span className="text-cyan-400 font-bold">Senior Product Designer</span> 
-                    <span className="text-slate-600">|</span> 
-                    <span className="text-indigo-400 font-bold">5 YOE</span>
+                    <span className="text-slate-600 hidden md:inline">|</span> 
+                    <span className="text-indigo-400 font-bold block md:inline w-full md:w-auto">5 YOE</span>
                     </div>
-                    <div className="flex flex-wrap gap-6 text-xs text-slate-400 font-medium">
+                    <div className="flex flex-wrap gap-4 md:gap-6 text-xs text-slate-400 font-medium">
                         <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">location_on</span> San Francisco, CA</span>
                         <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">mail</span> alex.chen@design.co</span>
                     </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-3 shrink-0 w-full md:w-auto relative z-10">
-                    <button className="w-full md:w-auto px-5 py-2.5 bg-[#0077b5]/10 border border-[#0077b5]/30 text-[#0077b5] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#0077b5]/20 transition-all shadow-[0_0_15px_rgba(0,119,181,0.1)]">
-                        <span className="material-symbols-outlined text-base animate-spin-slow">sync</span>
-                        Sync with LinkedIn
+                <div className="flex flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto relative z-10">
+                    <button 
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="w-full md:w-auto px-5 py-2.5 bg-[#0077b5]/10 border border-[#0077b5]/30 text-[#0077b5] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#0077b5]/20 transition-all shadow-[0_0_15px_rgba(0,119,181,0.1)] disabled:opacity-50"
+                    >
+                        <span className={`material-symbols-outlined text-base ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
+                        {isSyncing ? 'Syncing...' : 'Sync with LinkedIn'}
                     </button>
                     <p className="text-[10px] text-slate-600 font-medium uppercase tracking-wider">Last synced: 2 hours ago</p>
                 </div>
@@ -187,11 +355,11 @@ const ProfileView: React.FC = () => (
                 
                 {/* Experience Section */}
                 <div className="bg-[#0f1623]/50 border border-slate-800/50 rounded-3xl p-1">
-                    <div className="flex items-center justify-between mb-2 p-5 pb-2">
+                    <div className="flex items-center justify-between mb-2 p-4 md:p-5 pb-2">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <span className="material-symbols-outlined text-purple-400">work</span> Experience
                         </h3>
-                        <button className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined text-xl">add</span></button>
+                        <button onClick={() => alert("Add Experience Modal")} className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined text-xl">add</span></button>
                     </div>
                     {/* Cards */}
                     <div className="space-y-1 p-2">
@@ -220,7 +388,7 @@ const ProfileView: React.FC = () => (
                 <div className="bg-[#0f1623]/50 border border-slate-800/50 rounded-3xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2"><span className="material-symbols-outlined text-purple-400">auto_awesome</span> Skills & Proficiency</h3>
-                        <button className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined text-xl">edit</span></button>
+                        <button onClick={() => alert("Edit Skills Modal")} className="text-slate-400 hover:text-white transition-colors"><span className="material-symbols-outlined text-xl">edit</span></button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <SkillBar name="Figma" level="Expert" progress={95} color="bg-blue-500" />
@@ -229,7 +397,7 @@ const ProfileView: React.FC = () => (
                         <SkillBar name="Design Systems" level="Expert" progress={92} color="bg-blue-500" />
                         <SkillBar name="Prototyping" level="Advanced" progress={80} color="bg-purple-500" />
                         
-                        <button className="col-span-1 md:col-span-2 mt-4 py-3 border border-dashed border-slate-700 rounded-xl text-slate-500 text-sm font-bold hover:text-slate-300 hover:border-slate-500 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/30">
+                        <button onClick={handleAddSkill} className="col-span-1 md:col-span-2 mt-4 py-3 border border-dashed border-slate-700 rounded-xl text-slate-500 text-sm font-bold hover:text-slate-300 hover:border-slate-500 transition-all flex items-center justify-center gap-2 hover:bg-slate-800/30">
                             <span className="material-symbols-outlined text-base">add</span> Add Skill
                         </button>
                     </div>
@@ -237,95 +405,152 @@ const ProfileView: React.FC = () => (
             </div>
 
             {/* Right Column: Chat (TalentFlow AI) */}
-            <div className="w-full lg:w-[400px] flex flex-col bg-[#0f1623] border border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl shrink-0 h-[600px] lg:h-[calc(100vh-140px)] sticky top-0">
+            <div className="w-full lg:w-[400px] flex flex-col bg-[#0f1623] border border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl shrink-0 h-[600px] lg:h-[calc(100vh-140px)] lg:sticky lg:top-0 transition-all duration-300">
                 {/* Chat Header */}
-                <div className="p-5 border-b border-slate-700/50 bg-[#0f1623] flex items-center justify-between z-10 relative">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                            <span className="material-symbols-outlined text-white text-xl">smart_toy</span>
-                        </div>
-                        <div>
-                            <h4 className="text-base font-bold text-white leading-none">TalentFlow AI</h4>
-                            <div className="flex items-center gap-1.5 mt-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                <span className="text-[10px] text-green-500 font-bold tracking-wider uppercase">Interviewing</span>
+                <div className="p-4 border-b border-slate-700/50 bg-[#0f1623] flex flex-col gap-3 z-10 relative">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-colors duration-500 ${chatMode === 'optimizer' ? 'from-indigo-500 to-purple-600' : chatMode === 'interviewer' ? 'from-green-500 to-teal-600' : 'from-orange-500 to-red-600'}`}>
+                                <span className="material-symbols-outlined text-white text-xl">
+                                    {chatMode === 'optimizer' ? 'smart_toy' : chatMode === 'interviewer' ? 'record_voice_over' : 'query_stats'}
+                                </span>
+                            </div>
+                            <div>
+                                <h4 className="text-base font-bold text-white leading-none">TalentFlow AI</h4>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${chatMode === 'optimizer' ? 'bg-purple-400' : chatMode === 'interviewer' ? 'bg-green-400' : 'bg-orange-400'}`}></span>
+                                    <span className={`text-[10px] font-bold tracking-wider uppercase ${chatMode === 'optimizer' ? 'text-purple-400' : chatMode === 'interviewer' ? 'text-green-400' : 'text-orange-400'}`}>
+                                        {chatMode === 'optimizer' ? 'Profile Optimizer' : chatMode === 'interviewer' ? 'Mock Interviewer' : 'Market Analyst'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
+                        <button onClick={() => setMessages([{ id: Date.now(), sender: 'ai', text: "Chat cleared. How can I help you now?" }])} className="text-slate-500 hover:text-white p-2 rounded-lg hover:bg-slate-800"><span className="material-symbols-outlined text-lg">refresh</span></button>
                     </div>
-                    <button className="text-slate-400 hover:text-white"><span className="material-symbols-outlined text-xl">more_vert</span></button>
+                    
+                    {/* Mode Selector */}
+                    <div className="flex p-1 bg-slate-900 rounded-lg border border-slate-800">
+                        <button onClick={() => setChatMode('optimizer')} className={`flex-1 py-1.5 text-[10px] font-bold rounded flex items-center justify-center gap-1 ${chatMode === 'optimizer' ? 'bg-slate-800 text-purple-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
+                             <span className="material-symbols-outlined text-sm">auto_fix_high</span> Optimize
+                        </button>
+                        <button onClick={() => setChatMode('interviewer')} className={`flex-1 py-1.5 text-[10px] font-bold rounded flex items-center justify-center gap-1 ${chatMode === 'interviewer' ? 'bg-slate-800 text-green-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
+                             <span className="material-symbols-outlined text-sm">mic</span> Prep
+                        </button>
+                        <button onClick={() => setChatMode('market')} className={`flex-1 py-1.5 text-[10px] font-bold rounded flex items-center justify-center gap-1 ${chatMode === 'market' ? 'bg-slate-800 text-orange-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
+                             <span className="material-symbols-outlined text-sm">trending_up</span> Market
+                        </button>
+                    </div>
                 </div>
 
                 {/* Context Bar */}
-                <div className="px-5 py-3 bg-[#0a101f] border-b border-slate-700/30 flex items-center justify-between z-10 relative shadow-sm">
-                    <div className="flex items-center gap-2 text-[11px] text-purple-400 font-bold">
-                        <span className="material-symbols-outlined text-sm">target</span>
-                        Focus: Experience @ TechFlow
+                <div className="px-5 py-2 bg-[#0a101f] border-b border-slate-700/30 flex items-center justify-between z-10 relative shadow-sm">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold">
+                        <span className="material-symbols-outlined text-xs">target</span>
+                        Focus: <span className="text-white">TechFlow Experience</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">Context Lock</span>
-                        <div className="w-8 h-4 bg-purple-500 rounded-full relative cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                            <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-white rounded-full"></div>
+                        <div className="w-8 h-4 bg-slate-800 border border-slate-700 rounded-full relative cursor-pointer">
+                            <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-purple-500 rounded-full shadow-sm"></div>
                         </div>
                     </div>
                 </div>
 
                 {/* Chat Messages */}
                 <div className="flex-1 p-5 space-y-6 overflow-y-auto bg-gradient-to-b from-[#0a101f] to-[#0f1623] custom-scrollbar">
-                    <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/30 mt-1 shadow-[0_0_15px_rgba(99,102,241,0.15)]">
-                            <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                    {messages.map((msg) => (
+                        <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                            {msg.sender === 'ai' && (
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border mt-1 shadow-lg ${chatMode === 'optimizer' ? 'bg-purple-900/30 text-purple-400 border-purple-500/30' : chatMode === 'interviewer' ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-orange-900/30 text-orange-400 border-orange-500/30'}`}>
+                                    <span className="material-symbols-outlined text-sm">smart_toy</span>
+                                </div>
+                            )}
+                            {msg.sender === 'user' && (
+                                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 mt-1 border border-slate-600 shadow-md">
+                                    <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover" />
+                                </div>
+                            )}
+                            <div className={`p-3.5 text-sm leading-relaxed shadow-lg max-w-[80%] ${
+                                msg.sender === 'ai' 
+                                ? 'bg-slate-800/90 backdrop-blur-sm rounded-2xl rounded-tl-sm text-slate-200 border border-slate-700/50' 
+                                : 'bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl rounded-tr-sm text-white border border-white/10'
+                            }`}>
+                                {msg.text}
+                            </div>
                         </div>
-                        <div className="p-4 bg-slate-800/80 backdrop-blur-sm rounded-2xl rounded-tl-sm text-sm text-slate-200 leading-relaxed border border-slate-700/50 shadow-lg">
-                            Hi Alex! I see you've synced your LinkedIn profile. Your experience at TechFlow looks impressive. I noticed you mentioned scaling the design system there.
+                    ))}
+                    
+                    {isThinking && (
+                        <div className="flex gap-4 animate-fade-in">
+                             <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700 mt-1">
+                                <span className="material-symbols-outlined text-sm text-slate-500">more_horiz</span>
+                            </div>
+                            <div className="p-3 bg-slate-800/50 rounded-2xl rounded-tl-sm flex gap-1 items-center border border-slate-800">
+                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></div>
+                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-100"></div>
+                                <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-200"></div>
+                            </div>
                         </div>
-                    </div>
-
-                    <div className="flex gap-4 flex-row-reverse">
-                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 mt-1 border border-slate-600 shadow-md">
-                            <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="p-4 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl rounded-tr-sm text-sm text-white leading-relaxed shadow-xl border border-white/10">
-                            Thanks! It's been a great journey so far. Building the component library for TechFlow was one of my biggest challenges.
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/30 mt-1 shadow-[0_0_15px_rgba(99,102,241,0.15)]">
-                            <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                        </div>
-                        <div className="p-4 bg-slate-800/80 backdrop-blur-sm rounded-2xl rounded-tl-sm text-sm text-slate-200 leading-relaxed border border-slate-700/50 shadow-lg">
-                            I noticed you listed <span className="text-cyan-400 font-bold italic">'Project Management'</span> as a key skill. Can you describe a specific challenge you overcame in your last role involving this skill?
-                        </div>
-                    </div>
+                    )}
+                    <div ref={chatEndRef}></div>
                 </div>
 
                 {/* Input Area */}
-                <div className="p-5 border-t border-slate-700/50 bg-[#0f1623] relative z-10">
-                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar">
-                        <button className="whitespace-nowrap px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-slate-300 font-medium transition-colors">Tell me more</button>
-                        <button className="whitespace-nowrap px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-slate-300 font-medium transition-colors">Skip question</button>
+                <div className="p-4 border-t border-slate-700/50 bg-[#0f1623] relative z-10">
+                    {/* Dynamic Quick Replies */}
+                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar min-h-[32px]">
+                        {quickReplies.map((reply, i) => (
+                             <button 
+                                key={i} 
+                                onClick={() => handleSendMessage(reply)} 
+                                disabled={isThinking}
+                                className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 rounded-lg text-[10px] text-slate-300 font-bold transition-all animate-fade-in active:scale-95 disabled:opacity-50"
+                             >
+                                {reply}
+                             </button>
+                        ))}
                     </div>
+
                     <div className="bg-[#0a101f] rounded-2xl p-1.5 flex gap-2 border border-slate-700 focus-within:border-purple-500/50 transition-colors shadow-inner">
-                        <input className="bg-transparent flex-1 text-sm text-white px-4 py-3 outline-none placeholder-slate-600" placeholder="Type your answer..." />
+                        <input 
+                            className="bg-transparent flex-1 text-sm text-white px-4 py-3 outline-none placeholder-slate-600" 
+                            placeholder={isThinking ? "AI is typing..." : "Ask about your profile..."}
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            disabled={isThinking}
+                        />
                         <div className="flex items-center gap-1 pr-1">
                             <button className="p-2.5 text-slate-500 hover:text-white transition-colors rounded-xl hover:bg-slate-800"><span className="material-symbols-outlined text-xl">mic</span></button>
-                            <button className="p-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-white transition-colors shadow-lg"><span className="material-symbols-outlined text-xl">send</span></button>
+                            <button onClick={() => handleSendMessage()} disabled={!inputText.trim() || isThinking} className="p-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 rounded-xl text-white transition-colors shadow-lg"><span className="material-symbols-outlined text-xl">send</span></button>
                         </div>
                     </div>
-                    <p className="text-[10px] text-slate-600 text-center mt-3 font-medium">AI responses generated in real-time based on Profile & LinkedIn data.</p>
                 </div>
             </div>
         </div>
     </>
-)
+)}
 
 const SettingsView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
     return (
-        <div className="flex w-full h-full animate-fade-in relative">
-            {/* Settings Sidebar */}
-            <aside className="w-64 flex-col border-r border-slate-800 hidden lg:flex bg-[#050b14]/50">
+        <div className="flex flex-col lg:flex-row w-full h-full animate-fade-in relative">
+            
+            {/* Mobile Settings Nav */}
+            <div className="lg:hidden w-full overflow-x-auto p-4 border-b border-slate-800 flex gap-2 no-scrollbar bg-[#050b14]">
+                {['account', 'privacy', 'notifications', 'avatar-prefs', 'training-data'].map((tab) => (
+                    <button 
+                        key={tab}
+                        onClick={() => setActiveTab(tab as SettingsTab)}
+                        className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all ${activeTab === tab ? 'bg-cyan-500 text-black' : 'bg-slate-800 text-slate-400'}`}
+                    >
+                        {tab.replace('-', ' ')}
+                    </button>
+                ))}
+            </div>
+
+            {/* Desktop Settings Sidebar */}
+            <aside className="w-64 flex-col border-r border-slate-800 hidden lg:flex bg-[#050b14]/50 shrink-0">
                 <div className="p-6">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Settings</h2>
                     <nav className="space-y-1">
@@ -342,7 +567,7 @@ const SettingsView: React.FC = () => {
                 </div>
                 
                 <div className="mt-auto p-6 border-t border-slate-800">
-                     <button className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2">
+                     <button onClick={() => window.location.reload()} className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2">
                         <span className="material-symbols-outlined text-xl">logout</span>
                         <span className="text-sm font-bold">Log Out</span>
                      </button>
@@ -350,20 +575,20 @@ const SettingsView: React.FC = () => {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-4 lg:p-10 overflow-y-auto custom-scrollbar">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold text-white mb-2">Account Settings</h1>
+                    <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Account Settings</h1>
                     <p className="text-slate-400 text-sm mb-8">Manage your profile details and AI preferences.</p>
 
                     {/* Profile Banner */}
-                    <div className="relative overflow-hidden rounded-3xl border border-slate-700/50 bg-[#0a101f] p-8 mb-8 flex flex-col md:flex-row items-center gap-8 shadow-2xl">
+                    <div className="relative overflow-hidden rounded-3xl border border-slate-700/50 bg-[#0a101f] p-6 lg:p-8 mb-8 flex flex-col md:flex-row items-center gap-8 shadow-2xl text-center md:text-left">
                          {/* Background Effects */}
                          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-cyan-900/20 to-indigo-900/20 blur-[80px] rounded-full pointer-events-none"></div>
                          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
 
                          {/* Avatar */}
                          <div className="relative shrink-0">
-                             <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-br from-cyan-500 to-indigo-600 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+                             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full p-1 bg-gradient-to-br from-cyan-500 to-indigo-600 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
                                  <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full rounded-full object-cover border-4 border-[#0a101f]" alt="Profile" />
                              </div>
                              <button className="absolute bottom-1 right-1 p-2 bg-slate-800 rounded-full border border-slate-700 text-white hover:bg-slate-700 transition-colors shadow-lg">
@@ -372,16 +597,16 @@ const SettingsView: React.FC = () => {
                          </div>
 
                          {/* Info */}
-                         <div className="flex-1 text-center md:text-left z-10">
+                         <div className="flex-1 z-10">
                              <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
-                                 <h2 className="text-3xl font-bold text-white">Alex Chen</h2>
+                                 <h2 className="text-2xl md:text-3xl font-bold text-white">Alex Chen</h2>
                                  <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">Premium Member</span>
                              </div>
-                             <p className="text-slate-400 text-sm leading-relaxed max-w-lg mb-6">
+                             <p className="text-slate-400 text-sm leading-relaxed max-w-lg mb-6 mx-auto md:mx-0">
                                 Senior Product Designer specializing in AI interfaces. Located in San Francisco, CA.
                              </p>
                              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                                 <button className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                                 <button onClick={() => alert("Public view link copied!")} className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]">
                                      <span className="material-symbols-outlined text-lg">visibility</span>
                                      Public View
                                  </button>
@@ -393,7 +618,7 @@ const SettingsView: React.FC = () => {
                          </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
                         {/* Personal Information */}
                         <div className="bg-[#0a101f]/50 border border-slate-700/50 rounded-3xl p-6 lg:p-8 flex flex-col shadow-lg">
                             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
@@ -404,7 +629,7 @@ const SettingsView: React.FC = () => {
                             </div>
 
                             <div className="space-y-5 flex-1">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-slate-400 ml-1">Full Name</label>
                                         <input type="text" defaultValue="Alex Chen" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500 outline-none transition-colors" />
@@ -501,7 +726,7 @@ const SettingsView: React.FC = () => {
                                     <span className="material-symbols-outlined text-red-500">warning</span>
                                     <span className="text-sm font-bold text-red-400">Danger Zone</span>
                                 </div>
-                                <button className="text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
+                                <button onClick={() => alert("Are you sure? This cannot be undone.")} className="text-xs font-bold text-red-500 hover:text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors">
                                     Delete Account
                                 </button>
                             </div>
@@ -540,7 +765,7 @@ const ExperienceCard: React.FC<{role: string, company: string, period: string, d
                         <p className="text-sm text-slate-400 font-medium">{company} <span className="mx-1">•</span> {period}</p>
                     </div>
                     {active ? (
-                        <button className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center gap-1.5">
+                        <button onClick={(e) => { e.stopPropagation(); alert("Analyzing with AI..."); }} className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center gap-1.5 hover:bg-indigo-500/20">
                             <span className="material-symbols-outlined text-sm">auto_awesome</span>
                             Analyze with AI
                         </button>

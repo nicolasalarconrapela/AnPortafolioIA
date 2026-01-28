@@ -9,10 +9,10 @@ interface LandingViewProps {
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   return (
-    <main className="relative z-10 flex flex-col items-center justify-center w-full h-screen overflow-hidden">
+    <main className="relative z-10 flex flex-col items-center justify-center w-full h-screen overflow-hidden p-4">
       <div className="relative w-full max-w-7xl h-full flex items-center justify-center">
         {/* Central Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-full z-0 pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-full z-0 pointer-events-none"></div>
 
         <AvatarScanner />
 
@@ -21,7 +21,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           subtitle="Senior Product Designer"
           detail="TechFlow Systems • 4 Years"
           icon="work"
-          position="top-[25%] left-[5%] lg:left-[12%] xl:left-[18%]"
+          position="top-[15%] md:top-[25%] left-[2%] md:left-[5%] lg:left-[12%] xl:left-[18%]"
           delay="0.5s"
           type="cyan"
           align="left"
@@ -32,7 +32,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           subtitle=""
           detail=""
           icon="psychology"
-          position="top-[20%] right-[5%] lg:right-[12%] xl:right-[18%]"
+          position="top-[15%] md:top-[20%] right-[2%] md:right-[5%] lg:right-[12%] xl:right-[18%]"
           delay="1.5s"
           type="indigo"
           align="right"
@@ -44,7 +44,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           subtitle="M.S. Comp. Science"
           detail="Stanford University • 2021"
           icon="school"
-          position="bottom-[25%] left-[8%] lg:left-[15%] xl:left-[20%]"
+          position="bottom-[20%] md:bottom-[25%] left-[5%] md:left-[8%] lg:left-[15%] xl:left-[20%]"
           delay="2.5s"
           type="cyan"
           align="left"
@@ -55,19 +55,19 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           subtitle="Awwwards SOTD x3"
           detail="Best Innovation 2023"
           icon="trophy"
-          position="bottom-[30%] right-[8%] lg:right-[15%] xl:right-[20%]"
+          position="bottom-[25%] md:bottom-[30%] right-[5%] md:right-[8%] lg:right-[15%] xl:right-[20%]"
           delay="1.0s"
           type="indigo"
           align="right"
         />
       </div>
 
-      <nav className="absolute bottom-12 z-50 animate-fade-in">
-        <div className="glass-panel rounded-full p-2 px-3 flex items-center gap-4">
+      <nav className="absolute bottom-8 md:bottom-12 z-50 animate-fade-in w-full max-w-md px-4">
+        <div className="glass-panel rounded-2xl md:rounded-full p-2 px-3 flex flex-col md:flex-row items-center gap-2 md:gap-4 border border-white/10 bg-slate-900/50 backdrop-blur-xl">
           <button 
             onClick={() => onNavigate('auth-candidate')}
             aria-label="View Full CV" 
-            className="group nav-btn rounded-full px-5 py-2.5 flex items-center gap-3 relative overflow-hidden"
+            className="group nav-btn w-full md:w-auto rounded-xl md:rounded-full px-5 py-3 md:py-2.5 flex items-center justify-center md:justify-start gap-3 relative overflow-hidden transition-all hover:bg-white/5"
           >
             <div className="absolute inset-0 bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <span className="material-symbols-outlined text-cyan-400 text-2xl group-hover:scale-110 transition-transform">person</span>
@@ -77,12 +77,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             </div>
           </button>
           
-          <div className="w-px h-8 bg-white/10"></div>
+          <div className="w-full md:w-px h-px md:h-8 bg-white/10"></div>
           
           <button 
             onClick={() => onNavigate('recruiter-flow')}
             aria-label="Start Interview" 
-            className="group nav-btn rounded-full px-5 py-2.5 flex items-center gap-3 relative overflow-hidden"
+            className="group nav-btn w-full md:w-auto rounded-xl md:rounded-full px-5 py-3 md:py-2.5 flex items-center justify-center md:justify-start gap-3 relative overflow-hidden transition-all hover:bg-white/5"
           >
              <div className="absolute inset-0 bg-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             <span className="material-symbols-outlined text-indigo-400 text-2xl group-hover:scale-110 transition-transform">domain</span>

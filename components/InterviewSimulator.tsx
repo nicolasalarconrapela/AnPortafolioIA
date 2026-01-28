@@ -29,6 +29,9 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
   const [micActive, setMicActive] = useState(true);
   const [cameraActive, setCameraActive] = useState(true);
   const [timer, setTimer] = useState(0);
+  const [isMicTesting, setIsMicTesting] = useState(false);
+  const [micStatus, setMicStatus] = useState<'idle' | 'testing' | 'ok'>('idle');
+  const [showChatOverlay, setShowChatOverlay] = useState(false);
   
   // Data
   const [transcript, setTranscript] = useState<{sender: 'ai'|'user', text: string}[]>([]);
@@ -65,7 +68,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
       const processStep = () => {
           if (step.sender === 'ai') {
               setSpeakerState('ai_speaking');
-              // Add to transcript immediately for AI? Or simulate typing? Let's add immediately for readability
+              // Add to transcript immediately for AI
               setTranscript(prev => [...prev, { sender: 'ai', text: step.text }]);
               
               timeout = setTimeout(() => {
@@ -113,6 +116,15 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
     setSessionState('feedback');
   };
 
+  const handleTestMic = () => {
+      setMicStatus('testing');
+      setIsMicTesting(true);
+      setTimeout(() => {
+          setMicStatus('ok');
+          setIsMicTesting(false);
+      }, 2000);
+  };
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -127,8 +139,8 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
         <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto custom-scrollbar">
             <div className="max-w-5xl w-full">
                 <div className="text-center mb-8 lg:mb-12">
-                    <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">Interview Simulator</h1>
-                    <p className="text-slate-400 max-w-lg mx-auto">Calibrate your audio and video settings before entering the simulation with our AI recruiter.</p>
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">Interview Simulator</h1>
+                    <p className="text-slate-400 max-w-lg mx-auto text-sm md:text-base">Calibrate your audio and video settings before entering the simulation with our AI recruiter.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
@@ -207,10 +219,20 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                              </div>
                         </div>
 
-                        <div className="flex gap-4">
-                            <button className="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 text-slate-300 font-bold text-sm transition-all flex items-center justify-center gap-2">
-                                <span className="material-symbols-outlined">settings_voice</span>
-                                Test Mic
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <button 
+                                onClick={handleTestMic}
+                                disabled={micStatus === 'testing'}
+                                className={`flex-1 py-3.5 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                                    micStatus === 'ok' 
+                                    ? 'bg-green-500/20 border-green-500 text-green-400' 
+                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                                }`}
+                            >
+                                <span className={`material-symbols-outlined ${micStatus === 'testing' ? 'animate-spin' : ''}`}>
+                                    {micStatus === 'ok' ? 'check' : (micStatus === 'testing' ? 'refresh' : 'settings_voice')}
+                                </span>
+                                {micStatus === 'ok' ? 'Mic OK' : (micStatus === 'testing' ? 'Testing...' : 'Test Mic')}
                             </button>
                             <button onClick={handleStart} className="flex-[2] py-3.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all flex items-center justify-center gap-2 active:scale-95">
                                 Start Session
@@ -249,7 +271,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
       {sessionState === 'active' && (
           <div className="flex-1 flex flex-col relative bg-[#020408]">
               {/* Header */}
-              <div className="h-16 border-b border-slate-800 bg-[#050b14]/90 flex items-center justify-between px-6 z-20">
+              <div className="h-16 border-b border-slate-800 bg-[#050b14]/90 flex items-center justify-between px-4 lg:px-6 z-20">
                   <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -259,19 +281,19 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                   </div>
                   <div className="flex items-center gap-3">
                        <span className="text-xs text-slate-400 hidden sm:inline-block">Simulated Interview Environment v2.4</span>
-                       <div className="h-4 w-px bg-slate-700"></div>
+                       <div className="h-4 w-px bg-slate-700 hidden sm:block"></div>
                        <div className="flex items-center gap-2">
-                           <span className="text-xs text-slate-400">Topic:</span>
+                           <span className="text-xs text-slate-400 hidden sm:inline-block">Topic:</span>
                            <span className="text-xs text-white font-bold capitalize px-2 py-0.5 rounded bg-slate-800 border border-slate-700">{selectedType}</span>
                        </div>
                   </div>
               </div>
 
               {/* Main Stage */}
-              <div className="flex-1 relative p-4 lg:p-6 flex gap-4 lg:gap-6 overflow-hidden">
+              <div className="flex-1 relative p-4 lg:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
                   
                   {/* AI Avatar (Main Feed) */}
-                  <div className="flex-1 relative bg-gradient-to-b from-slate-900 to-[#0a101f] rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl group">
+                  <div className="flex-1 relative bg-gradient-to-b from-slate-900 to-[#0a101f] rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl group w-full h-full">
                       <img 
                         src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop" 
                         className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${speakerState === 'ai_speaking' ? 'scale-105 brightness-110' : 'scale-100 opacity-80'}`} 
@@ -279,11 +301,11 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                       />
                       
                       {/* AI Overlay UI */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-8 pt-24">
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 lg:p-8 pt-24">
                            <div className="flex items-end justify-between">
                                <div>
                                    <div className="flex items-center gap-3 mb-2">
-                                       <h3 className="text-2xl font-bold text-white">Sarah (AI)</h3>
+                                       <h3 className="text-xl lg:text-2xl font-bold text-white">Sarah (AI)</h3>
                                        {speakerState === 'ai_speaking' && (
                                             <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">Speaking</span>
                                        )}
@@ -309,26 +331,26 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                       </div>
                   </div>
 
-                  {/* User Feed (PIP) */}
-                  <div className={`absolute top-8 right-8 w-48 lg:w-64 aspect-[3/4] bg-slate-900 rounded-2xl border transition-all duration-300 shadow-2xl overflow-hidden z-20 ${speakerState === 'user_speaking' ? 'border-green-500 shadow-[0_0_20px_rgba(34,199,89,0.3)] scale-105' : 'border-slate-600'}`}>
+                  {/* User Feed (PIP) - Mobile Optimized Position */}
+                  <div className={`absolute top-4 right-4 lg:top-8 lg:right-8 w-28 lg:w-64 aspect-[3/4] bg-slate-900 rounded-2xl border transition-all duration-300 shadow-2xl overflow-hidden z-20 ${speakerState === 'user_speaking' ? 'border-green-500 shadow-[0_0_20px_rgba(34,199,89,0.3)] scale-105' : 'border-slate-600'}`}>
                        <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover mirror" alt="User" />
                        
-                       <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                       <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 bg-gradient-to-t from-black/80 to-transparent">
                             <div className="flex justify-between items-end">
-                                <div className="flex gap-1 items-end h-4">
+                                <div className="flex gap-1 items-end h-3 lg:h-4">
                                     {[1,2,3,4,5].map(i => (
-                                        <div key={i} className={`w-1 bg-green-500 rounded-full`} style={{ 
+                                        <div key={i} className={`w-0.5 lg:w-1 bg-green-500 rounded-full`} style={{ 
                                             height: (speakerState === 'user_speaking' && micActive) ? `${Math.random() * 100}%` : '20%' 
                                         }}></div>
                                     ))}
                                 </div>
-                                {!micActive && <div className="w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center"><span className="material-symbols-outlined text-[12px] text-white">mic_off</span></div>}
+                                {!micActive && <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-red-500/80 flex items-center justify-center"><span className="material-symbols-outlined text-[10px] lg:text-[12px] text-white">mic_off</span></div>}
                             </div>
                        </div>
                   </div>
 
                   {/* Transcript Overlay */}
-                  <div ref={scrollRef} className="absolute bottom-8 left-8 right-8 lg:right-auto lg:w-[450px] max-h-[300px] overflow-y-auto no-scrollbar z-10 flex flex-col gap-3 pointer-events-none pb-20 mask-linear-fade-top">
+                  <div ref={scrollRef} className={`absolute bottom-8 left-4 right-4 lg:left-8 lg:right-auto lg:w-[450px] max-h-[200px] lg:max-h-[300px] overflow-y-auto no-scrollbar z-10 flex flex-col gap-3 pointer-events-none pb-20 mask-linear-fade-top transition-opacity ${showChatOverlay ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
                       {transcript.map((msg, i) => (
                           <div key={i} className={`p-4 rounded-2xl backdrop-blur-md border shadow-lg animate-fade-in transition-all ${msg.sender === 'ai' ? 'bg-slate-900/80 border-slate-700/50 rounded-tl-sm self-start' : 'bg-indigo-600/80 border-indigo-500/30 rounded-tr-sm self-end text-right'}`}>
                               <p className="text-sm lg:text-base text-slate-100 font-medium leading-relaxed">"{msg.text}"</p>
@@ -345,8 +367,8 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
 
               </div>
 
-              {/* Controls Bar */}
-              <div className="h-24 bg-[#050b14] border-t border-slate-800 flex items-center justify-center gap-6 px-6 relative z-30 pb-4">
+              {/* Controls Bar - Mobile Optimized */}
+              <div className="h-20 lg:h-24 bg-[#050b14] border-t border-slate-800 flex items-center justify-evenly lg:justify-center gap-2 lg:gap-6 px-4 relative z-30 pb-2 lg:pb-4">
                   <ControlButton 
                     icon={micActive ? "mic" : "mic_off"} 
                     active={micActive} 
@@ -362,25 +384,31 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                     tooltip="Toggle Camera"
                   />
                   
-                  <button onClick={handleEnd} className="h-14 px-8 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-3 transition-all shadow-lg shadow-red-900/20 mx-4 active:scale-95 group">
-                      <span className="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">call_end</span>
-                      End Session
+                  <button onClick={handleEnd} className="h-12 lg:h-14 px-6 lg:px-8 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-2 lg:gap-3 transition-all shadow-lg shadow-red-900/20 mx-2 active:scale-95 group">
+                      <span className="material-symbols-outlined text-xl lg:text-2xl group-hover:scale-110 transition-transform">call_end</span>
+                      <span className="hidden sm:inline">End Session</span>
                   </button>
 
-                  <ControlButton icon="chat_bubble" active={false} onClick={() => {}} color="bg-slate-800" tooltip="Chat" />
-                  <ControlButton icon="settings" active={false} onClick={() => {}} color="bg-slate-800" tooltip="Settings" />
+                  <ControlButton 
+                    icon={showChatOverlay ? "chat_bubble" : "chat_bubble_outline"} 
+                    active={showChatOverlay} 
+                    onClick={() => setShowChatOverlay(!showChatOverlay)} 
+                    color={showChatOverlay ? "bg-slate-700 text-cyan-400" : "bg-slate-800"} 
+                    tooltip="Toggle Transcript" 
+                  />
+                  <ControlButton icon="settings" active={false} onClick={() => alert("Settings Modal")} color="bg-slate-800" tooltip="Settings" />
               </div>
           </div>
       )}
 
       {/* FEEDBACK PHASE */}
       {sessionState === 'feedback' && (
-          <div className="flex-1 overflow-y-auto p-6 lg:p-10 flex flex-col items-center custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 lg:p-10 flex flex-col items-center custom-scrollbar">
               <div className="max-w-5xl w-full animate-fade-in">
-                  <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800">
+                  <div className="flex flex-col sm:flex-row items-center justify-between mb-8 pb-6 border-b border-slate-800 gap-4 sm:gap-0 text-center sm:text-left">
                       <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Performance Analysis</h1>
-                        <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Performance Analysis</h1>
+                        <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-slate-400">
                             <span className="flex items-center gap-1"><span className="material-symbols-outlined text-base">timer</span> {formatTime(timer)} Duration</span>
                             <span className="flex items-center gap-1"><span className="material-symbols-outlined text-base">category</span> {selectedType}</span>
                         </div>
@@ -403,7 +431,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                           </div>
                           <h4 className="text-sm font-bold text-slate-400">Overall Score</h4>
                       </div>
-                      <div className="md:col-span-3 grid grid-cols-3 gap-4">
+                      <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <ScoreCard label="Communication" score={92} color="text-cyan-400" icon="chat" />
                           <ScoreCard label="Technical Depth" score={78} color="text-indigo-400" icon="code" />
                           <ScoreCard label="Culture Fit" score={95} color="text-purple-400" icon="diversity_3" />
@@ -412,7 +440,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
 
                   {/* Detailed Analysis */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div className="glass-panel p-8 rounded-3xl border border-green-500/20 bg-gradient-to-b from-green-900/10 to-transparent">
+                      <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-green-500/20 bg-gradient-to-b from-green-900/10 to-transparent">
                           <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
                                 <span className="material-symbols-outlined">thumb_up</span>
@@ -429,7 +457,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                           </ul>
                       </div>
 
-                      <div className="glass-panel p-8 rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-900/10 to-transparent">
+                      <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-900/10 to-transparent">
                           <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
                                 <span className="material-symbols-outlined">lightbulb</span>
@@ -457,9 +485,9 @@ const ControlButton: React.FC<{icon: string, active: boolean, onClick: () => voi
     <button 
         onClick={onClick}
         title={tooltip}
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${color} ${!color.includes('red') ? 'hover:bg-slate-700 text-slate-200 hover:text-white' : ''} border border-white/5 hover:scale-105 active:scale-95`}
+        className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all ${color} ${!color.includes('red') ? 'hover:bg-slate-700 text-slate-200 hover:text-white' : ''} border border-white/5 hover:scale-105 active:scale-95`}
     >
-        <span className="material-symbols-outlined text-2xl">{icon}</span>
+        <span className="material-symbols-outlined text-xl lg:text-2xl">{icon}</span>
     </button>
 )
 
