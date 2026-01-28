@@ -94,7 +94,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
               <div className="w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center">
                 <span className="material-symbols-outlined text-white text-[14px]">deployed_code</span>
               </div>
-              <span className="text-sm font-bold text-white">RecruitAI</span>
+              <span className="text-sm font-bold text-white">AnPortafolioIA</span>
             </div>
             <button onClick={() => setShowExitModal(true)} className="text-slate-400 p-2">
               <span className="material-symbols-outlined">home</span>

@@ -21,7 +21,7 @@ export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthentica
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center">
               <span className="material-symbols-outlined text-white text-lg font-bold">deployed_code</span>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight">RecruitAI</span>
+            <span className="text-lg font-bold text-white tracking-tight">AnPortafolioIA</span>
           </div>
           <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
             <span className="material-symbols-outlined">close</span>

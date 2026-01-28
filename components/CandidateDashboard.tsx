@@ -22,8 +22,8 @@ export const CandidateDashboard: React.FC = () => {
             <div className="flex items-center gap-12">
                 {/* Logo */}
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveView('profile')}>
-                    <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg">T</div>
-                    <span className="text-xl font-bold text-white tracking-tight">TalentFlow</span>
+                    <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg">A</div>
+                    <span className="text-xl font-bold text-white tracking-tight">AnPortafolioIA</span>
                 </div>
 
                 {/* Navigation */}

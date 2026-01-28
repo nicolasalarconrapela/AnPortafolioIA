@@ -42,7 +42,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ userType, onNavigate }) => {
                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br from-${isRecruiter ? 'indigo-500' : 'cyan-400'} to-${isRecruiter ? 'purple-600' : 'indigo-600'} flex items-center justify-center shadow-[0_0_20px_${glowColor}]`}>
                         <span className="material-symbols-outlined text-white text-xl">deployed_code</span>
                      </div>
-                     <h1 className="text-2xl font-bold text-white tracking-tight">RecruitAI</h1>
+                     <h1 className="text-2xl font-bold text-white tracking-tight">AnPortafolioIA</h1>
                 </div>
 
                 <h2 className="text-5xl xl:text-6xl font-bold text-white leading-tight mb-6 neon-text-glow">
