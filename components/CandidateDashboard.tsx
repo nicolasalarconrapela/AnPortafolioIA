@@ -320,7 +320,6 @@ const ProfileView: React.FC = () => {
                             <span className="material-symbols-outlined text-[14px] text-white block">edit</span>
                         </button>
                     </div>
-                    {/* Mobile Only Name shows here for better spacing if needed, but keeping unified for now */}
                 </div>
 
                 <div className="flex-1 min-w-0 relative z-10">

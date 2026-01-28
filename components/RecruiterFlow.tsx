@@ -221,7 +221,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl object-cover" alt="Liam" />
                             <div>
                                 <h3 className="text-white font-bold text-sm lg:text-lg leading-none">Liam Chen</h3>
-                                <div className="flex items-center gap-1.5 mt-1">
+                                <div className="flex items-center gap-1.5 mt-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                     <span className="text-[8px] lg:text-[10px] font-bold text-green-500 tracking-wider uppercase">Online</span>
                                 </div>
