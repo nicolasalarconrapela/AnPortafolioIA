@@ -39,7 +39,13 @@ const App: React.FC = () => {
       )}
 
       {view === 'recruiter-flow' && (
-        <RecruiterFlow isAuthenticated={isAuthenticated} />
+        <RecruiterFlow 
+          isAuthenticated={isAuthenticated} 
+          onExit={() => {
+            setView('landing');
+            setIsAuthenticated(false);
+          }}
+        />
       )}
     </>
   );
