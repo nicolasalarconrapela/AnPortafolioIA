@@ -32,3 +32,17 @@ gltf-transform inspect public/model.glb
 ```
 
 ### Reducer
+
+```bash
+npm i -D @gltf-transform/core @gltf-transform/extensions @gltf-transform/functions @gltf-transform/cli
+# Probar
+npx gltf-transform --help
+```
+
+Ahora instalar [KTX-Software](https://github.com/KhronosGroup/KTX-Software) y ejecutar :
+
+```bash
+./scripts/optimize-avatar.sh
+```
+
+[Pendiente de implementar](https://chatgpt.com/c/697b49ec-f0c8-8330-ac0d-a27323647eda)
