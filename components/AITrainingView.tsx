@@ -22,16 +22,17 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
     { id: 'Leader', icon: 'diversity_3' },
     { id: 'Problem Solver', icon: 'build' },
     { id: 'Empathetic', icon: 'volunteer_activism' },
-    { id: 'Strategic', icon: 'strategy' }
+    { id: 'Strategic', icon: 'strategy' },
+    { id: 'Diplomatic', icon: 'handshake' },
+    { id: 'Technical', icon: 'terminal' }
   ];
 
   const handleTraitToggle = (trait: string) => {
     if (selectedTraits.includes(trait)) {
       setSelectedTraits(selectedTraits.filter(t => t !== trait));
     } else {
-      if (selectedTraits.length < 3) {
-        setSelectedTraits([...selectedTraits, trait]);
-      }
+      // Limit removed to allow unlimited selections
+      setSelectedTraits([...selectedTraits, trait]);
     }
   };
 
@@ -116,6 +117,16 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
                         ? "Please wait while we calibrate your AI agent..." 
                         : (isDashboard ? "Agent is active and interviewing candidates." : "Configure how your AI represents you to recruiters.")}
                 </p>
+                
+                {isTraining && (
+                    <button 
+                        onClick={() => { setIsTraining(false); setProgress(0); }}
+                        className="mt-6 px-5 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all flex items-center gap-2 mx-auto animate-fade-in group"
+                    >
+                        <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">close</span>
+                        Cancel
+                    </button>
+                )}
             </div>
         </div>
 
@@ -138,7 +149,7 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
                     <div>
                         <div className="flex justify-between text-xs font-bold text-slate-300 mb-3">
                             <span>Communication Tone</span>
-                            <span className="text-purple-400">{toneValue < 50 ? 'Casual & Friendly' : 'Formal & Professional'}</span>
+                            <span className="text-purple-400">{toneValue}% | {toneValue < 50 ? 'Casual & Friendly' : 'Formal & Professional'}</span>
                         </div>
                         <input 
                             type="range" 
@@ -157,7 +168,7 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
                     <div>
                         <div className="flex justify-between text-xs font-bold text-slate-300 mb-3">
                             <span>Response Detail</span>
-                            <span className="text-cyan-400">{detailValue < 50 ? 'Concise & Direct' : 'Detailed & Thorough'}</span>
+                            <span className="text-cyan-400">{detailValue}% | {detailValue < 50 ? 'Concise & Direct' : 'Detailed & Thorough'}</span>
                         </div>
                         <input 
                             type="range" 
@@ -176,9 +187,14 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
 
                 {/* Traits Selection */}
                 <div>
-                    <label className="text-xs font-bold text-slate-400 mb-4 block uppercase tracking-wider">
-                        Key Traits (Max 3)
-                    </label>
+                    <div className="flex justify-between items-center mb-4">
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            Key Traits
+                        </label>
+                        <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-bold">
+                            {selectedTraits.length} Selected
+                        </span>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                         {traits.map((trait) => {
                             const isSelected = selectedTraits.includes(trait.id);

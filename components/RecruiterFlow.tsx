@@ -89,6 +89,11 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
     setIsPreparing(true);
   };
 
+  const handleCancelPreparation = () => {
+    setIsPreparing(false);
+    setPrepProgress(0);
+  };
+
   return (
     <div className="flex w-full h-screen bg-[#020408] overflow-hidden font-display relative z-20">
       {isAuthenticated && !isPreparing && !interviewStarted && (
@@ -164,6 +169,14 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                         <span>Neural Link</span>
                         <span className="text-cyan-400">{Math.round(prepProgress)}%</span>
                     </div>
+
+                    <button 
+                        onClick={handleCancelPreparation}
+                        className="mt-8 mx-auto px-5 py-2 rounded-full border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2 group animate-fade-in"
+                    >
+                        <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">cancel</span>
+                        Cancel Sequence
+                    </button>
                 </div>
             </div>
         )}
@@ -412,40 +425,124 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                 )}
 
                 {step === 3 && analysisComplete && (
-                    <div className="w-full animate-fade-in flex flex-col items-center py-8 px-4">
-                        <div className="mb-8 w-full">
-                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/30 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold tracking-wider uppercase mb-4">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                                Scan Complete
-                             </div>
-                             <h1 className="text-2xl lg:text-4xl font-bold text-white mb-2">Analysis Complete</h1>
+                    <div className="w-full max-w-4xl animate-fade-in flex flex-col items-center py-6 px-4">
+                        
+                        {/* Success Header */}
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                                <span className="material-symbols-outlined text-3xl text-green-400">check_circle</span>
+                            </div>
+                            <h2 className="text-3xl font-bold text-white mb-2">Analysis Complete</h2>
+                            <p className="text-slate-400 text-sm">AI has generated a tailored interview strategy based on the job context.</p>
                         </div>
 
-                        <div className="w-full rounded-2xl lg:rounded-3xl border border-slate-700/50 bg-[#0a101f]/80 p-6 lg:p-10 mb-8">
-                             <div className="flex flex-col gap-8">
-                                 <div className="flex gap-4 lg:gap-6">
-                                     <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400 shrink-0">
-                                        <span className="material-symbols-outlined text-sm lg:text-base">code</span>
+                        {/* Dashboard Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-8">
+                            
+                            {/* Card 1: Match Score */}
+                            <div className="md:col-span-1 glass-panel p-6 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="relative w-32 h-32 flex items-center justify-center mb-4">
+                                     {/* SVG Circle for progress */}
+                                     <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" strokeWidth="8" />
+                                        <circle cx="50" cy="50" r="45" fill="none" stroke="#22d3ee" strokeWidth="8" strokeDasharray="283" strokeDashoffset="28" strokeLinecap="round" className="animate-[spin_1s_ease-out_reverse]" />
+                                     </svg>
+                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-bold text-white">94%</span>
+                                        <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Match</span>
                                      </div>
-                                     <div>
-                                         <h3 className="text-sm lg:text-lg font-bold text-white mb-3">Target Skills</h3>
-                                         <div className="flex flex-wrap gap-2">
-                                             {['React.js', 'Node.js', 'Typescript'].map(skill => (
-                                                 <span key={skill} className="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-[10px] lg:text-sm">{skill}</span>
-                                             ))}
+                                </div>
+                                <h3 className="text-sm font-bold text-slate-300">Role Compatibility</h3>
+                                <p className="text-xs text-slate-500 mt-1">High alignment with extracted requirements.</p>
+                            </div>
+
+                            {/* Card 2: Strategic Insights */}
+                            <div className="md:col-span-2 glass-panel p-6 rounded-2xl border border-slate-700/50 flex flex-col justify-between relative overflow-hidden">
+                                 <div className="absolute top-0 right-0 p-4 opacity-20">
+                                    <span className="material-symbols-outlined text-6xl text-indigo-500">psychology</span>
+                                 </div>
+
+                                 <div className="relative z-10">
+                                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-indigo-400">auto_awesome</span>
+                                        Generated Strategy
+                                     </h3>
+                                     
+                                     <div className="space-y-4">
+                                         <div>
+                                            <div className="flex justify-between text-xs text-slate-300 mb-1">
+                                                <span className="font-bold">Primary Focus:</span>
+                                                <span className="text-indigo-400">Technical Architecture</span>
+                                            </div>
+                                            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                                <div className="bg-indigo-500 h-full w-[70%]"></div>
+                                            </div>
+                                         </div>
+                                         <div>
+                                            <div className="flex justify-between text-xs text-slate-300 mb-1">
+                                                <span className="font-bold">Secondary Focus:</span>
+                                                <span className="text-purple-400">Team Leadership</span>
+                                            </div>
+                                            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                                <div className="bg-purple-500 h-full w-[45%]"></div>
+                                            </div>
+                                         </div>
+                                     </div>
+
+                                     <div className="mt-6 flex flex-wrap gap-2">
+                                        {['System Design', 'React Performance', 'Mentorship', 'Agile Process'].map((tag, i) => (
+                                            <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1">
+                                                 {i === 0 && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>}
+                                                 {tag}
+                                            </span>
+                                        ))}
+                                     </div>
+                                 </div>
+                            </div>
+
+                            {/* Card 3: Requirements Map */}
+                            <div className="md:col-span-3 glass-panel p-6 rounded-2xl border border-slate-700/50">
+                                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Requirement Extraction</h3>
+                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                     <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
+                                         <span className="material-symbols-outlined text-green-400 mt-0.5 text-lg">check_circle</span>
+                                         <div>
+                                             <h4 className="text-sm font-bold text-white">Frontend Core</h4>
+                                             <p className="text-xs text-slate-400 mt-1">React, TypeScript, Next.js detected in job description.</p>
+                                         </div>
+                                     </div>
+                                     <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
+                                         <span className="material-symbols-outlined text-green-400 mt-0.5 text-lg">check_circle</span>
+                                         <div>
+                                             <h4 className="text-sm font-bold text-white">Experience Level</h4>
+                                             <p className="text-xs text-slate-400 mt-1">Senior level (5+ years) requirements matched.</p>
+                                         </div>
+                                     </div>
+                                     <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
+                                         <span className="material-symbols-outlined text-orange-400 mt-0.5 text-lg">warning</span>
+                                         <div>
+                                             <h4 className="text-sm font-bold text-white">Soft Skills</h4>
+                                             <p className="text-xs text-slate-400 mt-1">"Radical candor" culture fit needs verification.</p>
                                          </div>
                                      </div>
                                  </div>
-                             </div>
+                            </div>
                         </div>
 
-                        <button 
-                            onClick={handleStartInterview}
-                            className="w-full lg:w-auto px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
-                        >
-                            Start Interview
-                            <span className="material-symbols-outlined">arrow_forward</span>
-                        </button>
+                        {/* Actions */}
+                        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                            <button className="px-8 py-4 rounded-xl border border-slate-600 text-slate-300 font-bold hover:bg-slate-800 hover:text-white transition-all">
+                                Adjust Parameters
+                            </button>
+                            <button 
+                                onClick={handleStartInterview}
+                                className="px-10 py-4 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold rounded-xl flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(34,211,238,0.3)] transition-all transform hover:scale-105 active:scale-95"
+                            >
+                                Start Interview Session
+                                <span className="material-symbols-outlined">arrow_forward</span>
+                            </button>
+                        </div>
                     </div>
                 )}
 

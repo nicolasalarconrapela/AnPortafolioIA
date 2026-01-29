@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface AvatarCreatorProps {
   onBack: () => void;
@@ -10,6 +10,8 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
   const [activeTab, setActiveTab] = useState<'base' | 'hair' | 'style'>('base');
   const [isGenerating, setIsGenerating] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [avatarImage, setAvatarImage] = useState("https://www.shutterstock.com/image-illustration/animated-young-business-man-avatar-260nw-2574951157.jpg");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -25,6 +27,19 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
     setTimeout(() => {
         setIsGenerating(false);
     }, 1000);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      // Simulate processing
+      setIsGenerating(true);
+      setTimeout(() => {
+          setAvatarImage(imageUrl);
+          setIsGenerating(false);
+      }, 1500);
+    }
   };
 
   const tabs = [
@@ -47,7 +62,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
                 {/* Avatar Model (Image Mockup) */}
                 <div className="relative z-10 w-[280px] h-[350px] transition-transform duration-500" style={{ transform: `rotateY(${rotation}deg)` }}>
                     <img 
-                        src="https://www.shutterstock.com/image-illustration/animated-young-business-man-avatar-260nw-2574951157.jpg" 
+                        src={avatarImage} 
                         alt="3D Avatar Preview" 
                         className="w-full h-full object-cover rounded-xl drop-shadow-[0_0_30px_rgba(34,211,238,0.2)] mask-linear-fade filter brightness-110 contrast-110" 
                     />
@@ -66,6 +81,9 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 z-20">
                      <button onClick={() => setRotation(r => r + 45)} className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
                         <span className="material-symbols-outlined text-sm">360</span>
+                     </button>
+                     <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400" title="Upload Photo">
+                        <span className="material-symbols-outlined text-sm">upload_file</span>
                      </button>
                      <button onClick={() => alert("Zoom feature ready.")} className="p-2 rounded-full bg-slate-800/80 hover:bg-cyan-500/20 border border-slate-700 hover:border-cyan-500/50 transition-all text-slate-300 hover:text-cyan-400">
                         <span className="material-symbols-outlined text-sm">zoom_in</span>
@@ -114,6 +132,28 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                 {activeTab === 'base' && (
                     <div className="space-y-6 animate-fade-in">
+                        {/* Upload Section */}
+                        <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-cyan-500/50 transition-all group">
+                             <div className="flex justify-between items-center mb-3">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Generate from Photo</h4>
+                                <span className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">AI Powered</span>
+                             </div>
+                             <div 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full h-24 border-2 border-dashed border-slate-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-slate-700/50 hover:border-cyan-500/50 transition-all gap-2"
+                             >
+                                <span className="material-symbols-outlined text-2xl text-slate-500 group-hover:text-cyan-400 transition-colors">cloud_upload</span>
+                                <span className="text-xs text-slate-400 font-medium">Upload Selfie / Headshot</span>
+                             </div>
+                             <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                             />
+                        </div>
+
                         <div>
                             <label className="text-xs font-bold text-slate-400 mb-3 block uppercase tracking-wider">Skin Tone</label>
                             <div className="flex gap-3">

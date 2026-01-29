@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LinkedinSyncViewProps {
   onBack: () => void;
@@ -6,6 +6,19 @@ interface LinkedinSyncViewProps {
 }
 
 export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onComplete }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState([
+    { id: 1, sender: 'ai', text: "Hi Alex! I see you've synced your LinkedIn profile. Your experience at TechFlow looks impressive. I noticed you mentioned scaling the design system there.", time: '10:02 AM' },
+    { id: 2, sender: 'user', text: "Thanks! It's been a great journey so far. Building the component library for TechFlow was one of my biggest challenges.", time: '10:03 AM' },
+    { id: 3, sender: 'ai', text: <span>I noticed you listed <span className="text-cyan-400 font-bold">'Project Management'</span> as a key skill. Can you describe a specific challenge you overcame in your last role involving this skill?</span>, time: '10:03 AM' }
+  ]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
     <div className="w-full h-full flex flex-col gap-5 animate-fade-in text-left relative max-h-[calc(100vh-140px)] lg:max-h-full">
         
@@ -85,93 +98,127 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
             </div>
 
             {/* Right Column: Chat (TalentFlow AI) */}
-            <div className="w-full lg:w-[360px] flex flex-col bg-[#0a101f] border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl shrink-0 h-[500px] lg:h-auto">
+            <div className="w-full lg:w-[380px] flex flex-col bg-[#0a101f] border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl shrink-0 h-[500px] lg:h-auto ring-1 ring-white/5">
                 {/* Chat Header */}
-                <div className="p-4 border-b border-slate-700/50 bg-[#0f1623] flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-slate-800 bg-[#0f1623] flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                            <span className="material-symbols-outlined text-white text-lg">smart_toy</span>
+                        <div className="relative">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                                <span className="material-symbols-outlined text-white text-xl">smart_toy</span>
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#0f1623] rounded-full flex items-center justify-center">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            </div>
                         </div>
                         <div>
                             <h4 className="text-sm font-bold text-white leading-none">TalentFlow AI</h4>
-                            <div className="flex items-center gap-1.5 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                <span className="text-[9px] text-green-500 font-bold tracking-wider uppercase">Interviewing</span>
-                            </div>
+                            <span className="text-[10px] text-slate-400 font-medium tracking-wide">Interviewing Agent</span>
                         </div>
                     </div>
-                    <button className="text-slate-400 hover:text-white"><span className="material-symbols-outlined text-lg">more_vert</span></button>
+                    <button className="w-8 h-8 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                        <span className="material-symbols-outlined text-lg">more_vert</span>
+                    </button>
                 </div>
 
                 {/* Context Bar */}
-                <div className="px-4 py-2 bg-[#0a101f] border-b border-slate-700/30 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[10px] text-purple-400 font-medium">
+                <div className="px-4 py-2 bg-[#0a101f]/80 backdrop-blur-sm border-b border-slate-800 flex items-center justify-between z-10">
+                    <div className="flex items-center gap-2 text-[10px] text-purple-400 font-bold bg-purple-500/10 px-2 py-1 rounded-md border border-purple-500/20">
                         <span className="material-symbols-outlined text-xs">target</span>
                         Focus: Experience @ TechFlow
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase">Context Lock</span>
-                        <div className="w-6 h-3 bg-purple-500/20 rounded-full relative cursor-pointer">
-                            <div className="absolute top-0.5 right-0.5 w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Context Lock</span>
+                        <div className="w-8 h-4 bg-slate-800 rounded-full relative cursor-pointer border border-slate-700">
+                            <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-purple-500 rounded-full shadow-sm"></div>
                         </div>
                     </div>
                 </div>
 
                 {/* Chat Messages */}
-                <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-slate-900/30">
-                    <div className="flex gap-3">
-                        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/30 mt-1">
-                            <span className="material-symbols-outlined text-xs">auto_awesome</span>
+                <div ref={scrollRef} className="flex-1 p-4 space-y-5 overflow-y-auto bg-slate-900/20 scroll-smooth">
+                    {messages.map((msg) => (
+                         <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm mt-1 ${
+                                msg.sender === 'ai' 
+                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' 
+                                : 'border-slate-600 overflow-hidden'
+                            }`}>
+                                {msg.sender === 'ai' 
+                                    ? <span className="material-symbols-outlined text-xs">smart_toy</span> 
+                                    : <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover" alt="User" />
+                                }
+                            </div>
+                            <div className={`max-w-[85%] flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                                <div className={`px-4 py-3 text-xs leading-relaxed shadow-md ${
+                                    msg.sender === 'ai' 
+                                    ? 'bg-[#1e293b] text-slate-200 rounded-2xl rounded-tl-sm border border-slate-700/50' 
+                                    : 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm bg-gradient-to-br from-indigo-600 to-indigo-700 border border-indigo-500/50'
+                                }`}>
+                                    {typeof msg.text === 'string' ? msg.text : msg.text}
+                                </div>
+                                <span className="text-[9px] text-slate-500 mt-1.5 px-1 font-medium">{msg.time}</span>
+                            </div>
                         </div>
-                        <div className="p-3 bg-slate-800 rounded-2xl rounded-tl-sm text-xs text-slate-300 leading-relaxed border border-slate-700/50">
-                            Hi Alex! I see you've synced your LinkedIn profile. Your experience at TechFlow looks impressive. I noticed you mentioned scaling the design system there.
+                    ))}
+                    
+                    {/* Typing Indicator (Hidden by default, can be toggled) */}
+                    {/* <div className="flex gap-3 animate-fade-in">
+                        <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-xs text-indigo-400">smart_toy</span>
                         </div>
-                    </div>
-
-                    <div className="flex gap-3 flex-row-reverse">
-                        <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 mt-1 border border-slate-600">
-                             <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover" />
+                        <div className="px-4 py-3 bg-[#1e293b] rounded-2xl rounded-tl-sm border border-slate-700/50 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
+                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-100"></span>
+                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-200"></span>
                         </div>
-                        <div className="p-3 bg-indigo-600 rounded-2xl rounded-tr-sm text-xs text-white leading-relaxed shadow-lg">
-                            Thanks! It's been a great journey so far. Building the component library for TechFlow was one of my biggest challenges.
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                        <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/30 mt-1">
-                            <span className="material-symbols-outlined text-xs">auto_awesome</span>
-                        </div>
-                        <div className="p-3 bg-slate-800 rounded-2xl rounded-tl-sm text-xs text-slate-300 leading-relaxed border border-slate-700/50">
-                            I noticed you listed <span className="text-cyan-400 font-bold italic">'Project Management'</span> as a key skill. Can you describe a specific challenge you overcame in your last role involving this skill?
-                        </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-slate-700/50 bg-[#0f1623]">
-                    <div className="flex gap-2 mb-2 overflow-x-auto pb-1 no-scrollbar">
-                         <button className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[10px] text-slate-300 transition-colors">Tell me more</button>
-                         <button className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[10px] text-slate-300 transition-colors">Skip question</button>
+                <div className="p-4 border-t border-slate-700/50 bg-[#0f1623] relative z-20">
+                    {/* Quick Chips */}
+                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar mask-linear-fade-right">
+                        {['Tell me more', 'Skip question', 'Edit details'].map((action, i) => (
+                            <button key={i} className="whitespace-nowrap px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 rounded-full text-[10px] text-slate-300 transition-all font-medium active:scale-95 hover:text-white group">
+                                {action}
+                                <span className="inline-block w-0 group-hover:w-1 transition-all"></span>
+                            </button>
+                        ))}
                     </div>
-                    <div className="bg-[#0a101f] rounded-xl p-1.5 flex gap-2 border border-slate-700 focus-within:border-indigo-500/50 transition-colors">
-                        <input className="bg-transparent flex-1 text-xs text-white px-3 py-2 outline-none placeholder-slate-600" placeholder="Type your answer..." />
-                        <div className="flex items-center gap-1 pr-1">
-                             <button className="p-2 text-slate-500 hover:text-white transition-colors"><span className="material-symbols-outlined text-base">mic</span></button>
-                             <button className="p-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-white transition-colors shadow-lg"><span className="material-symbols-outlined text-base">send</span></button>
+
+                    {/* Glowing Input */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl opacity-20 group-hover:opacity-50 transition duration-500 blur"></div>
+                        <div className="relative bg-[#0a101f] rounded-xl p-1.5 flex gap-2 border border-slate-700 group-hover:border-slate-600 transition-colors">
+                            <input 
+                                className="bg-transparent flex-1 text-xs text-white px-3 py-2.5 outline-none placeholder-slate-500 font-medium" 
+                                placeholder="Type your answer..." 
+                            />
+                            <div className="flex items-center gap-1 pr-1">
+                                 <button className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800 active:scale-95"><span className="material-symbols-outlined text-lg">mic</span></button>
+                                 <button className="p-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-white transition-colors shadow-lg shadow-indigo-500/20 active:scale-95"><span className="material-symbols-outlined text-lg">send</span></button>
+                            </div>
                         </div>
                     </div>
-                    <p className="text-[9px] text-slate-600 text-center mt-2">AI responses generated in real-time based on Profile & LinkedIn data.</p>
+                    
+                    <div className="flex justify-between items-center mt-2.5 px-1">
+                        <p className="text-[9px] text-slate-500 flex items-center gap-1.5 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            AI Active & Listening
+                        </p>
+                        <span className="text-[9px] text-slate-600 font-medium">Enter to send</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         {/* Footer actions */}
         <div className="pt-4 border-t border-slate-700/50 flex items-center justify-between shrink-0">
-             <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-bold px-4 py-2 transition-colors flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">arrow_back</span>
+             <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-bold px-4 py-2 transition-colors flex items-center gap-2 group">
+                <span className="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_back</span>
                 Back
              </button>
-             <button onClick={onComplete} className="px-6 py-2.5 bg-white text-black font-bold text-sm rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2">
+             <button onClick={onComplete} className="px-6 py-2.5 bg-white text-black font-bold text-sm rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2 active:scale-95">
                 Confirm & Continue
                 <span className="material-symbols-outlined text-lg">arrow_forward</span>
              </button>

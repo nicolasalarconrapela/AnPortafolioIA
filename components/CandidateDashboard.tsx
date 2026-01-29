@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AvatarCreator } from './AvatarCreator';
 import { AITrainingView } from './AITrainingView';
 import { InterviewSimulator } from './InterviewSimulator';
 
-type DashboardView = 'profile' | 'avatar-studio' | 'ai-training' | 'settings' | 'interview-simulator';
+type DashboardView = 'profile' | 'ai-training' | 'settings' | 'interview-simulator';
 type SettingsTab = 'account' | 'privacy' | 'notifications' | 'avatar-prefs' | 'training-data';
 type AIChatMode = 'optimizer' | 'interviewer' | 'market';
 
-export const CandidateDashboard: React.FC = () => {
+interface CandidateDashboardProps {
+    onLogout: () => void;
+}
+
+export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout }) => {
   const [activeView, setActiveView] = useState<DashboardView>('profile');
   const [showNotification, setShowNotification] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -48,7 +51,6 @@ export const CandidateDashboard: React.FC = () => {
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center gap-2">
                     <NavButton label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
-                    <NavButton label="Avatar Studio" active={activeView === 'avatar-studio'} onClick={() => handleViewChange('avatar-studio')} icon="face" />
                     <NavButton label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
                     <NavButton label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
                     <NavButton label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
@@ -79,6 +81,13 @@ export const CandidateDashboard: React.FC = () => {
                         className="w-8 h-8 lg:w-9 lg:h-9 rounded-full border border-slate-600 object-cover cursor-pointer hover:border-purple-500 transition-colors" 
                         alt="User" 
                     />
+                    <button 
+                        onClick={onLogout}
+                        className="hidden lg:flex p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        title="Logout"
+                    >
+                        <span className="material-symbols-outlined">power_settings_new</span>
+                    </button>
                 </div>
             </div>
 
@@ -102,10 +111,17 @@ export const CandidateDashboard: React.FC = () => {
         {isMobileMenuOpen && (
             <div className="absolute top-16 left-0 right-0 bg-[#050b14]/95 backdrop-blur-xl border-b border-slate-800 z-40 p-4 md:hidden animate-fade-in flex flex-col gap-2 shadow-2xl">
                 <MobileNavItem label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
-                <MobileNavItem label="Avatar Studio" active={activeView === 'avatar-studio'} onClick={() => handleViewChange('avatar-studio')} icon="face" />
                 <MobileNavItem label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
                 <MobileNavItem label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
                 <MobileNavItem label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
+                <div className="h-px bg-slate-800 my-2"></div>
+                <button 
+                    onClick={onLogout}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3 text-red-400 hover:bg-red-500/10"
+                >
+                    <span className="material-symbols-outlined text-xl">power_settings_new</span>
+                    Log Out
+                </button>
             </div>
         )}
 
@@ -114,7 +130,7 @@ export const CandidateDashboard: React.FC = () => {
             {activeView === 'settings' ? (
                 // Settings has its own layout structure
                 <div className="w-full min-h-full">
-                    <SettingsView />
+                    <SettingsView onLogout={onLogout} />
                 </div>
             ) : activeView === 'interview-simulator' ? (
                 // Interview Simulator takes full height
@@ -128,26 +144,6 @@ export const CandidateDashboard: React.FC = () => {
                     {/* VIEW: PROFILE (DEFAULT) */}
                     {activeView === 'profile' && <ProfileView />}
 
-                    {/* VIEW: AVATAR STUDIO */}
-                    {activeView === 'avatar-studio' && (
-                        <div className="flex-1 flex flex-col h-full animate-fade-in">
-                            <div className="mb-6">
-                                <h1 className="text-2xl font-bold text-white mb-2">Avatar Studio</h1>
-                                <p className="text-slate-400 text-sm">Design and update your digital twin for interview simulations.</p>
-                            </div>
-                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 lg:p-6">
-                                <AvatarCreator 
-                                    onBack={() => setActiveView('profile')} 
-                                    onComplete={() => {
-                                        // Could show a toast here
-                                        setActiveView('profile');
-                                    }} 
-                                    isDashboard={true}
-                                />
-                            </div>
-                        </div>
-                    )}
-
                     {/* VIEW: AI TRAINING */}
                     {activeView === 'ai-training' && (
                         <div className="flex-1 flex flex-col h-full animate-fade-in">
@@ -159,7 +155,6 @@ export const CandidateDashboard: React.FC = () => {
                                 <AITrainingView 
                                     onBack={() => setActiveView('profile')} 
                                     onComplete={() => {
-                                        // Could show a toast here
                                         setActiveView('profile');
                                     }} 
                                     isDashboard={true}
@@ -214,7 +209,6 @@ const ProfileView: React.FC = () => {
     const generateAIResponse = (input: string, mode: AIChatMode): { text: string, replies: string[] } => {
         const lowerInput = input.toLowerCase();
 
-        // 1. Check for specific keywords
         if (lowerInput.includes('salary') || lowerInput.includes('rate') || lowerInput.includes('money')) {
             return {
                 text: "Based on recent placements for Senior Product Designers in SF, the base salary range is $165k - $195k. Your current profile suggests you could target the upper end due to your System Design experience.",
@@ -243,7 +237,6 @@ const ProfileView: React.FC = () => {
             };
         }
 
-        // 2. Mode-specific fallbacks
         if (mode === 'interviewer') {
             return {
                 text: "Let's focus on your STAR method. Can you describe a time you disagreed with a Product Manager?",
@@ -258,7 +251,6 @@ const ProfileView: React.FC = () => {
             };
         }
 
-        // 3. Generic Fallback
         return {
             text: "I understand. Is there anything specific about your profile, skills, or upcoming interviews you'd like to discuss?",
             replies: ["Analyze my resume", "Mock Interview", "Market Trends"]
@@ -322,6 +314,7 @@ const ProfileView: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Info Content ... */}
                 <div className="flex-1 min-w-0 relative z-10">
                     <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-2">Alex Chen</h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm mb-4">
@@ -441,7 +434,7 @@ const ProfileView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Context Bar */}
+                {/* Context Bar ... */}
                 <div className="px-5 py-2 bg-[#0a101f] border-b border-slate-700/30 flex items-center justify-between z-10 relative shadow-sm">
                     <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold">
                         <span className="material-symbols-outlined text-xs">target</span>
@@ -529,7 +522,7 @@ const ProfileView: React.FC = () => {
     </>
 )}
 
-const SettingsView: React.FC = () => {
+const SettingsView: React.FC<{onLogout: () => void}> = ({onLogout}) => {
     const [activeTab, setActiveTab] = useState<SettingsTab>('account');
 
     return (
@@ -566,9 +559,9 @@ const SettingsView: React.FC = () => {
                 </div>
                 
                 <div className="mt-auto p-6 border-t border-slate-800">
-                     <button onClick={() => window.location.reload()} className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2">
-                        <span className="material-symbols-outlined text-xl">logout</span>
-                        <span className="text-sm font-bold">Log Out</span>
+                     <button onClick={onLogout} className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors w-full px-2 py-2 group">
+                        <span className="material-symbols-outlined text-xl group-hover:text-red-400">power_settings_new</span>
+                        <span className="text-sm font-bold group-hover:text-red-400">Log Out</span>
                      </button>
                 </div>
             </aside>
@@ -608,10 +601,6 @@ const SettingsView: React.FC = () => {
                                  <button onClick={() => alert("Public view link copied!")} className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]">
                                      <span className="material-symbols-outlined text-lg">visibility</span>
                                      Public View
-                                 </button>
-                                 <button className="px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-cyan-400 font-bold text-sm flex items-center gap-2 hover:bg-slate-700 transition-all">
-                                     <span className="material-symbols-outlined text-lg">smart_toy</span>
-                                     Retrain Avatar
                                  </button>
                              </div>
                          </div>

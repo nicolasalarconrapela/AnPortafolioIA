@@ -1,20 +1,13 @@
 import React, { useState } from 'react';
-import { AvatarCreator } from './AvatarCreator';
 import { LinkedinSyncView } from './LinkedinSyncView';
 import { AITrainingView } from './AITrainingView';
 
 interface OnboardingViewProps {
   onComplete: () => void;
+  onExit: () => void;
 }
 
 const STEPS_CONFIG = [
-    {
-        id: 'avatar',
-        icon: 'face',
-        title: 'Create Your 3D Avatar',
-        desc: 'Design your photorealistic AI avatar for interviews.',
-        color: 'cyan'
-    },
     {
         id: 'linkedin',
         icon: 'work_history',
@@ -31,9 +24,9 @@ const STEPS_CONFIG = [
     }
 ];
 
-export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) => {
+export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit }) => {
   const [isWelcome, setIsWelcome] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<string[]>(['avatar', 'linkedin', 'ai']);
+  const [selectedItems, setSelectedItems] = useState<string[]>(['linkedin', 'ai']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
 
@@ -92,6 +85,15 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
             <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full transition-all duration-1000 ${!isWelcome ? 'opacity-50 scale-150' : ''}`}></div>
             <div className={`absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-500/10 blur-[120px] rounded-full transition-all duration-1000 ${!isWelcome ? 'opacity-50 scale-150' : ''}`}></div>
         </div>
+
+        {/* Exit Button */}
+        <button 
+            onClick={onExit}
+            className="absolute top-6 right-6 z-50 p-3 rounded-full bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/50 transition-all group"
+            title="Return to Home"
+        >
+            <span className="material-symbols-outlined group-hover:rotate-90 transition-transform">power_settings_new</span>
+        </button>
 
         {isWelcome ? (
             // WELCOME SCREEN
@@ -167,10 +169,6 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete }) =>
                 <div className="flex-1 p-6 lg:p-10 flex flex-col items-center justify-center relative overflow-y-auto">
                     
                     {/* DYNAMIC CONTENT SWITCHER */}
-                    {currentStep?.id === 'avatar' && (
-                        <AvatarCreator onBack={handleBack} onComplete={handleNext} />
-                    )}
-
                     {currentStep?.id === 'linkedin' && (
                         !linkedinConnected ? (
                             <div className="text-center animate-fade-in max-w-md w-full flex flex-col items-center">

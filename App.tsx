@@ -36,11 +36,19 @@ const App: React.FC = () => {
       )}
 
       {view === 'candidate-onboarding' && (
-        <OnboardingView onComplete={() => setView('candidate-dashboard')} />
+        <OnboardingView 
+            onComplete={() => setView('candidate-dashboard')} 
+            onExit={() => setView('landing')}
+        />
       )}
 
       {view === 'candidate-dashboard' && (
-        <CandidateDashboard />
+        <CandidateDashboard 
+            onLogout={() => {
+                setIsAuthenticated(false);
+                setView('landing');
+            }}
+        />
       )}
 
       {view === 'recruiter-flow' && (
