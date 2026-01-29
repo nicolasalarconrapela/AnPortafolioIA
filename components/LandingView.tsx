@@ -62,36 +62,24 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         />
       </div>
 
-      <nav className="absolute bottom-8 md:bottom-12 z-50 animate-fade-in w-full max-w-md px-4">
-        <div className="glass-panel rounded-2xl md:rounded-full p-2 px-3 flex flex-col md:flex-row items-center gap-2 md:gap-4 border border-white/10 bg-slate-900/50 backdrop-blur-xl">
+      <nav className="absolute bottom-12 z-50 animate-fade-in w-full flex justify-center px-4">
           <button 
             onClick={() => onNavigate('auth-candidate')}
-            aria-label="View Full CV" 
-            className="group nav-btn w-full md:w-auto rounded-xl md:rounded-full px-5 py-3 md:py-2.5 flex items-center justify-center md:justify-start gap-3 relative overflow-hidden transition-all hover:bg-white/5"
+            className="group relative px-8 py-4 bg-slate-900/50 hover:bg-slate-800/80 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-5 transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(34,211,238,0.2)]"
           >
-            <div className="absolute inset-0 bg-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <span className="material-symbols-outlined text-cyan-400 text-2xl group-hover:scale-110 transition-transform">person</span>
-            <div className="flex flex-col items-start text-left">
-              <span className="text-[10px] text-cyan-400/70 uppercase tracking-widest font-semibold">Candidate</span>
-              <span className="text-xs text-slate-200 font-medium group-hover:text-cyan-100">View Full Profile</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center shadow-lg group-hover:shadow-cyan-500/50 transition-all">
+                <span className="material-symbols-outlined text-white text-3xl">rocket_launch</span>
             </div>
-          </button>
-          
-          <div className="w-full md:w-px h-px md:h-8 bg-white/10"></div>
-          
-          <button 
-            onClick={() => onNavigate('recruiter-flow')}
-            aria-label="Start Interview" 
-            className="group nav-btn w-full md:w-auto rounded-xl md:rounded-full px-5 py-3 md:py-2.5 flex items-center justify-center md:justify-start gap-3 relative overflow-hidden transition-all hover:bg-white/5"
-          >
-             <div className="absolute inset-0 bg-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <span className="material-symbols-outlined text-indigo-400 text-2xl group-hover:scale-110 transition-transform">domain</span>
-            <div className="flex flex-col items-start text-left">
-              <span className="text-[10px] text-indigo-400/70 uppercase tracking-widest font-semibold">Recruiter</span>
-              <span className="text-xs text-slate-200 font-medium group-hover:text-indigo-100">Enter Interview</span>
+            
+            <div className="flex flex-col items-start text-left mr-2">
+              <span className="text-white font-bold text-lg leading-none mb-1">Start Career Journey</span>
+              <span className="text-cyan-400 text-xs font-bold uppercase tracking-widest">Build your AI Portfolio</span>
             </div>
+            
+            <span className="material-symbols-outlined text-slate-400 group-hover:text-white transition-colors group-hover:translate-x-1">arrow_forward</span>
           </button>
-        </div>
       </nav>
     </main>
   );

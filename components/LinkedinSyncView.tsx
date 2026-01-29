@@ -8,7 +8,7 @@ interface LinkedinSyncViewProps {
 export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onComplete }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState([
-    { id: 1, sender: 'ai', text: "Hi Alex! I see you've synced your LinkedIn profile. Your experience at TechFlow looks impressive. I noticed you mentioned scaling the design system there.", time: '10:02 AM' },
+    { id: 1, sender: 'ai', text: "Hi Alex! I've analyzed your resume. Your experience at TechFlow looks impressive. I noticed you mentioned scaling the design system there.", time: '10:02 AM' },
     { id: 2, sender: 'user', text: "Thanks! It's been a great journey so far. Building the component library for TechFlow was one of my biggest challenges.", time: '10:03 AM' },
     { id: 3, sender: 'ai', text: <span>I noticed you listed <span className="text-cyan-400 font-bold">'Project Management'</span> as a key skill. Can you describe a specific challenge you overcame in your last role involving this skill?</span>, time: '10:03 AM' }
   ]);
@@ -40,9 +40,9 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                  </div>
              </div>
              <div className="flex flex-col items-end gap-2 shrink-0 w-full md:w-auto">
-                 <button className="w-full md:w-auto px-4 py-2 bg-[#0077b5]/10 border border-[#0077b5]/30 text-[#0077b5] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#0077b5]/20 transition-all">
-                     <span className="material-symbols-outlined text-sm animate-spin-slow">sync</span>
-                     Synced 2m ago
+                 <button className="w-full md:w-auto px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-slate-700 transition-all cursor-default">
+                     <span className="material-symbols-outlined text-sm text-green-400">check_circle</span>
+                     Analysis Complete
                  </button>
              </div>
         </div>
@@ -161,17 +161,6 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                         </div>
                     ))}
                     
-                    {/* Typing Indicator (Hidden by default, can be toggled) */}
-                    {/* <div className="flex gap-3 animate-fade-in">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-xs text-indigo-400">smart_toy</span>
-                        </div>
-                        <div className="px-4 py-3 bg-[#1e293b] rounded-2xl rounded-tl-sm border border-slate-700/50 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
-                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-100"></span>
-                            <span className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-200"></span>
-                        </div>
-                    </div> */}
                 </div>
 
                 {/* Input Area */}

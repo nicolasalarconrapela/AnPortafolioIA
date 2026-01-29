@@ -193,8 +193,6 @@ const MobileNavItem: React.FC<{label: string, active: boolean, onClick: () => vo
 )
 
 const ProfileView: React.FC = () => {
-    const [isSyncing, setIsSyncing] = useState(false);
-    
     // Chat & Logic State
     const [messages, setMessages] = useState([
         { id: 1, sender: 'ai', text: "Hi Alex! I've analyzed your TechFlow experience. Your leadership on the Design System is a strong asset. Shall we optimize your profile description?" }
@@ -285,11 +283,6 @@ const ProfileView: React.FC = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isThinking]);
 
-    const handleSync = () => {
-        setIsSyncing(true);
-        setTimeout(() => setIsSyncing(false), 2000);
-    };
-
     const handleAddSkill = () => {
         const result = window.prompt("Enter new skill:");
         if (result) {
@@ -326,18 +319,6 @@ const ProfileView: React.FC = () => {
                         <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">location_on</span> San Francisco, CA</span>
                         <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">mail</span> alex.chen@design.co</span>
                     </div>
-                </div>
-
-                <div className="flex flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto relative z-10">
-                    <button 
-                        onClick={handleSync}
-                        disabled={isSyncing}
-                        className="w-full md:w-auto px-5 py-2.5 bg-[#0077b5]/10 border border-[#0077b5]/30 text-[#0077b5] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#0077b5]/20 transition-all shadow-[0_0_15px_rgba(0,119,181,0.1)] disabled:opacity-50"
-                    >
-                        <span className={`material-symbols-outlined text-base ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
-                        {isSyncing ? 'Syncing...' : 'Sync with LinkedIn'}
-                    </button>
-                    <p className="text-[10px] text-slate-600 font-medium uppercase tracking-wider">Last synced: 2 hours ago</p>
                 </div>
         </div>
 
