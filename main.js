@@ -23,6 +23,7 @@ import * as THREE from "three";
 import Stats from "three/addons/libs/stats.module.js";
 
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
@@ -436,11 +437,50 @@ function deselectBone() {
 // ============================================================
 // Loading avatar (GLB)
 // ============================================================
+// ============================================================
+// Loading helpers (GLB / FBX)
+// ============================================================
+async function loadFBX(url) {
+  const loader = new FBXLoader();
+  const object = await loader.loadAsync(url);
+
+  // FBX a menudo viene con escala muy grande o muy pequeña
+  // Ajuste conservador (escala 0.01 suele ser común si viene de Mixamo/Blender cm)
+  object.scale.setScalar(0.01);
+
+  object.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      if (o.material) {
+        // A veces el FBX trae materiales Phong/Lambert básicos
+        // o.material.envMapIntensity = 0.3; 
+      }
+    }
+  });
+
+  computeModelBaseY(object);
+  faceCamera(object);
+
+  scene.add(object);
+
+  // Animaciones del FBX
+  if (object.animations?.length) {
+    const clip = object.animations[0];
+    idleAction = mixer.clipAction(clip);
+    idleAction.reset().play();
+  } else {
+    idleAction = null;
+  }
+
+  return object;
+}
+
 async function loadAvatar(url) {
   const loader = new GLTFLoader();
   const gltf = await loader.loadAsync(url);
-
   const model = gltf.scene;
+  // ... (resto reutilizable si quieres, pero aquí separo para claridad)
 
   model.traverse((o) => {
     if (o.isMesh) {
@@ -452,10 +492,8 @@ async function loadAvatar(url) {
 
   computeModelBaseY(model);
   faceCamera(model);
-
   scene.add(model);
 
-  // Animaciones incluidas (idle)
   if (gltf.animations?.length) {
     const idleClip = gltf.animations.find((a) => /idle/i.test(a.name)) || gltf.animations[0];
     idleAction = mixer.clipAction(idleClip);
@@ -489,9 +527,75 @@ function replaceAvatar(newAvatar) {
 }
 
 // ============================================================
+// Retargeting Helper (Mixamo -> Avaturn)
+// ============================================================
+function retargetAnimation(target, clip) {
+  const newClip = clip.clone();
+  newClip.name = clip.name + "_retarget";
+
+  // 1. Detectar prefijo en el modelo destino (si lo tiene)
+  const boneNames = [];
+  target.traverse((o) => { if (o.isBone) boneNames.push(o.name); });
+
+  const targetHasPrefix = boneNames.some(n => n.startsWith("mixamorig:"));
+
+  newClip.tracks.forEach((track) => {
+    // track.name puede ser "mixamorig:Hips.position" o "mixamorigHips.position"
+    let trackName = track.name;
+
+    // Extraer nombre de hueso y propiedad
+    const lastDot = trackName.lastIndexOf(".");
+    let boneName = lastDot !== -1 ? trackName.substring(0, lastDot) : trackName;
+    let property = lastDot !== -1 ? trackName.substring(lastDot) : "";
+
+    // Quitar prefijo mixamorig: o mixamorig
+    if (boneName.startsWith("mixamorig:")) {
+      boneName = boneName.substring(10);
+    } else if (boneName.startsWith("mixamorig")) {
+      boneName = boneName.substring(9);
+    }
+
+    // Si el avatar QUIERE "mixamorig:" y la anim no lo tiene -> agregamos
+    if (targetHasPrefix && !trackName.startsWith("mixamorig")) {
+      track.name = `mixamorig:${boneName}${property}`;
+    }
+    // Si el avatar NO quiere "mixamorig:" y la anim SÍ lo tiene -> quitamos
+    else if (!targetHasPrefix && (trackName.startsWith("mixamorig:") || trackName.startsWith("mixamorig"))) {
+      track.name = `${boneName}${property}`;
+    }
+
+    // FILTRO DE POSICIÓN PARA CADERAS
+    // Un problema común es que la animación mueva las Hips a (0,0,0) o al aire.
+    // mixamo suele animar Hips.position. 
+    // Si quieres que el avatar se quede en su sitio X/Z pero salte en Y, o solo rote,
+    // puedes filtrar. Por defecto, dejamos pasar Hips.position pero a veces escala mal.
+
+    // Ejemplo: si el avatar se va volando, comenta esto:
+    if (track.name.endsWith(".position") && !track.name.toLowerCase().includes("hips")) {
+      // Bloquear traslación de huesos que no sean hips (evita estiramientos raros)
+      // track.values = track.values.map(v => 0); // o eliminar track
+    }
+  });
+
+  // IMPORTANTE: Filtrar Hips.position si causa problemas de escala
+  // (el avatar vuela lejos o se va bajo tierra)
+  newClip.tracks = newClip.tracks.filter(track => {
+    // Mantener solo rotaciones, eliminar traslaciones excepto tal vez Hips Y
+    if (track.name === "Hips.position") {
+      console.log("🚫 Eliminando track Hips.position para evitar que el avatar vuele");
+      return false; // eliminar
+    }
+    return true;
+  });
+
+  return newClip;
+}
+
+// ============================================================
 // Scene init
 // ============================================================
 async function init() {
+  // ... (setup scene, camera, lights, etc.)
   const container = document.getElementById("container");
   if (!container) throw new Error("No existe #container en el HTML.");
 
@@ -511,7 +615,6 @@ async function init() {
   camera.position.set(-2, 1, 3);
   controls.target.set(0, 1, 0);
 
-  // Para que “se pueda mover” con ratón y sea suave
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.enablePan = false;
@@ -523,7 +626,6 @@ async function init() {
   clock = new THREE.Clock();
   mixer = new THREE.AnimationMixer(scene);
 
-  // Luces
   const hemi = new THREE.HemisphereLight(0xffffff, 0x444444);
   hemi.position.set(0, 20, 0);
   scene.add(hemi);
@@ -541,13 +643,11 @@ async function init() {
   dir.intensity = 3;
   scene.add(dir);
 
-  // HDR env
   new RGBELoader().load("public/brown_photostudio_01.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
   });
 
-  // Suelo
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(100, 100),
     new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false })
@@ -556,9 +656,51 @@ async function init() {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Carga avatar
+  // 1. Cargar Avatar (GLB)
   const avatar = await loadAvatar("public/model.glb");
   replaceAvatar(avatar);
+
+  // 2. Cargar Animación (FBX) e integrarla
+  try {
+    const loader = new FBXLoader();
+    const animFbx = await loader.loadAsync("public/Block With Rifle.fbx");
+
+    if (animFbx.animations && animFbx.animations.length > 0) {
+      console.log("Animación FBX encontrada:", animFbx.animations[0].name);
+
+      // DEBUG: Ver nombres de huesos del avatar
+      const avatarBones = [];
+      avatar.traverse((o) => { if (o.isBone) avatarBones.push(o.name); });
+      console.log("Huesos del avatar:", avatarBones.slice(0, 10));
+
+      // DEBUG: Ver nombres de tracks originales
+      let clip = animFbx.animations[0];
+      console.log("Tracks originales (muestra):", clip.tracks.slice(0, 5).map(t => t.name));
+
+      // Retarget
+      clip = retargetAnimation(avatar, clip);
+      console.log("Tracks retargeteados (muestra):", clip.tracks.slice(0, 5).map(t => t.name));
+      console.log("Total tracks:", clip.tracks.length);
+      console.log("Todos los tracks retargeteados:", clip.tracks.map(t => t.name));
+
+      // Opcional: si la animación viene de Mixamo sin prefijo "mixamorig:" 
+      // y tu avatar SÍ lo tiene (o viceversa), a veces hay que renombrar tracks.
+      // Por ahora probamos directo:
+
+      // Limpiamos acción anterior (idle)
+      if (idleAction) idleAction.stop();
+
+      // Reproducir nueva
+      const action = mixer.clipAction(clip);
+      action.reset().play();
+
+      console.log("Reproduciendo animación del FBX en el avatar.");
+    } else {
+      console.warn("El FBX no tiene animaciones.");
+    }
+  } catch (err) {
+    console.warn("Error cargando animación FBX:", err);
+  }
 
   // Stats
   stats = new Stats();
@@ -568,7 +710,6 @@ async function init() {
 
   wireUI();
 
-  // Atajos visibles
   console.log(
     [
       "CONTROLES PUPPET:",
@@ -579,7 +720,7 @@ async function init() {
       "- M: toggle markers",
       "- K: toggle skeleton",
       "- Esc: deseleccionar",
-    ].join("\n")
+    ].join("\\n")
   );
 
   animate();
