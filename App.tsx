@@ -4,6 +4,7 @@ import { LandingView } from './components/LandingView';
 import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
+import { RecruiterFlow } from './components/RecruiterFlow';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -20,7 +21,15 @@ const App: React.FC = () => {
       
       {view === 'auth-candidate' && (
         <AuthView 
-            onNavigate={(nextView) => setView(nextView)} 
+            onNavigate={(nextView) => setView(nextView)}
+            userType="candidate"
+        />
+      )}
+
+      {view === 'auth-recruiter' && (
+        <AuthView 
+            onNavigate={(nextView) => setView(nextView)}
+            userType="recruiter"
         />
       )}
 
@@ -38,6 +47,13 @@ const App: React.FC = () => {
                 setView('landing');
             }}
         />
+      )}
+
+      {view === 'recruiter-flow' && (
+          <RecruiterFlow 
+            isAuthenticated={true}
+            onExit={() => setView('landing')}
+          />
       )}
     </>
   );

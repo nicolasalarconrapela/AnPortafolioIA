@@ -14,6 +14,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         {/* Central Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-full z-0 pointer-events-none"></div>
 
+        {/* Recruiter Access Button */}
+        <button 
+            onClick={() => onNavigate('auth-recruiter')}
+            className="absolute top-6 right-6 lg:top-10 lg:right-10 z-50 px-5 py-2.5 rounded-full bg-slate-900/50 hover:bg-indigo-900/30 border border-slate-700/50 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-300 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 backdrop-blur-md group"
+        >
+            <span className="material-symbols-outlined text-lg group-hover:text-indigo-400">business_center</span>
+            For Companies
+        </button>
+
         {/* Mobile Spacer to push avatar up */}
         <div className="h-12 lg:hidden"></div>
 

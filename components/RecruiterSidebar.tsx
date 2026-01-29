@@ -43,10 +43,12 @@ export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthentica
         {isAuthenticated && (
           <div className="p-4 border-t border-white/5">
               <div className="glass-panel p-3 rounded-xl flex items-center gap-3 border border-white/5 bg-slate-900/50">
-              <img src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="Recruiter" className="w-10 h-10 rounded-full border border-indigo-500/30 shrink-0" />
+              <div className="w-10 h-10 rounded-full border border-indigo-500/30 shrink-0 bg-slate-800 flex items-center justify-center text-slate-400">
+                   <span className="material-symbols-outlined">person</span>
+              </div>
               <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-bold text-white truncate">Alex Morgan</span>
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider truncate">Senior Recruiter</span>
+                  <span className="text-sm font-bold text-white truncate">Recruiter</span>
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider truncate">Hiring Manager</span>
               </div>
               </div>
           </div>

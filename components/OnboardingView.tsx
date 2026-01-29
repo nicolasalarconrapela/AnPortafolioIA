@@ -1,10 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { LinkedinSyncView } from './LinkedinSyncView';
 import { AITrainingView } from './AITrainingView';
+import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
 
 interface OnboardingViewProps {
   onComplete: () => void;
   onExit: () => void;
+}
+
+export interface UploadedFile {
+    name: string;
+    data: string;
+    size: number;
+    type: string;
 }
 
 const STEPS_CONFIG = [
@@ -12,7 +20,7 @@ const STEPS_CONFIG = [
         id: 'import',
         icon: 'folder_shared',
         title: 'Import Profile Data',
-        desc: 'Upload your Resume (PDF) to auto-fill.',
+        desc: 'Upload Resumes, Portfolios, or Case Studies.',
         color: 'indigo'
     },
     {
@@ -25,26 +33,31 @@ const STEPS_CONFIG = [
 ];
 
 // SECURITY CONSTANTS
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB Strict Limit
-const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.csv'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // Increased to 10MB to handle larger exports
+const MAX_TOTAL_FILES = 25; // Increased limit to handle full LinkedIn export (approx 18 files)
 
 // SECURITY STATUS MESSAGES
 const SCANNING_STEPS = [
-    "Verifying file integrity...",
-    "Scanning for malware...",
-    "Analyzing document structure...",
-    "Extracting professional data..."
+    "Verifying signatures...",
+    "Initializing secure parser...",
+    "Extracting layers...",
+    "Structuring data..."
 ];
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit }) => {
   const [selectedItems] = useState<string[]>(['import', 'ai']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  
+  // Data State
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   
   // File Upload States
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [scanStep, setScanStep] = useState(0);
+  const [processingFileIndex, setProcessingFileIndex] = useState(0);
+  const [totalFilesToProcess, setTotalFilesToProcess] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +76,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
       if (currentStep?.id === 'import' && dataLoaded) {
           setDataLoaded(false);
           setUploadError(null);
+          setUploadedFiles([]);
           return;
       }
 
@@ -85,7 +99,6 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
   /**
    * SECURITY CHECK: VALIDATE MAGIC NUMBERS
-   * Prevents renaming .exe files to .pdf by reading binary signature
    */
   const validateFileSignature = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -95,34 +108,25 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
             const arr = (new Uint8Array(e.target.result as ArrayBuffer)).subarray(0, 4);
             let header = "";
             for (let i = 0; i < arr.length; i++) {
-                header += arr[i].toString(16);
+                // Pad with '0' to ensure we get '03' instead of '3' for byte values < 16
+                header += arr[i].toString(16).padStart(2, '0');
             }
             
-            // PDF Signature: 25 50 44 46 (%PDF)
+            // PDF: 25 50 44 46
             if (header.startsWith('25504446')) return resolve(true);
-            
-            // DOCX/ZIP Signature: 50 4b 03 04 (PK..)
+            // DOCX/ZIP: 50 4b 03 04
             if (header.startsWith('504b0304')) return resolve(true);
-            
-            // DOC (Old binary) Signature: d0 cf 11 e0
+            // DOC: d0 cf 11 e0
             if (header.startsWith('d0cf11e0')) return resolve(true);
 
-            // CSV Logic: CSVs don't have a magic number. 
-            // We check if the extension matches AND ensure it's NOT a binary executable masking as CSV.
+            // CSV Logic (text files usually don't have magic numbers, so we rely on extension + absence of binary headers)
             if (file.name.toLowerCase().endsWith('.csv')) {
-                 // Check against common executable headers to prevent spoofing
-                 // MZ (Windows Executable): 4d 5a
-                 if (header.startsWith('4d5a')) {
-                     console.warn("Security Audit: Blocked executable masking as CSV");
-                     return resolve(false);
-                 }
-                 // ELF (Linux Executable): 7f 45 4c 46
-                 if (header.startsWith('7f454c46')) return resolve(false);
-                 
+                 if (header.startsWith('4d5a')) return resolve(false); // EXE (Windows)
+                 if (header.startsWith('7f454c46')) return resolve(false); // ELF (Linux)
                  return resolve(true);
             }
 
-            console.warn("Security Audit: Invalid file signature detected:", header);
+            console.warn(`Security Audit: Invalid file signature for ${file.name}:`, header);
             resolve(false);
         };
         reader.readAsArrayBuffer(file.slice(0, 4));
@@ -130,63 +134,95 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+      const rawFiles = e.target.files;
       setUploadError(null);
 
-      if (!file) return;
-
-      // 0. EMPTY FILE CHECK
-      if (file.size === 0) {
-          setUploadError("Security Alert: File is empty (0 bytes).");
-          return;
-      }
-
-      // 1. SIZE CHECK
-      if (file.size > MAX_FILE_SIZE) {
-          setUploadError(`Security Alert: File exceeds the 5MB limit. Detected: ${(file.size / (1024*1024)).toFixed(2)}MB`);
-          return;
-      }
-
-      // 2. FILENAME SANITIZATION
-      // Only allow alphanumeric, dots, underscores, dashes, spaces, and parentheses to prevent shell injection/path traversal issues in logs
-      const safeNameRegex = /^[a-zA-Z0-9._\-\s()]+$/;
-      if (!safeNameRegex.test(file.name)) {
-         setUploadError("Security Alert: Filename contains potentially unsafe characters. Please rename using only letters, numbers, and basic punctuation.");
-         return;
-      }
-
-      // 3. EXTENSION CHECK (Quick Fail)
-      const parts = file.name.split('.');
-      const fileExt = parts.length > 1 ? "." + parts.pop()?.toLowerCase() : "";
-      
-      if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
-          setUploadError(`Security Alert: Invalid file type (${fileExt}). Only PDF, DOCX, and CSV are allowed.`);
-          return;
-      }
+      if (!rawFiles || rawFiles.length === 0) return;
 
       setIsUploading(true);
       setScanStep(0);
+      setProcessingFileIndex(0);
 
-      // 4. MAGIC NUMBER CHECK (Deep Verification)
-      const isValidSignature = await validateFileSignature(file);
+      const processedFiles: UploadedFile[] = [];
+      let filesToProcess: File[] = [];
 
-      if (!isValidSignature) {
-          setIsUploading(false);
-          setUploadError("Security Alert: File signature mismatch. The file content does not match its extension (Potential spoofing attempt).");
-          return;
-      }
-
-      // 5. SIMULATE SECURE SCANNING PROCESS
-      let step = 0;
-      const interval = setInterval(() => {
-          step++;
-          setScanStep(step);
-          if (step >= SCANNING_STEPS.length) {
-              clearInterval(interval);
-              setIsUploading(false);
-              setDataLoaded(true);
+      try {
+          // 1. EXPANSION PHASE: Handle ZIPs and create flat list
+          setScanStep(0); // "Verifying signatures..."
+          
+          for (let i = 0; i < rawFiles.length; i++) {
+              const file = rawFiles[i];
+              const ext = file.name.split('.').pop()?.toLowerCase();
+              
+              if (ext === 'zip') {
+                  // Validate ZIP Signature
+                  const isZipSig = await validateFileSignature(file);
+                  if (!isZipSig) throw new Error(`ZIP File ${file.name} signature invalid.`);
+                  
+                  // Extract contents
+                  const extracted = await extractFilesFromZip(file);
+                  filesToProcess.push(...extracted);
+              } else {
+                  filesToProcess.push(file);
+              }
           }
-      }, 800);
+
+          // 2. LIMIT CHECK
+          if (filesToProcess.length === 0) {
+              throw new Error("No valid files found (checked for PDF, DOCX, CSV).");
+          }
+          if (filesToProcess.length > MAX_TOTAL_FILES) {
+              throw new Error(`Security Alert: Total extracted files (${filesToProcess.length}) exceeds limit of ${MAX_TOTAL_FILES}.`);
+          }
+
+          setTotalFilesToProcess(filesToProcess.length);
+
+          // 3. PROCESSING PHASE
+          for (let i = 0; i < filesToProcess.length; i++) {
+              const file = filesToProcess[i];
+              setProcessingFileIndex(i + 1);
+
+              // Basic Security Checks per file
+              if (file.size === 0) throw new Error(`File ${file.name} is empty.`);
+              if (file.size > MAX_FILE_SIZE) throw new Error(`File ${file.name} exceeds 10MB limit.`);
+              
+              const safeNameRegex = /^[a-zA-Z0-9._\-\s()]+$/;
+              // We relax this regex slightly for extracted files which might have weird names, 
+              // but purely for parsing, we just ensure no path traversal chars like '/' or '\'
+              if (file.name.includes('/') || file.name.includes('\\')) throw new Error(`File ${file.name} has unsafe characters.`);
+
+              // Validate Signature
+              const isValidSignature = await validateFileSignature(file);
+              if (!isValidSignature) throw new Error(`File ${file.name} failed security signature check.`);
+
+              // Simulate Visual Scan
+              for (let step = 1; step < SCANNING_STEPS.length; step++) {
+                  setScanStep(step);
+                  await new Promise(r => setTimeout(r, 150)); 
+              }
+
+              // Real Parsing
+              const text = await parseFileContent(file);
+              
+              processedFiles.push({
+                  name: file.name,
+                  data: text,
+                  size: file.size,
+                  type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN'
+              });
+          }
+
+          setUploadedFiles(processedFiles);
+          setDataLoaded(true);
+
+      } catch (err: any) {
+          console.error(err);
+          setUploadError(err.message || "Failed to parse files.");
+          setUploadedFiles([]);
+      } finally {
+          setIsUploading(false);
+          setProcessingFileIndex(0);
+      }
   };
 
   return (
@@ -262,13 +298,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
                                         <div className="absolute inset-0 border-4 border-cyan-400 rounded-full border-t-transparent animate-spin"></div>
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-3xl text-cyan-400 animate-pulse">security</span>
+                                            <span className="material-symbols-outlined text-3xl text-cyan-400 animate-pulse">folder_zip</span>
                                         </div>
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-2">{SCANNING_STEPS[Math.min(scanStep, SCANNING_STEPS.length - 1)]}</h3>
+                                    <h3 className="text-xl font-bold text-white mb-2">{SCANNING_STEPS[scanStep]}</h3>
                                     <p className="text-slate-400 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                        Secure Environment
+                                        {processingFileIndex > 0 ? `Processing File ${processingFileIndex} of ${totalFilesToProcess}` : 'Expanding Archives...'}
                                     </p>
                                 </div>
                             ) : (
@@ -277,13 +313,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         <span className="material-symbols-outlined text-2xl lg:text-3xl">shield_lock</span>
                                     </div>
 
-                                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 lg:mb-4">Secure Profile Import</h2>
+                                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 lg:mb-4">Secure Batch Import</h2>
                                     <p className="text-slate-400 mb-6 lg:mb-8 max-w-lg text-sm lg:text-base">
-                                        Upload your resume or data (PDF, DOCX, CSV) to securely populate your portfolio. 
+                                        Upload resumes, portfolios, or data sheets. Supports <strong>ZIP archives</strong> for bulk upload.
                                         <br/>
                                         <span className="text-xs text-slate-500 mt-2 block">
                                             <span className="material-symbols-outlined text-[10px] align-middle mr-1">check_circle</span>
-                                            Files are scanned for malware and prompt injection attempts.
+                                            Secure client-side extraction. Up to {MAX_TOTAL_FILES} total files.
                                         </span>
                                     </p>
                                     
@@ -306,21 +342,23 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         >
                                             <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-600 group-hover:border-cyan-500/30 group-hover:text-cyan-400 text-slate-400 transition-colors shadow-lg relative">
                                                 <span className="material-symbols-outlined text-3xl lg:text-4xl">upload_file</span>
+                                                {/* Multiple Badge */}
                                                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 rounded-full border border-slate-600 flex items-center justify-center z-10">
-                                                    <span className="material-symbols-outlined text-[12px] text-green-400">verified_user</span>
+                                                    <span className="material-symbols-outlined text-[12px] text-green-400">library_add</span>
                                                 </div>
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-white text-lg lg:text-xl">Upload Data</h3>
+                                                <h3 className="font-bold text-white text-lg lg:text-xl">Upload Files or ZIPs</h3>
                                                 <p className="text-sm text-slate-400 mt-2 font-mono text-[10px] uppercase tracking-wider">
-                                                    Max 5MB • PDF, DOCX, CSV
+                                                    PDF, DOCX, CSV, ZIP • Max 10MB
                                                 </p>
                                             </div>
                                             <input 
                                                 type="file" 
                                                 ref={fileInputRef}
                                                 className="hidden" 
-                                                accept=".pdf,.doc,.docx,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv"
+                                                multiple
+                                                accept=".pdf,.doc,.docx,.csv,.zip,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/zip,application/x-zip-compressed"
                                                 onChange={handleFileUpload}
                                             />
                                         </div>
@@ -346,7 +384,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                             )}
                         </div>
                     ) : (
-                        <LinkedinSyncView onBack={() => setDataLoaded(false)} onComplete={handleNext} />
+                        <LinkedinSyncView 
+                            onBack={() => {
+                                setDataLoaded(false);
+                                setUploadedFiles([]);
+                            }} 
+                            onComplete={handleNext}
+                            uploadedFiles={uploadedFiles}
+                        />
                     )
                 )}
 

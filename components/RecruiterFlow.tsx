@@ -223,7 +223,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                          
                          {candidateSpeaking && (
                              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur rounded-full text-white text-xs font-bold animate-pulse">
-                                 Liam is speaking...
+                                 Candidate is speaking...
                              </div>
                          )}
                     </div>
@@ -231,9 +231,11 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                     {/* Stats Card (Floating/Static on mobile) */}
                     <div className="absolute top-24 left-4 lg:top-32 lg:left-12 w-64 lg:w-80 glass-panel p-4 lg:p-5 rounded-2xl border border-white/10 animate-float z-20 scale-75 lg:scale-100 origin-top-left">
                         <div className="flex items-center gap-3 lg:gap-4 mb-4 lg:mb-6">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop" className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl object-cover" alt="Liam" />
+                            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-slate-800 flex items-center justify-center">
+                                 <span className="material-symbols-outlined text-slate-400">person</span>
+                            </div>
                             <div>
-                                <h3 className="text-white font-bold text-sm lg:text-lg leading-none">Liam Chen</h3>
+                                <h3 className="text-white font-bold text-sm lg:text-lg leading-none">Candidate</h3>
                                 <div className="flex items-center gap-1.5 mt-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                     <span className="text-[8px] lg:text-[10px] font-bold text-green-500 tracking-wider uppercase">Online</span>
@@ -241,8 +243,8 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <MobileProgress label="Culture Fit" value="98%" progress={98} />
-                            <MobileProgress label="Technical" value="94%" progress={94} color="bg-indigo-500" />
+                            <MobileProgress label="Culture Fit" value="--%" progress={0} />
+                            <MobileProgress label="Technical" value="--%" progress={0} color="bg-indigo-500" />
                         </div>
                     </div>
 
@@ -406,8 +408,8 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
 
                             {/* Mobile-Friendly Node Layout */}
                             <div className="hidden lg:block">
-                                <ProcessingNode icon="badge" label="Senior Developer" position="top-[15%] left-[5%]" delay="0s" />
-                                <ProcessingNode icon="psychology" label="React, Node.js" position="top-[25%] right-[-5%]" delay="1.5s" />
+                                <ProcessingNode icon="badge" label="Role" position="top-[15%] left-[5%]" delay="0s" />
+                                <ProcessingNode icon="psychology" label="Skills" position="top-[25%] right-[-5%]" delay="1.5s" />
                             </div>
                         </div>
 
@@ -449,12 +451,12 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                                         <circle cx="50" cy="50" r="45" fill="none" stroke="#22d3ee" strokeWidth="8" strokeDasharray="283" strokeDashoffset="28" strokeLinecap="round" className="animate-[spin_1s_ease-out_reverse]" />
                                      </svg>
                                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-3xl font-bold text-white">94%</span>
+                                        <span className="text-3xl font-bold text-white">--%</span>
                                         <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Match</span>
                                      </div>
                                 </div>
                                 <h3 className="text-sm font-bold text-slate-300">Role Compatibility</h3>
-                                <p className="text-xs text-slate-500 mt-1">High alignment with extracted requirements.</p>
+                                <p className="text-xs text-slate-500 mt-1">Pending Interview Data.</p>
                             </div>
 
                             {/* Card 2: Strategic Insights */}
@@ -473,7 +475,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                                          <div>
                                             <div className="flex justify-between text-xs text-slate-300 mb-1">
                                                 <span className="font-bold">Primary Focus:</span>
-                                                <span className="text-indigo-400">Technical Architecture</span>
+                                                <span className="text-indigo-400">Technical Assessment</span>
                                             </div>
                                             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                                 <div className="bg-indigo-500 h-full w-[70%]"></div>
@@ -482,7 +484,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                                          <div>
                                             <div className="flex justify-between text-xs text-slate-300 mb-1">
                                                 <span className="font-bold">Secondary Focus:</span>
-                                                <span className="text-purple-400">Team Leadership</span>
+                                                <span className="text-purple-400">Behavioral Fit</span>
                                             </div>
                                             <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                                 <div className="bg-purple-500 h-full w-[45%]"></div>
@@ -491,7 +493,7 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                                      </div>
 
                                      <div className="mt-6 flex flex-wrap gap-2">
-                                        {['System Design', 'React Performance', 'Mentorship', 'Agile Process'].map((tag, i) => (
+                                        {['Problem Solving', 'Communication', 'Adaptability'].map((tag, i) => (
                                             <span key={i} className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1">
                                                  {i === 0 && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>}
                                                  {tag}
@@ -508,22 +510,22 @@ export const RecruiterFlow: React.FC<RecruiterFlowProps> = ({ isAuthenticated = 
                                      <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
                                          <span className="material-symbols-outlined text-green-400 mt-0.5 text-lg">check_circle</span>
                                          <div>
-                                             <h4 className="text-sm font-bold text-white">Frontend Core</h4>
-                                             <p className="text-xs text-slate-400 mt-1">React, TypeScript, Next.js detected in job description.</p>
+                                             <h4 className="text-sm font-bold text-white">Core Skills</h4>
+                                             <p className="text-xs text-slate-400 mt-1">Key technical requirements identified.</p>
                                          </div>
                                      </div>
                                      <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
                                          <span className="material-symbols-outlined text-green-400 mt-0.5 text-lg">check_circle</span>
                                          <div>
                                              <h4 className="text-sm font-bold text-white">Experience Level</h4>
-                                             <p className="text-xs text-slate-400 mt-1">Senior level (5+ years) requirements matched.</p>
+                                             <p className="text-xs text-slate-400 mt-1">Senority level requirements matched.</p>
                                          </div>
                                      </div>
                                      <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700 flex items-start gap-3">
                                          <span className="material-symbols-outlined text-orange-400 mt-0.5 text-lg">warning</span>
                                          <div>
                                              <h4 className="text-sm font-bold text-white">Soft Skills</h4>
-                                             <p className="text-xs text-slate-400 mt-1">"Radical candor" culture fit needs verification.</p>
+                                             <p className="text-xs text-slate-400 mt-1">Culture fit needs verification.</p>
                                          </div>
                                      </div>
                                  </div>

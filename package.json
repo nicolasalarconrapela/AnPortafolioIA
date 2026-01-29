@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "react-dom": "^19.2.4",
-    "react": "^19.2.4"
+    "react": "^19.2.4",
+    "pdfjs-dist": "3.11.174",
+    "mammoth": "1.6.0",
+    "papaparse": "5.4.1",
+    "jszip": "3.10.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
