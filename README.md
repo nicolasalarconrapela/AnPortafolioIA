@@ -1,11 +1,34 @@
-<div align="center">
+This example shows how to load [Avaturn](https://avaturn.me) avatars using three.js.
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+![Avaturn Three.js example](https://assets.avaturn.me/docs/three-js-example.jpg)
 
-  <h1>Built with AI Studio</h2>
+# Build
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+There is nothing to build, just run a http server in this folder. You can install one with e.g.:
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+```bash
+npm install -g local-web-server
 
-</div>
+```
+
+And then run
+
+```bash
+ws
+
+```
+
+The server will open up at `http://localhost:8000`
+
+Read more at [docs.avaturn.me](https://docs.avaturn.me).
+
+## Developer
+
+### Inspect
+
+```bash
+npm i -g @gltf-transform/cli
+gltf-transform inspect public/model.glb
+```
+
+### Reducer
