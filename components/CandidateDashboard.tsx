@@ -32,24 +32,24 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
     <div className="relative z-20 flex flex-col w-full h-screen bg-[#020408] overflow-hidden animate-fade-in">
         
         {/* APP HEADER */}
-        <header className="h-16 border-b border-slate-800 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-between px-4 lg:px-10 shrink-0 z-30 relative">
+        <header className="h-16 border-b border-slate-800 bg-[#050b14]/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 lg:px-10 shrink-0 z-30 relative">
             <div className="flex items-center gap-4 lg:gap-12">
                 {/* Mobile Menu Button */}
                 <button 
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="md:hidden text-slate-400 hover:text-white p-1"
+                    className="md:hidden text-slate-400 hover:text-white p-2 -ml-2"
                 >
                     <span className="material-symbols-outlined">{isMobileMenuOpen ? 'close' : 'menu'}</span>
                 </button>
 
                 {/* Logo */}
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveView('profile')}>
-                    <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg">A</div>
+                    <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-purple-900/20">A</div>
                     <span className="text-xl font-bold text-white tracking-tight hidden sm:block">AnPortafolioIA</span>
                 </div>
 
                 {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-2">
+                <nav className="hidden md:flex items-center gap-1 lg:gap-2">
                     <NavButton label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
                     <NavButton label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
                     <NavButton label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
@@ -58,16 +58,16 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             </div>
 
             <div className="flex items-center gap-3 lg:gap-6">
-                {/* Profile Completion - Desktop Only */}
-                <div className="hidden lg:flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Profile Completion</span>
+                {/* Profile Completion - Desktop/Tablet Only */}
+                <div className="hidden md:flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden lg:block">Profile Completion</span>
                     <span className="text-[10px] font-bold text-purple-400">65%</span>
-                    <div className="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="w-16 lg:w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 w-[65%]"></div>
                     </div>
                 </div>
 
-                <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
+                <div className="h-6 w-px bg-slate-800 hidden md:block"></div>
 
                 {/* User Actions */}
                 <div className="flex items-center gap-3 lg:gap-4">
@@ -93,7 +93,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
             {/* Notification Toast */}
             {showNotification && (
-                <div className="absolute top-16 right-4 lg:right-6 w-72 lg:w-80 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl animate-fade-in z-50">
+                <div className="absolute top-16 right-4 lg:right-6 w-[calc(100vw-2rem)] sm:w-80 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl animate-fade-in z-50">
                     <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
                             <span className="material-symbols-outlined text-sm">campaign</span>
@@ -109,7 +109,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
         {/* MOBILE MENU OVERLAY */}
         {isMobileMenuOpen && (
-            <div className="absolute top-16 left-0 right-0 bg-[#050b14]/95 backdrop-blur-xl border-b border-slate-800 z-40 p-4 md:hidden animate-fade-in flex flex-col gap-2 shadow-2xl">
+            <div className="absolute top-16 left-0 right-0 bg-[#050b14]/95 backdrop-blur-xl border-b border-slate-800 z-40 p-4 md:hidden animate-fade-in flex flex-col gap-2 shadow-2xl h-[calc(100vh-4rem)] overflow-y-auto">
                 <MobileNavItem label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
                 <MobileNavItem label="Simulator" active={activeView === 'interview-simulator'} onClick={() => handleViewChange('interview-simulator')} icon="videocam" />
                 <MobileNavItem label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
@@ -117,7 +117,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 <div className="h-px bg-slate-800 my-2"></div>
                 <button 
                     onClick={onLogout}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3 text-red-400 hover:bg-red-500/10"
+                    className="w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3 text-red-400 hover:bg-red-500/10 active:bg-red-500/20"
                 >
                     <span className="material-symbols-outlined text-xl">power_settings_new</span>
                     Log Out
@@ -139,7 +139,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 </div>
             ) : (
                 // Other views use the standard centered container
-                <div className="max-w-7xl mx-auto flex flex-col gap-6 p-4 lg:p-10 min-h-full pb-20">
+                <div className="max-w-7xl mx-auto flex flex-col gap-6 p-4 md:p-6 lg:p-10 min-h-full pb-20">
                     
                     {/* VIEW: PROFILE (DEFAULT) */}
                     {activeView === 'profile' && <ProfileView />}
@@ -151,7 +151,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                                 <h1 className="text-2xl font-bold text-white mb-2">AI Neural Core</h1>
                                 <p className="text-slate-400 text-sm">Re-calibrate your agent's responses and personality traits.</p>
                             </div>
-                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 lg:p-6">
+                            <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 md:p-6 lg:p-8">
                                 <AITrainingView 
                                     onBack={() => setActiveView('profile')} 
                                     onComplete={() => {
@@ -175,7 +175,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 const NavButton: React.FC<{label: string, active: boolean, onClick: () => void, icon: string}> = ({label, active, onClick, icon}) => (
     <button 
         onClick={onClick}
-        className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${active ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
+        className={`px-3 lg:px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${active ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
     >
         <span className={`material-symbols-outlined text-base ${active ? 'text-purple-400' : ''}`}>{icon}</span>
         {label}
@@ -185,9 +185,9 @@ const NavButton: React.FC<{label: string, active: boolean, onClick: () => void, 
 const MobileNavItem: React.FC<{label: string, active: boolean, onClick: () => void, icon: string}> = ({label, active, onClick, icon}) => (
     <button 
         onClick={onClick}
-        className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3 ${active ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:bg-slate-800/30'}`}
+        className={`w-full px-4 py-4 rounded-xl text-base font-bold transition-all flex items-center gap-4 ${active ? 'bg-slate-800 text-white border border-slate-700' : 'text-slate-400 hover:bg-slate-800/30'}`}
     >
-        <span className={`material-symbols-outlined text-xl ${active ? 'text-purple-400' : ''}`}>{icon}</span>
+        <span className={`material-symbols-outlined text-2xl ${active ? 'text-purple-400' : ''}`}>{icon}</span>
         {label}
     </button>
 )
@@ -307,7 +307,7 @@ const ProfileView: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Info Content ... */}
+                {/* Info Content */}
                 <div className="flex-1 min-w-0 relative z-10">
                     <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-2">Alex Chen</h1>
                     <div className="flex flex-wrap items-center gap-3 text-sm mb-4">
@@ -470,7 +470,7 @@ const ProfileView: React.FC = () => {
                 {/* Input Area */}
                 <div className="p-4 border-t border-slate-700/50 bg-[#0f1623] relative z-10">
                     {/* Dynamic Quick Replies */}
-                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar min-h-[32px]">
+                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1 no-scrollbar min-h-[32px] mask-linear-fade-right">
                         {quickReplies.map((reply, i) => (
                              <button 
                                 key={i} 
@@ -548,7 +548,7 @@ const SettingsView: React.FC<{onLogout: () => void}> = ({onLogout}) => {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 p-4 lg:p-10 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-4 md:p-6 lg:p-10 overflow-y-auto custom-scrollbar">
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Account Settings</h1>
                     <p className="text-slate-400 text-sm mb-8">Manage your profile details and AI preferences.</p>
@@ -722,27 +722,27 @@ const SettingsNavItem: React.FC<{label: string, icon: string, active: boolean, o
 )
 
 const ExperienceCard: React.FC<{role: string, company: string, period: string, desc: string, logo: string, color: string, active: boolean}> = ({role, company, period, desc, logo, color, active}) => (
-    <div className={`p-6 rounded-2xl transition-all group relative cursor-pointer ${active ? 'bg-[#1e1b4b]/30 border border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : 'bg-[#0f1623] border border-slate-700/30 hover:border-slate-600'}`}>
-        <div className="flex gap-5 items-start">
-            <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center font-bold text-sm shrink-0 shadow-lg`}>
+    <div className={`p-4 md:p-6 rounded-2xl transition-all group relative cursor-pointer ${active ? 'bg-[#1e1b4b]/30 border border-indigo-500/50 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : 'bg-[#0f1623] border border-slate-700/30 hover:border-slate-600'}`}>
+        <div className="flex gap-4 md:gap-5 items-start">
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl ${color} flex items-center justify-center font-bold text-sm shrink-0 shadow-lg`}>
                 {logo}
             </div>
             <div className="flex-1">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
                     <div>
-                        <h4 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{role}</h4>
-                        <p className="text-sm text-slate-400 font-medium">{company} <span className="mx-1">•</span> {period}</p>
+                        <h4 className="text-base md:text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{role}</h4>
+                        <p className="text-xs md:text-sm text-slate-400 font-medium">{company} <span className="mx-1">•</span> {period}</p>
                     </div>
                     {active ? (
-                        <button onClick={(e) => { e.stopPropagation(); alert("Analyzing with AI..."); }} className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center gap-1.5 hover:bg-indigo-500/20">
+                        <button onClick={(e) => { e.stopPropagation(); alert("Analyzing with AI..."); }} className="mt-2 sm:mt-0 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center gap-1.5 hover:bg-indigo-500/20 w-fit">
                             <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                            Analyze with AI
+                            Analyze
                         </button>
                     ) : (
-                        <button className="p-2 text-slate-500 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>
+                        <button className="hidden sm:block p-2 text-slate-500 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>
                     )}
                 </div>
-                <p className="text-sm text-slate-300 leading-relaxed font-light">{desc}</p>
+                <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-light">{desc}</p>
             </div>
         </div>
     </div>

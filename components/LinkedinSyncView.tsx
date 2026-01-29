@@ -20,7 +20,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
   }, [messages]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-5 animate-fade-in text-left relative max-h-[calc(100vh-140px)] lg:max-h-full">
+    <div className="w-full h-full flex flex-col gap-5 animate-fade-in text-left relative min-h-full">
         
         {/* Header Profile Card */}
         <div className="flex flex-col md:flex-row gap-5 p-5 rounded-2xl bg-[#0a101f]/80 border border-slate-700/50 items-start md:items-center shadow-lg shrink-0">
@@ -47,9 +47,9 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
              </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 overflow-visible lg:overflow-hidden">
             {/* Left Column: Experience & Skills */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-5">
+            <div className="flex-1 overflow-visible lg:overflow-y-auto pr-0 lg:pr-2 custom-scrollbar space-y-5">
                 
                 {/* Experience Section */}
                 <div>
@@ -98,7 +98,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
             </div>
 
             {/* Right Column: Chat (TalentFlow AI) */}
-            <div className="w-full lg:w-[380px] flex flex-col bg-[#0a101f] border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl shrink-0 h-[500px] lg:h-auto ring-1 ring-white/5">
+            <div className="w-full lg:w-[380px] flex flex-col bg-[#0a101f] border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl shrink-0 h-[500px] lg:h-auto ring-1 ring-white/5 order-first lg:order-last">
                 {/* Chat Header */}
                 <div className="px-5 py-4 border-b border-slate-800 bg-[#0f1623] flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-3">
@@ -127,7 +127,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                         Focus: Experience @ TechFlow
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Context Lock</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider hidden sm:block">Context Lock</span>
                         <div className="w-8 h-4 bg-slate-800 rounded-full relative cursor-pointer border border-slate-700">
                             <div className="absolute top-0.5 right-0.5 w-3 h-3 bg-purple-500 rounded-full shadow-sm"></div>
                         </div>
@@ -135,7 +135,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                 </div>
 
                 {/* Chat Messages */}
-                <div ref={scrollRef} className="flex-1 p-4 space-y-5 overflow-y-auto bg-slate-900/20 scroll-smooth">
+                <div ref={scrollRef} className="flex-1 p-4 space-y-5 overflow-y-auto bg-slate-900/20 scroll-smooth min-h-[300px]">
                     {messages.map((msg) => (
                          <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm mt-1 ${
@@ -228,7 +228,7 @@ const ExperienceCard: React.FC<{role: string, company: string, period: string, d
                         <h4 className="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">{role}</h4>
                         <p className="text-xs text-slate-400 mb-1">{company} • {period}</p>
                     </div>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-700 rounded text-slate-400">
+                    <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-slate-700 rounded text-slate-400 hidden sm:block">
                         <span className="material-symbols-outlined text-base">edit</span>
                     </button>
                 </div>
@@ -237,10 +237,10 @@ const ExperienceCard: React.FC<{role: string, company: string, period: string, d
         </div>
         
         {/* Analyze AI Button Overlay */}
-        <div className="absolute top-4 right-10">
-            <button className="flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-bold text-indigo-400 hover:bg-indigo-500/20 transition-all opacity-0 group-hover:opacity-100">
+        <div className="absolute top-4 right-4 sm:right-10">
+            <button className="flex items-center gap-1.5 px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-bold text-indigo-400 hover:bg-indigo-500/20 transition-all opacity-100 sm:opacity-0 group-hover:opacity-100">
                 <span className="material-symbols-outlined text-[10px]">auto_awesome</span>
-                Analyze with AI
+                Analyze
             </button>
         </div>
     </div>

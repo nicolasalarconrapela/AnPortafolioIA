@@ -78,9 +78,9 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
     <div className="w-full h-full flex flex-col lg:flex-row gap-8 animate-fade-in text-left relative overflow-hidden">
         
         {/* LEFT: AI Core Visualizer */}
-        <div className="flex-1 flex flex-col items-center justify-center relative min-h-[300px]">
+        <div className="flex-1 flex flex-col items-center justify-center relative min-h-[300px] lg:min-h-0">
             {/* The Orb */}
-            <div className="relative w-64 h-64 flex items-center justify-center">
+            <div className="relative w-48 h-48 lg:w-64 lg:h-64 flex items-center justify-center">
                 {/* Outer Rotating Rings */}
                 <div className={`absolute inset-0 border border-purple-500/20 rounded-full border-dashed ${isTraining ? 'animate-spin' : 'animate-spin-slow'} transition-all duration-[2000ms]`}></div>
                 <div className={`absolute inset-4 border border-cyan-500/20 rounded-full border-dashed ${isTraining ? 'animate-spin-reverse-slow duration-700' : 'animate-spin-reverse-slow'} transition-all`}></div>
@@ -131,7 +131,7 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
         </div>
 
         {/* RIGHT: Calibration Controls */}
-        <div className={`flex-1 bg-slate-900/40 border border-slate-700/50 rounded-2xl p-8 flex flex-col transition-all duration-500 ${isTraining ? 'opacity-50 pointer-events-none blur-sm' : 'opacity-100'}`}>
+        <div className={`flex-1 bg-slate-900/40 border border-slate-700/50 rounded-2xl p-6 lg:p-8 flex flex-col transition-all duration-500 ${isTraining ? 'opacity-50 pointer-events-none blur-sm' : 'opacity-100'}`}>
             <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                     <span className="material-symbols-outlined">tune</span>
@@ -142,7 +142,7 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
                 </div>
             </div>
 
-            <div className="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2">
+            <div className="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[300px] lg:min-h-0">
                 
                 {/* Sliders */}
                 <div className="space-y-6">

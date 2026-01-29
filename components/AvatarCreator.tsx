@@ -52,7 +52,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
     <div className="w-full h-full flex flex-col lg:flex-row gap-6 animate-fade-in text-left">
         
         {/* LEFT: Preview Area */}
-        <div className="flex-1 lg:flex-[1.2] relative min-h-[400px] flex flex-col">
+        <div className="flex-1 lg:flex-[1.2] relative min-h-[350px] lg:min-h-[400px] flex flex-col">
             <div className="relative flex-1 bg-gradient-to-b from-slate-900/50 to-slate-900/80 rounded-2xl border border-slate-700/50 overflow-hidden flex items-center justify-center group">
                 
                 {/* Background Grid */}
@@ -60,7 +60,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
                 <div className="absolute inset-0 bg-radial-glow opacity-30 pointer-events-none"></div>
 
                 {/* Avatar Model (Image Mockup) */}
-                <div className="relative z-10 w-[280px] h-[350px] transition-transform duration-500" style={{ transform: `rotateY(${rotation}deg)` }}>
+                <div className="relative z-10 w-[240px] md:w-[280px] h-[300px] md:h-[350px] transition-transform duration-500" style={{ transform: `rotateY(${rotation}deg)` }}>
                     <img 
                         src={avatarImage} 
                         alt="3D Avatar Preview" 
@@ -129,7 +129,7 @@ export const AvatarCreator: React.FC<AvatarCreatorProps> = ({ onBack, onComplete
             </div>
 
             {/* Dynamic Content Area */}
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-[250px]">
                 {activeTab === 'base' && (
                     <div className="space-y-6 animate-fade-in">
                         {/* Upload Section */}
