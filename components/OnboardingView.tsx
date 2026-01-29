@@ -200,23 +200,24 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
         {/* Exit Button */}
         <button 
             onClick={onExit}
-            className="absolute top-6 right-6 z-50 p-3 rounded-full bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/50 transition-all group"
+            className="absolute top-6 right-6 z-50 p-2 lg:p-3 rounded-full bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/50 transition-all group"
             title="Return to Home"
         >
             <span className="material-symbols-outlined group-hover:rotate-90 transition-transform">power_settings_new</span>
         </button>
 
         {/* WIZARD FLOW */}
-        <div className="glass-panel w-full max-w-6xl min-h-[650px] rounded-3xl border border-slate-700/50 flex overflow-hidden shadow-2xl relative animate-fade-in">
-                {/* Progress Bar */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-slate-800 z-20">
+        <div className="glass-panel w-full max-w-6xl h-full lg:h-[650px] lg:min-h-[650px] rounded-3xl border border-slate-700/50 flex flex-col lg:flex-row overflow-hidden shadow-2xl relative animate-fade-in">
+            
+            {/* Desktop Progress Bar */}
+            <div className="hidden lg:block absolute top-0 left-0 w-full h-1 bg-slate-800 z-20">
                 <div 
                     className="h-full bg-cyan-400 transition-all duration-500 ease-out" 
                     style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}
                 ></div>
             </div>
 
-            {/* Steps Sidebar */}
+            {/* Steps Sidebar (Desktop) */}
             <div className="w-64 border-r border-slate-700/50 p-8 hidden lg:block bg-slate-900/30 shrink-0">
                 <h3 className="text-xl font-bold text-white mb-2">Setup Progress</h3>
                 <p className="text-slate-400 text-sm mb-8">Your personalized setup plan.</p>
@@ -236,13 +237,24 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                 </div>
             </div>
 
+            {/* Mobile Header / Steps */}
+            <div className="lg:hidden p-6 pb-2 bg-[#050b14] border-b border-slate-800 shrink-0">
+                 <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
+                    <span>Step {currentStepIndex + 1} of {activeSteps.length}</span>
+                    <span className="text-cyan-400">{currentStep.title}</span>
+                 </div>
+                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-400 transition-all duration-500 ease-out" style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}></div>
+                 </div>
+            </div>
+
             {/* Main Content Area */}
-            <div className="flex-1 p-6 lg:p-10 flex flex-col items-center justify-center relative overflow-y-auto">
+            <div className="flex-1 p-4 lg:p-10 flex flex-col items-center justify-center relative overflow-y-auto custom-scrollbar">
                 
                 {/* DYNAMIC CONTENT SWITCHER */}
                 {currentStep?.id === 'import' && (
                     !dataLoaded ? (
-                        <div className="text-center animate-fade-in max-w-2xl w-full flex flex-col items-center">
+                        <div className="text-center animate-fade-in max-w-2xl w-full flex flex-col items-center my-auto">
                             
                             {isUploading ? (
                                 <div className="flex flex-col items-center justify-center py-12">
@@ -261,12 +273,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                 </div>
                             ) : (
                                 <>
-                                    <div className="mb-6 flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                                        <span className="material-symbols-outlined text-3xl">shield_lock</span>
+                                    <div className="mb-4 lg:mb-6 flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                                        <span className="material-symbols-outlined text-2xl lg:text-3xl">shield_lock</span>
                                     </div>
 
-                                    <h2 className="text-3xl font-bold text-white mb-4">Secure Profile Import</h2>
-                                    <p className="text-slate-400 mb-8 max-w-lg">
+                                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 lg:mb-4">Secure Profile Import</h2>
+                                    <p className="text-slate-400 mb-6 lg:mb-8 max-w-lg text-sm lg:text-base">
                                         Upload your resume or data (PDF, DOCX, CSV) to securely populate your portfolio. 
                                         <br/>
                                         <span className="text-xs text-slate-500 mt-2 block">
@@ -290,16 +302,16 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         {/* Secure Upload Box */}
                                         <div 
                                             onClick={() => fileInputRef.current?.click()}
-                                            className={`group relative p-10 rounded-2xl bg-slate-800/30 border-2 border-dashed ${uploadError ? 'border-red-500/30' : 'border-slate-700 hover:border-cyan-500/50'} hover:bg-slate-800/50 transition-all flex flex-col items-center gap-4 cursor-pointer hover:-translate-y-1 w-full max-w-md`}
+                                            className={`group relative p-6 lg:p-10 rounded-2xl bg-slate-800/30 border-2 border-dashed ${uploadError ? 'border-red-500/30' : 'border-slate-700 hover:border-cyan-500/50'} hover:bg-slate-800/50 transition-all flex flex-col items-center gap-4 cursor-pointer hover:-translate-y-1 w-full max-w-md`}
                                         >
-                                            <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-600 group-hover:border-cyan-500/30 group-hover:text-cyan-400 text-slate-400 transition-colors shadow-lg relative">
-                                                <span className="material-symbols-outlined text-4xl">upload_file</span>
+                                            <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-600 group-hover:border-cyan-500/30 group-hover:text-cyan-400 text-slate-400 transition-colors shadow-lg relative">
+                                                <span className="material-symbols-outlined text-3xl lg:text-4xl">upload_file</span>
                                                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 rounded-full border border-slate-600 flex items-center justify-center z-10">
                                                     <span className="material-symbols-outlined text-[12px] text-green-400">verified_user</span>
                                                 </div>
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-white text-xl">Upload Data</h3>
+                                                <h3 className="font-bold text-white text-lg lg:text-xl">Upload Data</h3>
                                                 <p className="text-sm text-slate-400 mt-2 font-mono text-[10px] uppercase tracking-wider">
                                                     Max 5MB • PDF, DOCX, CSV
                                                 </p>
@@ -328,8 +340,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                             )}
                             
                             {currentStepIndex > 0 && (
-                                <button onClick={handleBack} className="absolute bottom-0 left-1/2 -translate-x-1/2 mb-4 text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors">
-                                    Back
+                                <button onClick={handleBack} className="mt-8 text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors">
+                                    Go Back
                                 </button>
                             )}
                         </div>

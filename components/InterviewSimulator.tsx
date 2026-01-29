@@ -250,16 +250,16 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
           <div className="flex-1 flex flex-col items-center justify-center relative">
               <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
               
-              <div className="relative w-40 h-40 mb-10">
+              <div className="relative w-32 h-32 lg:w-40 lg:h-40 mb-10">
                   <div className="absolute inset-0 border-4 border-cyan-500/20 rounded-full animate-ping"></div>
                   <div className="absolute inset-4 border-4 border-indigo-500/30 rounded-full animate-spin-slow border-t-transparent"></div>
                   <div className="absolute inset-0 flex items-center justify-center">
-                       <span className="material-symbols-outlined text-5xl text-white animate-pulse">smart_toy</span>
+                       <span className="material-symbols-outlined text-4xl lg:text-5xl text-white animate-pulse">smart_toy</span>
                   </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-3">Establishing Secure Link</h2>
+              <h2 className="text-2xl lg:text-3xl font-bold text-white mb-3">Establishing Secure Link</h2>
               <div className="flex flex-col items-center gap-2">
-                <p className="text-cyan-400 font-mono text-sm">Loading Neural Personality Model...</p>
+                <p className="text-cyan-400 font-mono text-xs lg:text-sm">Loading Neural Personality Model...</p>
                 <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
                     <div className="h-full bg-cyan-400 animate-[pulse_1s_infinite] w-full origin-left"></div>
                 </div>
@@ -290,10 +290,10 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
               </div>
 
               {/* Main Stage */}
-              <div className="flex-1 relative p-4 lg:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
+              <div className="flex-1 relative p-2 lg:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
                   
                   {/* AI Avatar (Main Feed) */}
-                  <div className="flex-1 relative bg-gradient-to-b from-slate-900 to-[#0a101f] rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl group w-full h-full">
+                  <div className="flex-1 relative bg-gradient-to-b from-slate-900 to-[#0a101f] rounded-2xl lg:rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl group w-full h-full">
                       <img 
                         src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop" 
                         className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${speakerState === 'ai_speaking' ? 'scale-105 brightness-110' : 'scale-100 opacity-80'}`} 
@@ -305,7 +305,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                            <div className="flex items-end justify-between">
                                <div>
                                    <div className="flex items-center gap-3 mb-2">
-                                       <h3 className="text-xl lg:text-2xl font-bold text-white">Sarah (AI)</h3>
+                                       <h3 className="text-lg lg:text-2xl font-bold text-white">Sarah (AI)</h3>
                                        {speakerState === 'ai_speaking' && (
                                             <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">Speaking</span>
                                        )}
@@ -314,11 +314,11 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                                        )}
                                    </div>
                                    {/* AI Waveform */}
-                                   <div className="flex items-center gap-1 h-8">
+                                   <div className="flex items-center gap-1 h-6 lg:h-8">
                                        {[...Array(16)].map((_, i) => (
                                            <div 
                                             key={i} 
-                                            className={`w-1 bg-cyan-400 rounded-full transition-all duration-75 ease-in-out`}
+                                            className={`w-0.5 lg:w-1 bg-cyan-400 rounded-full transition-all duration-75 ease-in-out`}
                                             style={{ 
                                                 height: speakerState === 'ai_speaking' ? `${Math.random() * 100}%` : '4px',
                                                 opacity: speakerState === 'ai_speaking' ? 1 : 0.2
@@ -332,10 +332,10 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                   </div>
 
                   {/* User Feed (PIP) - Mobile Optimized Position */}
-                  <div className={`absolute top-4 right-4 lg:top-8 lg:right-8 w-28 lg:w-64 aspect-[3/4] bg-slate-900 rounded-2xl border transition-all duration-300 shadow-2xl overflow-hidden z-20 ${speakerState === 'user_speaking' ? 'border-green-500 shadow-[0_0_20px_rgba(34,199,89,0.3)] scale-105' : 'border-slate-600'}`}>
+                  <div className={`absolute top-4 right-4 lg:top-8 lg:right-8 w-24 lg:w-64 aspect-[3/4] bg-slate-900 rounded-xl lg:rounded-2xl border transition-all duration-300 shadow-2xl overflow-hidden z-20 ${speakerState === 'user_speaking' ? 'border-green-500 shadow-[0_0_20px_rgba(34,199,89,0.3)] scale-105' : 'border-slate-600'}`}>
                        <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover mirror" alt="User" />
                        
-                       <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 bg-gradient-to-t from-black/80 to-transparent">
+                       <div className="absolute bottom-0 left-0 right-0 p-1.5 lg:p-3 bg-gradient-to-t from-black/80 to-transparent">
                             <div className="flex justify-between items-end">
                                 <div className="flex gap-1 items-end h-3 lg:h-4">
                                     {[1,2,3,4,5].map(i => (
@@ -350,10 +350,10 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                   </div>
 
                   {/* Transcript Overlay */}
-                  <div ref={scrollRef} className={`absolute bottom-8 left-4 right-4 lg:left-8 lg:right-auto lg:w-[450px] max-h-[200px] lg:max-h-[300px] overflow-y-auto no-scrollbar z-10 flex flex-col gap-3 pointer-events-none pb-20 mask-linear-fade-top transition-opacity ${showChatOverlay ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
+                  <div ref={scrollRef} className={`absolute bottom-6 left-4 right-4 lg:left-8 lg:right-auto lg:w-[450px] max-h-[180px] lg:max-h-[300px] overflow-y-auto no-scrollbar z-10 flex flex-col gap-3 pointer-events-none pb-20 mask-linear-fade-top transition-opacity ${showChatOverlay ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
                       {transcript.map((msg, i) => (
-                          <div key={i} className={`p-4 rounded-2xl backdrop-blur-md border shadow-lg animate-fade-in transition-all ${msg.sender === 'ai' ? 'bg-slate-900/80 border-slate-700/50 rounded-tl-sm self-start' : 'bg-indigo-600/80 border-indigo-500/30 rounded-tr-sm self-end text-right'}`}>
-                              <p className="text-sm lg:text-base text-slate-100 font-medium leading-relaxed">"{msg.text}"</p>
+                          <div key={i} className={`p-3 lg:p-4 rounded-2xl backdrop-blur-md border shadow-lg animate-fade-in transition-all ${msg.sender === 'ai' ? 'bg-slate-900/80 border-slate-700/50 rounded-tl-sm self-start' : 'bg-indigo-600/80 border-indigo-500/30 rounded-tr-sm self-end text-right'}`}>
+                              <p className="text-xs lg:text-base text-slate-100 font-medium leading-relaxed">"{msg.text}"</p>
                           </div>
                       ))}
                       {speakerState === 'ai_thinking' && (
@@ -368,7 +368,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
               </div>
 
               {/* Controls Bar - Mobile Optimized */}
-              <div className="h-20 lg:h-24 bg-[#050b14] border-t border-slate-800 flex items-center justify-evenly lg:justify-center gap-2 lg:gap-6 px-4 relative z-30 pb-2 lg:pb-4">
+              <div className="h-20 lg:h-24 bg-[#050b14] border-t border-slate-800 flex items-center justify-center gap-2 lg:gap-6 px-4 relative z-30 pb-2 lg:pb-4">
                   <ControlButton 
                     icon={micActive ? "mic" : "mic_off"} 
                     active={micActive} 
@@ -384,7 +384,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                     tooltip="Toggle Camera"
                   />
                   
-                  <button onClick={handleEnd} className="h-12 lg:h-14 px-6 lg:px-8 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-2 lg:gap-3 transition-all shadow-lg shadow-red-900/20 mx-2 active:scale-95 group">
+                  <button onClick={handleEnd} className="h-12 lg:h-14 px-4 lg:px-8 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-2 lg:gap-3 transition-all shadow-lg shadow-red-900/20 mx-1 active:scale-95 group">
                       <span className="material-symbols-outlined text-xl lg:text-2xl group-hover:scale-110 transition-transform">call_end</span>
                       <span className="hidden sm:inline">End Session</span>
                   </button>
@@ -396,7 +396,6 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                     color={showChatOverlay ? "bg-slate-700 text-cyan-400" : "bg-slate-800"} 
                     tooltip="Toggle Transcript" 
                   />
-                  <ControlButton icon="settings" active={false} onClick={() => alert("Settings Modal")} color="bg-slate-800" tooltip="Settings" />
               </div>
           </div>
       )}
