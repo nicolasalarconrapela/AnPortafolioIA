@@ -1,40 +1,62 @@
 /**
- * main.js — Avatar Avaturn/GLB de frente + gesto “Saludar” + grabación a JSON (keyframes)
- * ------------------------------------------------------------------------------------
- * ✅ Avatar siempre frente a cámara (sin dar vueltas)
- * ✅ Botón “Saludar” (gesto procedural robusto)
- * ✅ “Record” / “Stop” / “Play” del gesto grabado
- * ✅ Guardar / cargar JSON (localStorage + descarga de archivo + carga desde <input type="file">)
+ * main.js — Avaturn/GLB + Three.js
+ * ------------------------------------------------------------
+ * ✅ Avatar de frente (quieto en el mundo)
+ * ✅ OrbitControls (mueves cámara con ratón)
+ * ✅ “Puppet Mode” (mover TODO el cuerpo):
+ *    - SkeletonHelper visible
+ *    - Markers clicables para seleccionar huesos
+ *    - TransformControls (gizmo) para ROTAR / TRASLADAR huesos
+ * ✅ Botón #buttonWave: saludar (procedural)
+ * ✅ (Opcional) Recorder JSON: si tienes botones/inputs (no rompe si no existen)
  *
- * IDs de UI que (idealmente) existan en tu HTML:
- * - #container
- * - #buttonOpen, #buttonClose, #avaturn-sdk-container  (tu flujo Avaturn)
- * - #buttonWave
- * - #buttonRecord, #buttonStop, #buttonPlay
- * - #buttonSaveJson, #buttonLoadJson, #fileJson
+ * HTML mínimo requerido:
+ * - <div id="container"></div>
+ * - <button id="buttonWave">Saludar</button> (opcional, si no existe avisa por consola)
  *
- * Si alguno no existe, el script no se rompe: lo avisa por consola.
+ * Rutas esperadas:
+ * - public/model.glb
+ * - public/brown_photostudio_01.hdr
  */
 
 import * as THREE from "three";
 import Stats from "three/addons/libs/stats.module.js";
+
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+// Avaturn (opcional, si reactivas su UI)
 import { AvaturnSDK } from "https://cdn.jsdelivr.net/npm/@avaturn/sdk/dist/index.js";
 
-// ================================
-// Estado global Three.js
-// ================================
+// ============================================================
+// Globals
+// ============================================================
 let scene, renderer, camera, stats, controls;
 let mixer, clock;
+
 let currentAvatar = null;
 let idleAction = null;
-let activeAction = null;
 
-// ================================
-// Helpers matemáticos
-// ================================
+// Puppet / rig controls
+let transformControls = null;
+let skeletonHelper = null;
+let boneMarkersGroup = null;
+let selectedBone = null;
+
+const puppet = {
+  enabled: true,
+  showSkeleton: true,
+  showMarkers: true,
+  markerSize: 0.025, // tamaño esfera markers
+  mode: "rotate", // "rotate" | "translate"
+  space: "local", // "local" | "world"
+};
+
+// ============================================================
+// Utils (easing)
+// ============================================================
 function easeInOutCubic(x) {
   x = Math.max(0, Math.min(1, x));
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -44,130 +66,9 @@ function bump(x) {
   return Math.sin(Math.PI * x); // 0..1..0
 }
 
-// ================================
-// Recorder: huesos -> JSON -> clip
-// ================================
-class BoneAnimationRecorder {
-  constructor() {
-    this.isRecording = false;
-    this.startTime = 0;
-
-    /** @type {THREE.Bone[]} */
-    this.bones = [];
-
-    /** @type {number[]} */
-    this.times = [];
-
-    /** Map boneName -> number[] (x,y,z,w,... por frame) */
-    this.valuesByBone = new Map();
-
-    // throttle sampling
-    this._acc = 0;
-    this.sampleRate = 30; // fps
-  }
-
-  /**
-   * @param {THREE.Object3D} root
-   * @param {string[]} boneNames EXACTOS
-   */
-  bindBones(root, boneNames) {
-    const boneMap = new Map();
-    root.traverse((o) => {
-      if (o.isBone) boneMap.set(o.name, o);
-    });
-
-    this.bones = [];
-    this.valuesByBone.clear();
-
-    for (const name of boneNames) {
-      const b = boneMap.get(name);
-      if (!b) {
-        console.warn("[Recorder] Bone no encontrado:", name);
-        continue;
-      }
-      this.bones.push(b);
-      this.valuesByBone.set(name, []);
-    }
-
-    console.log("[Recorder] bound bones:", this.bones.map((b) => b.name));
-  }
-
-  start(nowSeconds) {
-    if (!this.bones.length) throw new Error("Recorder: no hay huesos bindeados.");
-    this.isRecording = true;
-    this.startTime = nowSeconds;
-    this.times = [];
-    this._acc = 0;
-    for (const b of this.bones) this.valuesByBone.set(b.name, []);
-    console.log("[Recorder] START");
-  }
-
-  capture(dt, nowSeconds) {
-    if (!this.isRecording) return;
-
-    // muestreo a sampleRate
-    this._acc += dt;
-    const step = 1 / this.sampleRate;
-    if (this._acc < step) return;
-    this._acc = 0;
-
-    const t = nowSeconds - this.startTime;
-    this.times.push(t);
-
-    for (const b of this.bones) {
-      const arr = this.valuesByBone.get(b.name);
-      const q = b.quaternion;
-      arr.push(q.x, q.y, q.z, q.w);
-    }
-  }
-
-  stop() {
-    this.isRecording = false;
-    console.log("[Recorder] STOP. samples:", this.times.length);
-  }
-
-  toJSON(name = "RecordedClip") {
-    const duration = this.times.length ? this.times[this.times.length - 1] : 0;
-    const values = {};
-    for (const b of this.bones) values[b.name] = this.valuesByBone.get(b.name);
-
-    return {
-      version: 1,
-      name,
-      duration,
-      times: this.times,
-      bones: this.bones.map((b) => b.name),
-      values,
-    };
-  }
-
-  static clipFromJSON(json) {
-    if (!json?.bones?.length || !json?.times?.length) {
-      throw new Error("JSON inválido: faltan bones/times.");
-    }
-    const tracks = [];
-    for (const boneName of json.bones) {
-      const vals = json.values?.[boneName];
-      if (!vals?.length) continue;
-      tracks.push(new THREE.QuaternionKeyframeTrack(`${boneName}.quaternion`, json.times, vals));
-    }
-    return new THREE.AnimationClip(json.name || "RecordedClip", json.duration || -1, tracks);
-  }
-}
-
-// ================================
-// Gestión de acciones del mixer
-// ================================
-function setAction(next, fade = 0.2) {
-  if (!next || next === activeAction) return;
-  next.reset().fadeIn(fade).play();
-  if (activeAction) activeAction.fadeOut(fade);
-  activeAction = next;
-}
-
-// ================================
-// Limpieza de recursos al cambiar avatar
-// ================================
+// ============================================================
+// Resource cleanup
+// ============================================================
 function disposeMaterial(mat) {
   const maps = [
     "map",
@@ -179,9 +80,10 @@ function disposeMaterial(mat) {
     "alphaMap",
     "envMap",
   ];
-  for (const k of maps) mat[k]?.dispose?.();
-  mat.dispose?.();
+  for (const k of maps) mat?.[k]?.dispose?.();
+  mat?.dispose?.();
 }
+
 function disposeGLTF(root) {
   root.traverse((obj) => {
     if (obj.isMesh) {
@@ -193,30 +95,28 @@ function disposeGLTF(root) {
   });
 }
 
-// ================================
-// Colocar avatar en el suelo y de frente
-// ================================
+// ============================================================
+// Placement helpers
+// ============================================================
 function computeModelBaseY(root) {
   const box = new THREE.Box3().setFromObject(root);
   const minY = box.min.y;
-  root.position.y -= minY; // apoyo en Y=0
+  root.position.y -= minY; // apoya en Y=0
 }
 
 function faceCamera(root) {
-  // centrado
   root.position.x = 0;
   root.position.z = 0;
 
-  // orientación base
   root.rotation.set(0, 0, 0);
 
   // Si lo ves de espaldas, descomenta:
   // root.rotation.y = Math.PI;
 }
 
-// ================================
-// Detectar huesos para el gesto
-// ================================
+// ============================================================
+// Bone helpers
+// ============================================================
 function listBones(root) {
   const out = [];
   root.traverse((o) => {
@@ -233,8 +133,8 @@ function findBoneByRegex(root, regexList) {
   root.traverse((o) => {
     if (o.isBone) bones.push(o);
   });
-
   const lowered = bones.map((b) => ({ b, n: (b.name || "").toLowerCase() }));
+
   for (const re of regexList) {
     const hit = lowered.find((x) => re.test(x.n));
     if (hit) return hit.b;
@@ -243,26 +143,33 @@ function findBoneByRegex(root, regexList) {
 }
 
 function detectRightArmBones(root) {
-  // regex bastante tolerante a rigs
   const upper = findBoneByRegex(root, [
     /right.*upperarm/,
     /r.*upperarm/,
     /right.*shoulder/,
     /r.*shoulder/,
-    /right.*arm(?!ature)/, // evita "armature"
+    /right.*arm(?!ature)/,
     /r.*arm(?!ature)/,
   ]);
-  const fore = findBoneByRegex(root, [/right.*forearm/, /r.*forearm/, /right.*elbow/, /r.*elbow/]);
-  const hand = findBoneByRegex(root, [/right.*hand/, /r.*hand/, /right.*wrist/, /r.*wrist/]);
-
+  const fore = findBoneByRegex(root, [
+    /right.*forearm/,
+    /r.*forearm/,
+    /right.*elbow/,
+    /r.*elbow/,
+  ]);
+  const hand = findBoneByRegex(root, [
+    /right.*hand/,
+    /r.*hand/,
+    /right.*wrist/,
+    /r.*wrist/,
+  ]);
   return { upper, fore, hand };
 }
 
-// ================================
-// Gesto procedural: SALUDAR 👋 (robusto)
-// - aplica quaternions (evita gimbal / saltos raros)
-// - se superpone al idle (lo aplicamos después del mixer.update)
-// ================================
+// ============================================================
+// Procedural gesture: Wave 👋
+// (aplica quaternions -> menos “cosas raras”)
+// ============================================================
 const wave = {
   enabled: true,
   active: false,
@@ -271,31 +178,25 @@ const wave = {
   duration: 1.7,
   waves: 3,
 
-  // “sensación”: ajusta si quieres
   shoulderLift: 0.55,
   elbowBend: 0.22,
   wristAmp: 0.95,
 
-  // huesos
   upper: null,
   fore: null,
   hand: null,
 
-  // base quaternions
   baseUpper: null,
   baseFore: null,
   baseHand: null,
 
-  // ejes locales aproximados (en rigs distintos puede variar)
-  // si lo ves raro, cambia estos ejes/signos
-  upperAxis: new THREE.Vector3(1, 0, 0), // levantar brazo
-  foreAxis: new THREE.Vector3(1, 0, 0),  // doblar codo
-  wristAxis: new THREE.Vector3(0, 0, 1), // agitar muñeca
+  upperAxis: new THREE.Vector3(1, 0, 0),
+  foreAxis: new THREE.Vector3(1, 0, 0),
+  wristAxis: new THREE.Vector3(0, 0, 1),
 };
 
 function bindWaveBonesFromAvatar() {
   if (!currentAvatar) return;
-
   const { upper, fore, hand } = detectRightArmBones(currentAvatar);
 
   wave.upper = upper;
@@ -329,7 +230,7 @@ function triggerWave() {
     return;
   }
 
-  // re-captura base por si el idle movió cosas
+  // Recaptura base por si idle movió los huesos
   wave.baseUpper = wave.upper ? wave.upper.quaternion.clone() : null;
   wave.baseFore = wave.fore ? wave.fore.quaternion.clone() : null;
   wave.baseHand = wave.hand ? wave.hand.quaternion.clone() : null;
@@ -343,7 +244,6 @@ function updateWave(nowSeconds) {
 
   const p = (nowSeconds - wave.t0) / wave.duration;
   if (p >= 1) {
-    // restore
     if (wave.upper && wave.baseUpper) wave.upper.quaternion.copy(wave.baseUpper);
     if (wave.fore && wave.baseFore) wave.fore.quaternion.copy(wave.baseFore);
     if (wave.hand && wave.baseHand) wave.hand.quaternion.copy(wave.baseHand);
@@ -351,133 +251,191 @@ function updateWave(nowSeconds) {
     return;
   }
 
-  // fases: levantar (0..0.25), agitar (0.25..0.85), bajar (0.85..1)
   const up = p < 0.25 ? easeInOutCubic(p / 0.25) : 1;
   const down = p > 0.85 ? 1 - easeInOutCubic((p - 0.85) / 0.15) : 1;
   const lift = Math.min(up, down);
 
-  // ventana wave
   let w = 0;
   if (p >= 0.25 && p <= 0.85) {
-    const wp = (p - 0.25) / 0.60;
+    const wp = (p - 0.25) / 0.6;
     w = bump(wp);
   }
 
-  // hombro: levantar
   if (wave.upper && wave.baseUpper) {
     applyQuatOffset(wave.upper, wave.baseUpper, wave.upperAxis, -wave.shoulderLift * lift);
   }
-
-  // codo: doblar un poco
   if (wave.fore && wave.baseFore) {
     applyQuatOffset(wave.fore, wave.baseFore, wave.foreAxis, -wave.elbowBend * lift);
   }
-
-  // muñeca: agitar (senoidal)
   if (wave.hand && wave.baseHand) {
     const swing = Math.sin(p * Math.PI * 2 * wave.waves) * wave.wristAmp * w;
     applyQuatOffset(wave.hand, wave.baseHand, wave.wristAxis, swing);
   }
 }
 
-// ================================
-// Grabación a JSON (del gesto en tiempo real)
-// ================================
-const recorder = new BoneAnimationRecorder();
-const STORAGE_KEY = "avaturn_gesture_wave_json";
-let recordedClipAction = null; // action para reproducir el clip grabado
+// ============================================================
+// Puppet system (mover cuerpo completo)
+// - SkeletonHelper
+// - Markers clicables para seleccionar huesos
+// - TransformControls para rotar / trasladar huesos
+// ============================================================
+function enableSkeletonHelper(root) {
+  if (skeletonHelper) skeletonHelper.removeFromParent();
+  skeletonHelper = new THREE.SkeletonHelper(root);
+  skeletonHelper.visible = puppet.showSkeleton;
+  scene.add(skeletonHelper);
+}
 
-function bindRecorderToWaveBones() {
-  if (!currentAvatar) return;
-
-  // preferimos usar exactamente los huesos encontrados por wave
-  if (!wave.upper && !wave.hand) bindWaveBonesFromAvatar();
-
-  const names = [];
-  if (wave.upper) names.push(wave.upper.name);
-  if (wave.fore) names.push(wave.fore.name);
-  if (wave.hand) names.push(wave.hand.name);
-
-  if (!names.length) {
-    console.warn("[Recorder] No hay huesos detectados para grabar.");
-    return;
+function createBoneMarkers(root) {
+  // Cleanup anterior
+  if (boneMarkersGroup) {
+    boneMarkersGroup.removeFromParent();
+    boneMarkersGroup.traverse((o) => o.geometry?.dispose?.());
+    boneMarkersGroup.traverse((o) => o.material?.dispose?.());
   }
 
-  recorder.bindBones(currentAvatar, names);
+  boneMarkersGroup = new THREE.Group();
+  boneMarkersGroup.name = "BoneMarkers";
+
+  const bones = [];
+  root.traverse((o) => {
+    if (o.isBone) bones.push(o);
+  });
+
+  // Reutilizamos misma geometría para todas
+  const geo = new THREE.SphereGeometry(puppet.markerSize, 10, 10);
+
+  for (const bone of bones) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    const marker = new THREE.Mesh(geo, mat);
+
+    marker.name = `marker:${bone.name}`;
+    marker.userData.bone = bone;
+
+    // Los colocamos por matriz world en updateBoneMarkersWorldMatrices()
+    marker.matrixAutoUpdate = false;
+
+    boneMarkersGroup.add(marker);
+  }
+
+  boneMarkersGroup.visible = puppet.showMarkers;
+  scene.add(boneMarkersGroup);
 }
 
-function startRecording() {
-  if (!currentAvatar) return;
-  bindRecorderToWaveBones();
-  try {
-    recorder.start(clock.elapsedTime);
-  } catch (e) {
-    console.error(e);
+function updateBoneMarkersWorldMatrices() {
+  if (!boneMarkersGroup || !boneMarkersGroup.visible) return;
+
+  scene.updateMatrixWorld(true);
+
+  const pos = new THREE.Vector3();
+  for (const marker of boneMarkersGroup.children) {
+    const bone = marker.userData.bone;
+    if (!bone) continue;
+
+    bone.getWorldPosition(pos);
+    marker.matrix.identity();
+    marker.matrix.setPosition(pos);
   }
 }
 
-function stopRecording() {
-  recorder.stop();
-  const json = recorder.toJSON("WaveRecorded");
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(json));
-  console.log("[Recorder] JSON guardado en localStorage:", STORAGE_KEY, json);
-}
+function initTransformControlsOnce() {
+  if (transformControls) return;
 
-function playRecorded() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    console.warn("No hay JSON grabado. Pulsa Record -> Wave -> Stop.");
-    return;
-  }
+  transformControls = new TransformControls(camera, renderer.domElement);
+  transformControls.setMode(puppet.mode);
+  transformControls.setSpace(puppet.space);
+  transformControls.enabled = puppet.enabled;
 
-  const json = JSON.parse(raw);
-  const clip = BoneAnimationRecorder.clipFromJSON(json);
+  transformControls.addEventListener("dragging-changed", (e) => {
+    // cuando mueves gizmo, apaga orbit
+    if (controls) controls.enabled = !e.value;
+  });
 
-  // Nota: el mixer está creado sobre scene, así que el track target "BoneName.quaternion"
-  // se resolverá si el bone existe en la escena (está dentro del avatar ya añadido).
-  if (recordedClipAction) recordedClipAction.stop();
-  recordedClipAction = mixer.clipAction(clip);
+  scene.add(transformControls);
 
-  // Si hay idle, lo dejamos; el clip puede mezclarse “encima” si quieres.
-  // Aquí lo reproducimos tal cual:
-  recordedClipAction.reset().play();
-}
+  // Teclas de control
+  window.addEventListener("keydown", (e) => {
+    if (!puppet.enabled) return;
 
-function downloadJSON() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    console.warn("No hay JSON grabado para descargar.");
-    return;
-  }
-  const blob = new Blob([raw], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "gesture_wave.json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function loadJSONFromFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const json = JSON.parse(String(reader.result));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(json));
-      console.log("[JSON] cargado y guardado en localStorage:", STORAGE_KEY, json);
-    } catch (e) {
-      console.error("JSON inválido:", e);
+    if (e.code === "KeyR") {
+      puppet.mode = "rotate";
+      transformControls.setMode("rotate");
     }
-  };
-  reader.readAsText(file);
+    if (e.code === "KeyT") {
+      puppet.mode = "translate";
+      transformControls.setMode("translate");
+    }
+    if (e.code === "KeyL") {
+      puppet.space = puppet.space === "local" ? "world" : "local";
+      transformControls.setSpace(puppet.space);
+    }
+    if (e.code === "Escape") {
+      deselectBone();
+    }
+    // Toggle markers/skeleton rápido
+    if (e.code === "KeyM") {
+      puppet.showMarkers = !puppet.showMarkers;
+      if (boneMarkersGroup) boneMarkersGroup.visible = puppet.showMarkers;
+      if (!puppet.showMarkers) deselectBone();
+    }
+    if (e.code === "KeyK") {
+      puppet.showSkeleton = !puppet.showSkeleton;
+      if (skeletonHelper) skeletonHelper.visible = puppet.showSkeleton;
+    }
+  });
+
+  // Selección por click en markers
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  renderer.domElement.addEventListener("pointerdown", (ev) => {
+    if (!puppet.enabled || !boneMarkersGroup || !boneMarkersGroup.visible) return;
+    if (transformControls.dragging) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(boneMarkersGroup.children, false);
+    if (!hits.length) return;
+
+    const marker = hits[0].object;
+    const bone = marker.userData.bone;
+    if (bone) selectBone(bone);
+  });
 }
 
-// ================================
-// Carga de avatar (GLB)
-// ================================
+function selectBone(bone) {
+  selectedBone = bone;
+  transformControls.attach(bone);
+
+  // feedback visual: marca el seleccionado (simple)
+  if (boneMarkersGroup) {
+    for (const m of boneMarkersGroup.children) {
+      const b = m.userData.bone;
+      if (!b) continue;
+      m.material.color.setHex(b === bone ? 0xff0000 : 0x111111);
+    }
+  }
+
+  console.log("[puppet] selected bone:", bone.name, " | mode:", puppet.mode, "space:", puppet.space);
+}
+
+function deselectBone() {
+  selectedBone = null;
+  transformControls?.detach?.();
+
+  if (boneMarkersGroup) {
+    for (const m of boneMarkersGroup.children) {
+      m.material.color.setHex(0x111111);
+    }
+  }
+}
+
+// ============================================================
+// Loading avatar (GLB)
+// ============================================================
 async function loadAvatar(url) {
   const loader = new GLTFLoader();
   const gltf = await loader.loadAsync(url);
@@ -497,11 +455,11 @@ async function loadAvatar(url) {
 
   scene.add(model);
 
-  // Idle desde el propio GLB si existe
+  // Animaciones incluidas (idle)
   if (gltf.animations?.length) {
     const idleClip = gltf.animations.find((a) => /idle/i.test(a.name)) || gltf.animations[0];
     idleAction = mixer.clipAction(idleClip);
-    setAction(idleAction, 0.0);
+    idleAction.reset().play();
   } else {
     idleAction = null;
   }
@@ -510,21 +468,29 @@ async function loadAvatar(url) {
 }
 
 function replaceAvatar(newAvatar) {
+  // Quita anterior
   if (currentAvatar) {
+    deselectBone();
     currentAvatar.removeFromParent();
     disposeGLTF(currentAvatar);
   }
+
   currentAvatar = newAvatar;
 
-  // Debug útil (descomenta si lo necesitas):
+  // Debug útil si quieres: lista de huesos
   // listBones(currentAvatar);
 
   bindWaveBonesFromAvatar();
+
+  // Puppet setup
+  enableSkeletonHelper(currentAvatar);
+  createBoneMarkers(currentAvatar);
+  initTransformControlsOnce();
 }
 
-// ================================
-// Init scene
-// ================================
+// ============================================================
+// Scene init
+// ============================================================
 async function init() {
   const container = document.getElementById("container");
   if (!container) throw new Error("No existe #container en el HTML.");
@@ -544,33 +510,44 @@ async function init() {
   controls = new OrbitControls(camera, renderer.domElement);
   camera.position.set(-2, 1, 3);
   controls.target.set(0, 1, 0);
+
+  // Para que “se pueda mover” con ratón y sea suave
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.enablePan = false;
+  controls.enableZoom = true;
+  controls.minDistance = 1.2;
+  controls.maxDistance = 6.0;
   controls.update();
 
   clock = new THREE.Clock();
   mixer = new THREE.AnimationMixer(scene);
 
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
-  hemiLight.position.set(0, 20, 0);
-  scene.add(hemiLight);
+  // Luces
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x444444);
+  hemi.position.set(0, 20, 0);
+  scene.add(hemi);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff);
-  dirLight.position.set(3, 3, 5);
-  dirLight.castShadow = true;
-  dirLight.shadow.camera.top = 2;
-  dirLight.shadow.camera.bottom = -2;
-  dirLight.shadow.camera.left = -2;
-  dirLight.shadow.camera.right = 2;
-  dirLight.shadow.camera.near = 0.1;
-  dirLight.shadow.camera.far = 40;
-  dirLight.shadow.bias = -0.001;
-  dirLight.intensity = 3;
-  scene.add(dirLight);
+  const dir = new THREE.DirectionalLight(0xffffff);
+  dir.position.set(3, 3, 5);
+  dir.castShadow = true;
+  dir.shadow.camera.top = 2;
+  dir.shadow.camera.bottom = -2;
+  dir.shadow.camera.left = -2;
+  dir.shadow.camera.right = 2;
+  dir.shadow.camera.near = 0.1;
+  dir.shadow.camera.far = 40;
+  dir.shadow.bias = -0.001;
+  dir.intensity = 3;
+  scene.add(dir);
 
+  // HDR env
   new RGBELoader().load("public/brown_photostudio_01.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
   });
 
+  // Suelo
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(100, 100),
     new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false })
@@ -579,16 +556,31 @@ async function init() {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Cargar avatar por defecto
+  // Carga avatar
   const avatar = await loadAvatar("public/model.glb");
   replaceAvatar(avatar);
 
+  // Stats
   stats = new Stats();
   container.appendChild(stats.dom);
 
   window.addEventListener("resize", onWindowResize);
 
   wireUI();
+
+  // Atajos visibles
+  console.log(
+    [
+      "CONTROLES PUPPET:",
+      "- Click en un punto (marker) del esqueleto para seleccionar hueso",
+      "- R: modo ROTATE",
+      "- T: modo TRANSLATE",
+      "- L: alterna Local/World",
+      "- M: toggle markers",
+      "- K: toggle skeleton",
+      "- Esc: deseleccionar",
+    ].join("\n")
+  );
 
   animate();
 }
@@ -599,10 +591,10 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// ================================
-// UI wiring (tolerante: no rompe si faltan)
-// ================================
-function wire(id, fn) {
+// ============================================================
+// UI wiring (no revienta si falta)
+// ============================================================
+function wireClick(id, fn) {
   const el = document.querySelector(id);
   if (!el) {
     console.warn("Falta en HTML:", id);
@@ -612,64 +604,42 @@ function wire(id, fn) {
 }
 
 function wireUI() {
-  // gesto
-  wire("#buttonWave", () => triggerWave());
+  wireClick("#buttonWave", triggerWave);
 
-  // grabación
-  wire("#buttonRecord", () => startRecording());
-  wire("#buttonStop", () => stopRecording());
-  wire("#buttonPlay", () => playRecorded());
-
-  // JSON export/import
-  wire("#buttonSaveJson", () => downloadJSON());
-  wire("#buttonLoadJson", () => {
-    const input = document.querySelector("#fileJson");
-    if (input) input.click();
-    else console.warn("Falta #fileJson (input type='file').");
-  });
-
-  const fileInput = document.querySelector("#fileJson");
-  if (fileInput) {
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target?.files?.[0];
-      loadJSONFromFile(file);
-      // limpiar para permitir recargar el mismo archivo
-      e.target.value = "";
-    });
-  } else {
-    console.warn("Falta #fileJson (input type='file').");
-  }
-
-  // Avaturn iframe open/close (si existen)
-  wire("#buttonOpen", openIframe);
-  wire("#buttonClose", closeIframe);
+  // (Opcional) Avaturn si lo reactivas en HTML
+  wireClick("#buttonOpen", openIframe);
+  wireClick("#buttonClose", closeIframe);
 }
 
-// ================================
-// Loop
-// ================================
+// ============================================================
+// Render loop
+// ============================================================
 function animate() {
   requestAnimationFrame(animate);
 
   const dt = clock.getDelta();
   const t = clock.elapsedTime;
 
-  // 1) animaciones (idle / clips)
+  // Actualiza orbit (damping)
+  controls?.update?.();
+
+  // Animaciones (idle)
   mixer.update(dt);
 
-  // 2) aplicar gesto procedural “encima”
+  // Aplica gesto encima (si está activo)
   updateWave(t);
 
-  // 3) grabar (si activo) -> captura post-animación para registrar el resultado final
-  recorder.capture(dt, t);
+  // Puppet visuals
+  updateBoneMarkersWorldMatrices();
+  skeletonHelper?.update?.();
 
   stats.update();
   renderer.render(scene, camera);
 }
 
-// ================================
-// Avaturn iframe
-// ================================
+// ============================================================
+// Avaturn iframe (opcional)
+// ============================================================
 function openIframe() {
   initAvaturn();
   const c = document.querySelector("#avaturn-sdk-container");
@@ -678,6 +648,7 @@ function openIframe() {
   const open = document.querySelector("#buttonOpen");
   if (open) open.disabled = true;
 }
+
 function closeIframe() {
   const c = document.querySelector("#avaturn-sdk-container");
   if (c) c.hidden = true;
@@ -717,12 +688,12 @@ function initAvaturn() {
           computeModelBaseY(avatar);
           faceCamera(avatar);
 
-          // idle desde avatar exportado si viene
+          // Idle si viene
           if (gltf.animations?.length) {
             const idleClip =
               gltf.animations.find((a) => /idle/i.test(a.name)) || gltf.animations[0];
             idleAction = mixer.clipAction(idleClip);
-            setAction(idleAction, 0.0);
+            idleAction.reset().play();
           } else {
             idleAction = null;
           }
@@ -738,17 +709,8 @@ function initAvaturn() {
   });
 }
 
-// ================================
+// ============================================================
 // Start
-// ================================
+// ============================================================
 await init();
 closeIframe();
-
-// Nota operativa:
-// Para grabar el saludo a JSON:
-// 1) Pulsa "Record"
-// 2) Pulsa "Saludar"
-// 3) Pulsa "Stop"
-// 4) "Play" reproduce desde JSON guardado
-// 5) "Save JSON" descarga gesture_wave.json
-// 6) "Load JSON" + elegir archivo -> lo carga a localStorage
