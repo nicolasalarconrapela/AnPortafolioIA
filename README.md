@@ -49,12 +49,8 @@ src/
 ├── App.css                     # Estilos de navegación
 ├── index.css                   # Estilos globales
 ├── routes/
-│   ├── Home.tsx                # Página de inicio
-│   ├── Home.css
 │   ├── AvatarPage.tsx          # Página del avatar 3D ⭐
-│   ├── AvatarPage.css
-│   ├── About.tsx               # Página informativa
-│   └── About.css
+│   └── AvatarPage.css
 └── three/
     ├── AvatarEngine.ts         # Motor Three.js encapsulado ⭐
     └── dispose.ts              # Utilidades de limpieza GPU ⭐
@@ -137,7 +133,7 @@ Three.js **no libera automáticamente** recursos de GPU. Sin limpieza manual:
 
 ### 1. ✓ Detención Completa del Render Loop
 
-Al navegar de `/avatar` a cualquier otra ruta:
+Al navegar fuera de la página del avatar:
 
 ```javascript
 // En el cleanup de useEffect:
@@ -148,7 +144,7 @@ engine.stop(); // ← Cancela requestAnimationFrame
 1. Abrir DevTools → Performance
 2. Iniciar grabación
 3. Navegar a `/avatar`
-4. Navegar a `/` o `/about`
+4. Navegar fuera de la página del avatar
 5. **Resultado:** No hay frames activos después de salir
 
 ### 2. ✓ Canvas Desaparece del DOM
@@ -163,8 +159,8 @@ dispose() {
 ```
 
 **Verificación:**
-1. Inspeccionar elemento en `/avatar` → canvas presente
-2. Navegar a otra página
+1. Inspeccionar elemento en la página del avatar → canvas presente
+2. Navegar fuera de la página del avatar
 3. **Resultado:** Canvas eliminado del DOM
 
 ### 3. ✓ Sin Fugas de Memoria
@@ -180,7 +176,7 @@ dispose() {
 **Verificación:**
 1. DevTools → Memory
 2. Tomar snapshot inicial
-3. Navegar 10 veces entre páginas
+3. Navegar hacia y fuera de la página del avatar 10 veces
 4. Forzar GC (garbage collector)
 5. Tomar snapshot final
 6. **Resultado:** Memoria estable, sin crecimiento
@@ -195,7 +191,7 @@ this.resizeObserver.observe(this.host);
 ```
 
 **Verificación:**
-1. Entrar a `/avatar`
+1. Entrar a la página del avatar
 2. Redimensionar ventana
 3. **Resultado:** Canvas se adapta sin distorsión
 
@@ -221,9 +217,8 @@ this.renderer.setPixelRatio(dpr);
 
 ### Navegación
 
-- **`/`** - Home: Introducción y características
+- **`/`** - Avatar 3D: Escena Three.js interactiva
 - **`/avatar`** - Avatar 3D: Escena Three.js interactiva
-- **`/about`** - About: Documentación técnica
 
 ### Controles en `/avatar`
 
@@ -267,7 +262,7 @@ npm run preview   # Preview del build
 2. Ir a **Memory** tab
 3. Tomar snapshot "Heap Snapshot"
 4. Guardar como "Inicial"
-5. Navegar 10 veces: `/avatar` → `/` → `/avatar` → `/` ...
+5. Navegar 10 veces hacia y fuera de la página del avatar
 6. En la consola ejecutar: `window.gc()` (requiere `--js-flags="--expose-gc"`)
 7. Tomar otro snapshot "Final"
 8. Comparar tamaños
@@ -277,13 +272,13 @@ npm run preview   # Preview del build
 
 1. DevTools → **Performance** tab
 2. Iniciar grabación
-3. Navegar a `/avatar`
+3. Navegar a la página del avatar
 4. Esperar 5 segundos
-5. Navegar a `/`
+5. Navegar fuera de la página del avatar
 6. Detener grabación
-7. **Verificar:** 
-   - Frames activos solo mientras está en `/avatar`
-   - Sin `requestAnimationFrame` fuera de `/avatar`
+7. **Verificar:**
+   - Frames activos solo mientras está en la página del avatar
+   - Sin `requestAnimationFrame` fuera de la página del avatar
 
 ---
 

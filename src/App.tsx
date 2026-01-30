@@ -1,7 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom';
-import Home from './routes/Home';
 import AvatarPage from './routes/AvatarPage';
-import About from './routes/About';
 import './App.css';
 
 function App() {
@@ -14,18 +12,8 @@ function App() {
                     </Link>
                     <ul className="nav-menu">
                         <li className="nav-item">
-                            <Link to="/" className="nav-link">
-                                Home
-                            </Link>
-                        </li>
-                        <li className="nav-item">
                             <Link to="/avatar" className="nav-link">
                                 Avatar
-                            </Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link to="/about" className="nav-link">
-                                About
                             </Link>
                         </li>
                     </ul>
@@ -34,9 +22,8 @@ function App() {
 
             <main className="main-content">
                 <Routes>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/" element={<AvatarPage />} />
                     <Route path="/avatar" element={<AvatarPage />} />
-                    <Route path="/about" element={<About />} />
                 </Routes>
             </main>
         </div>
