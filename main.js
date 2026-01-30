@@ -1,22 +1,25 @@
 /**
- * main.js — Avaturn/GLB + Three.js
+ * main.js — Avaturn/GLB + Three.js (Interview / Upper-body framing)
  * ------------------------------------------------------------
  * ✅ Avatar de frente (quieto en el mundo)
- * ✅ OrbitControls (mueves cámara con ratón)
+ * ✅ OrbitControls (mueves cámara con ratón) — aquí desactivado (modo entrevista)
  * ✅ “Puppet Mode” (mover TODO el cuerpo):
  *    - SkeletonHelper visible
  *    - Markers clicables para seleccionar huesos
  *    - TransformControls (gizmo) para ROTAR / TRASLADAR huesos
  * ✅ Botón #buttonWave: saludar (procedural)
- * ✅ (Opcional) Recorder JSON: si tienes botones/inputs (no rompe si no existen)
+ * ✅ Selector #animationSelector: cargar animaciones FBX desde movements.json (opcional)
+ * ✅ Cámara auto-centrada y encuadrada (torso+cara) usando bounding-box (robusto)
  *
  * HTML mínimo requerido:
  * - <div id="container"></div>
- * - <button id="buttonWave">Saludar</button> (opcional, si no existe avisa por consola)
+ * - <button id="buttonWave">Saludar</button> (opcional)
+ * - <select id="animationSelector"></select> (opcional)
  *
  * Rutas esperadas:
- * - public/model.glb
- * - public/brown_photostudio_01.hdr
+ * - /model.glb
+ * - /brown_photostudio_01.hdr
+ * - /movements.json  (opcional)
  */
 
 import * as THREE from "three";
@@ -47,34 +50,33 @@ let boneMarkersGroup = null;
 let selectedBone = null;
 
 const puppet = {
-  enabled: true,
-  showSkeleton: true,
-  showMarkers: true,
-  markerSize: 0.025, // tamaño esfera markers
-  mode: "rotate", // "rotate" | "translate"
-  space: "local", // "local" | "world"
+  enabled: false,        // ❌ Modo entrevista por defecto
+  showSkeleton: false,
+  showMarkers: false,
+  markerSize: 0.025,
+  mode: "rotate",
+  space: "local",
 };
 
 // ============================================================
 // Animation Library
 // ============================================================
-// Se cargará dinámicamente desde public/movements.json
+// Se cargará dinámicamente desde /movements.json
 let AVAILABLE_ANIMATIONS = [];
-
 let currentAnimationAction = null;
 
 // Cargar lista de animaciones disponibles
 async function loadAvailableAnimations() {
   try {
-    const response = await fetch('public/movements.json');
+    const response = await fetch("/movements.json");
     if (!response.ok) {
-      console.warn('No se pudo cargar movements.json, usando lista vacía');
+      console.warn("No se pudo cargar /movements.json, usando lista vacía");
       return;
     }
     AVAILABLE_ANIMATIONS = await response.json();
     console.log(`📋 Cargadas ${AVAILABLE_ANIMATIONS.length} animaciones disponibles`);
   } catch (err) {
-    console.warn('Error cargando movements.json:', err);
+    console.warn("Error cargando /movements.json:", err);
   }
 }
 
@@ -87,7 +89,7 @@ function easeInOutCubic(x) {
 }
 function bump(x) {
   x = Math.max(0, Math.min(1, x));
-  return Math.sin(Math.PI * x); // 0..1..0
+  return Math.sin(Math.PI * x);
 }
 
 // ============================================================
@@ -131,12 +133,95 @@ function computeModelBaseY(root) {
 function faceCamera(root) {
   root.position.x = 0;
   root.position.z = 0;
-
   root.rotation.set(0, 0, 0);
 
   // Si lo ves de espaldas, descomenta:
   // root.rotation.y = Math.PI;
 }
+
+// ============================================================
+// Camera framing (TORSO / Interview) ✅
+// ============================================================
+function frameUpperBody(camera, object3D, opts = {}) {
+  const {
+    targetHeightRatio = 0.76,  // mira al pecho/cuello
+    heightPortion = 0.42,      // torso+head en vertical
+    distanceMultiplier = 1.00, // ajuste fino
+
+    offsetX = 0.0,
+    offsetY = 0.0,
+    offsetZ = 0.0,
+
+    // 🔒 clamps para que no “desaparezca”
+    minDistance = 1.0,         // <- IMPORTANTÍSIMO
+    maxDistance = 6.0,
+    nearFactor = 0.02,         // near = distance * nearFactor
+    minNear = 0.01,
+    farMultiplier = 50,
+  } = opts;
+
+  if (!object3D) return;
+
+  object3D.updateWorldMatrix(true, true);
+  const box = new THREE.Box3().setFromObject(object3D);
+
+  if (box.isEmpty()) {
+    console.warn("[camera] Bounding box vacío. No se puede encuadrar.");
+    return;
+  }
+
+  const size = new THREE.Vector3();
+  box.getSize(size);
+
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+
+  // Target tipo entrevista (pecho/cuello)
+  const target = new THREE.Vector3(
+    center.x + offsetX,
+    box.min.y + size.y * targetHeightRatio + offsetY,
+    center.z
+  );
+
+  // Altura efectiva (torso) con seguridad
+  const effectiveHeight = Math.max(0.2, size.y * heightPortion);
+
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  let distance = (effectiveHeight / (2 * Math.tan(fov / 2))) * distanceMultiplier;
+
+  // ✅ clamp distancia para evitar cámara dentro del modelo
+  distance = THREE.MathUtils.clamp(distance, minDistance, maxDistance);
+
+  // Posición frontal (asumiendo que el avatar está alrededor de Z=0)
+  camera.position.set(
+    target.x,
+    target.y,
+    target.z + distance + offsetZ
+  );
+
+  // ✅ near/far robustos (evita clipping brutal)
+  camera.near = Math.max(minNear, distance * nearFactor);
+  camera.far = Math.max(camera.near + 10, distance * farMultiplier);
+  camera.updateProjectionMatrix();
+
+  camera.lookAt(target);
+
+  // Mantén coherente el target de OrbitControls aunque estén disabled
+  if (controls) {
+    controls.target.copy(target);
+    controls.update?.();
+  }
+
+  console.log("[camera] framed OK", {
+    size: size.toArray(),
+    target: target.toArray(),
+    effectiveHeight,
+    distance,
+    near: camera.near,
+    far: camera.far,
+  });
+}
+
 
 // ============================================================
 // Bone helpers
@@ -192,7 +277,6 @@ function detectRightArmBones(root) {
 
 // ============================================================
 // Procedural gesture: Wave 👋
-// (aplica quaternions -> menos “cosas raras”)
 // ============================================================
 const wave = {
   enabled: true,
@@ -254,7 +338,6 @@ function triggerWave() {
     return;
   }
 
-  // Recaptura base por si idle movió los huesos
   wave.baseUpper = wave.upper ? wave.upper.quaternion.clone() : null;
   wave.baseFore = wave.fore ? wave.fore.quaternion.clone() : null;
   wave.baseHand = wave.hand ? wave.hand.quaternion.clone() : null;
@@ -298,10 +381,7 @@ function updateWave(nowSeconds) {
 }
 
 // ============================================================
-// Puppet system (mover cuerpo completo)
-// - SkeletonHelper
-// - Markers clicables para seleccionar huesos
-// - TransformControls para rotar / trasladar huesos
+// Puppet system
 // ============================================================
 function enableSkeletonHelper(root) {
   if (skeletonHelper) skeletonHelper.removeFromParent();
@@ -311,7 +391,6 @@ function enableSkeletonHelper(root) {
 }
 
 function createBoneMarkers(root) {
-  // Cleanup anterior
   if (boneMarkersGroup) {
     boneMarkersGroup.removeFromParent();
     boneMarkersGroup.traverse((o) => o.geometry?.dispose?.());
@@ -326,7 +405,6 @@ function createBoneMarkers(root) {
     if (o.isBone) bones.push(o);
   });
 
-  // Reutilizamos misma geometría para todas
   const geo = new THREE.SphereGeometry(puppet.markerSize, 10, 10);
 
   for (const bone of bones) {
@@ -335,8 +413,6 @@ function createBoneMarkers(root) {
 
     marker.name = `marker:${bone.name}`;
     marker.userData.bone = bone;
-
-    // Los colocamos por matriz world en updateBoneMarkersWorldMatrices()
     marker.matrixAutoUpdate = false;
 
     boneMarkersGroup.add(marker);
@@ -371,13 +447,11 @@ function initTransformControlsOnce() {
   transformControls.enabled = puppet.enabled;
 
   transformControls.addEventListener("dragging-changed", (e) => {
-    // cuando mueves gizmo, apaga orbit
     if (controls) controls.enabled = !e.value;
   });
 
   scene.add(transformControls);
 
-  // Teclas de control
   window.addEventListener("keydown", (e) => {
     if (!puppet.enabled) return;
 
@@ -396,7 +470,6 @@ function initTransformControlsOnce() {
     if (e.code === "Escape") {
       deselectBone();
     }
-    // Toggle markers/skeleton rápido
     if (e.code === "KeyM") {
       puppet.showMarkers = !puppet.showMarkers;
       if (boneMarkersGroup) boneMarkersGroup.visible = puppet.showMarkers;
@@ -408,7 +481,6 @@ function initTransformControlsOnce() {
     }
   });
 
-  // Selección por click en markers
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
 
@@ -434,7 +506,6 @@ function selectBone(bone) {
   selectedBone = bone;
   transformControls.attach(bone);
 
-  // feedback visual: marca el seleccionado (simple)
   if (boneMarkersGroup) {
     for (const m of boneMarkersGroup.children) {
       const b = m.userData.bone;
@@ -443,7 +514,7 @@ function selectBone(bone) {
     }
   }
 
-  console.log("[puppet] selected bone:", bone.name, " | mode:", puppet.mode, "space:", puppet.space);
+  console.log("[puppet] selected bone:", bone.name, "| mode:", puppet.mode, "space:", puppet.space);
 }
 
 function deselectBone() {
@@ -458,27 +529,18 @@ function deselectBone() {
 }
 
 // ============================================================
-// Loading avatar (GLB)
-// ============================================================
-// ============================================================
 // Loading helpers (GLB / FBX)
 // ============================================================
 async function loadFBX(url) {
   const loader = new FBXLoader();
   const object = await loader.loadAsync(url);
 
-  // FBX a menudo viene con escala muy grande o muy pequeña
-  // Ajuste conservador (escala 0.01 suele ser común si viene de Mixamo/Blender cm)
   object.scale.setScalar(0.01);
 
   object.traverse((o) => {
     if (o.isMesh) {
       o.castShadow = true;
       o.receiveShadow = true;
-      if (o.material) {
-        // A veces el FBX trae materiales Phong/Lambert básicos
-        // o.material.envMapIntensity = 0.3; 
-      }
     }
   });
 
@@ -487,7 +549,6 @@ async function loadFBX(url) {
 
   scene.add(object);
 
-  // Animaciones del FBX
   if (object.animations?.length) {
     const clip = object.animations[0];
     idleAction = mixer.clipAction(clip);
@@ -503,7 +564,6 @@ async function loadAvatar(url) {
   const loader = new GLTFLoader();
   const gltf = await loader.loadAsync(url);
   const model = gltf.scene;
-  // ... (resto reutilizable si quieres, pero aquí separo para claridad)
 
   model.traverse((o) => {
     if (o.isMesh) {
@@ -528,8 +588,8 @@ async function loadAvatar(url) {
   return model;
 }
 
+
 function replaceAvatar(newAvatar) {
-  // Quita anterior
   if (currentAvatar) {
     deselectBone();
     currentAvatar.removeFromParent();
@@ -538,15 +598,23 @@ function replaceAvatar(newAvatar) {
 
   currentAvatar = newAvatar;
 
-  // Debug útil si quieres: lista de huesos
-  // listBones(currentAvatar);
-
   bindWaveBonesFromAvatar();
 
-  // Puppet setup
+  // Puppet setup (aunque disabled en modo entrevista)
   enableSkeletonHelper(currentAvatar);
   createBoneMarkers(currentAvatar);
   initTransformControlsOnce();
+
+  // ✅ Auto-encuadre usando bounding box
+  frameUpperBody(camera, currentAvatar, {
+    targetHeightRatio: 0.76,
+    heightPortion: 0.42,
+    distanceMultiplier: 1.0,
+    minDistance: 1.2,
+    maxDistance: 5.0,
+    nearFactor: 0.02,
+    minNear: 0.01,
+  });
 }
 
 // ============================================================
@@ -556,57 +624,36 @@ function retargetAnimation(target, clip) {
   const newClip = clip.clone();
   newClip.name = clip.name + "_retarget";
 
-  // 1. Detectar prefijo en el modelo destino (si lo tiene)
   const boneNames = [];
   target.traverse((o) => { if (o.isBone) boneNames.push(o.name); });
 
   const targetHasPrefix = boneNames.some(n => n.startsWith("mixamorig:"));
 
   newClip.tracks.forEach((track) => {
-    // track.name puede ser "mixamorig:Hips.position" o "mixamorigHips.position"
     let trackName = track.name;
 
-    // Extraer nombre de hueso y propiedad
     const lastDot = trackName.lastIndexOf(".");
     let boneName = lastDot !== -1 ? trackName.substring(0, lastDot) : trackName;
-    let property = lastDot !== -1 ? trackName.substring(lastDot) : "";
+    const property = lastDot !== -1 ? trackName.substring(lastDot) : "";
 
-    // Quitar prefijo mixamorig: o mixamorig
     if (boneName.startsWith("mixamorig:")) {
       boneName = boneName.substring(10);
     } else if (boneName.startsWith("mixamorig")) {
       boneName = boneName.substring(9);
     }
 
-    // Si el avatar QUIERE "mixamorig:" y la anim no lo tiene -> agregamos
     if (targetHasPrefix && !trackName.startsWith("mixamorig")) {
       track.name = `mixamorig:${boneName}${property}`;
-    }
-    // Si el avatar NO quiere "mixamorig:" y la anim SÍ lo tiene -> quitamos
-    else if (!targetHasPrefix && (trackName.startsWith("mixamorig:") || trackName.startsWith("mixamorig"))) {
+    } else if (!targetHasPrefix && (trackName.startsWith("mixamorig:") || trackName.startsWith("mixamorig"))) {
       track.name = `${boneName}${property}`;
-    }
-
-    // FILTRO DE POSICIÓN PARA CADERAS
-    // Un problema común es que la animación mueva las Hips a (0,0,0) o al aire.
-    // mixamo suele animar Hips.position. 
-    // Si quieres que el avatar se quede en su sitio X/Z pero salte en Y, o solo rote,
-    // puedes filtrar. Por defecto, dejamos pasar Hips.position pero a veces escala mal.
-
-    // Ejemplo: si el avatar se va volando, comenta esto:
-    if (track.name.endsWith(".position") && !track.name.toLowerCase().includes("hips")) {
-      // Bloquear traslación de huesos que no sean hips (evita estiramientos raros)
-      // track.values = track.values.map(v => 0); // o eliminar track
     }
   });
 
-  // IMPORTANTE: Filtrar Hips.position si causa problemas de escala
-  // (el avatar vuela lejos o se va bajo tierra)
+  // IMPORTANTE: filtra traslación de caderas si te hace “volar”
   newClip.tracks = newClip.tracks.filter(track => {
-    // Mantener solo rotaciones, eliminar traslaciones excepto tal vez Hips Y
     if (track.name === "Hips.position") {
       console.log("🚫 Eliminando track Hips.position para evitar que el avatar vuele");
-      return false; // eliminar
+      return false;
     }
     return true;
   });
@@ -618,33 +665,29 @@ function retargetAnimation(target, clip) {
 // Scene init
 // ============================================================
 async function init() {
-  // ... (setup scene, camera, lights, etc.)
   const container = document.getElementById("container");
   if (!container) throw new Error("No existe #container en el HTML.");
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xc0c0c0);
-  scene.fog = new THREE.Fog(0xc0c0c0, 20, 50);
+  scene.background = new THREE.Color(0xf5f5f5);
+  scene.fog = null;
 
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  // Cámara (modo entrevista)
+  camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.02, 100);
 
+  // OrbitControls (desactivados)
   controls = new OrbitControls(camera, renderer.domElement);
-  camera.position.set(-2, 1, 3);
-  controls.target.set(0, 1, 0);
-
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
+  controls.enabled = false;
+  controls.enableDamping = false;
   controls.enablePan = false;
-  controls.enableZoom = true;
-  controls.minDistance = 1.2;
-  controls.maxDistance = 6.0;
-  controls.update();
+  controls.enableZoom = false;
+  controls.enableRotate = false;
 
   clock = new THREE.Clock();
   mixer = new THREE.AnimationMixer(scene);
@@ -666,23 +709,14 @@ async function init() {
   dir.intensity = 3;
   scene.add(dir);
 
-  new RGBELoader().load("public/brown_photostudio_01.hdr", (texture) => {
+  new RGBELoader().load("/brown_photostudio_01.hdr", (texture) => {
     texture.mapping = THREE.EquirectangularReflectionMapping;
     scene.environment = texture;
   });
 
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100),
-    new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  // 1. Cargar Avatar (GLB)
+  // 1) Cargar avatar
   const avatar = await loadAvatar("public/model.glb");
   replaceAvatar(avatar);
-
 
   // Stats
   stats = new Stats();
@@ -690,12 +724,12 @@ async function init() {
 
   window.addEventListener("resize", onWindowResize);
 
-  // Cargar lista de animaciones disponibles
+  // Animaciones disponibles
   await loadAvailableAnimations();
 
   wireUI();
 
-  // 3. Cargar animación inicial si hay disponible
+  // 3) Cargar animación inicial si hay
   if (AVAILABLE_ANIMATIONS.length > 0) {
     await loadAnimation(AVAILABLE_ANIMATIONS[0].path);
   }
@@ -710,7 +744,7 @@ async function init() {
       "- M: toggle markers",
       "- K: toggle skeleton",
       "- Esc: deseleccionar",
-    ].join("\\n")
+    ].join("\n")
   );
 
   animate();
@@ -720,6 +754,15 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // ✅ Re-encuadra al redimensionar (mantiene torso centrado)
+  if (currentAvatar) {
+    frameUpperBody(camera, currentAvatar, {
+      targetHeightRatio: 0.76,
+      heightPortion: 0.42,
+      distanceMultiplier: 0.98,
+    });
+  }
 }
 
 // ============================================================
@@ -741,7 +784,16 @@ function wireUI() {
   wireClick("#buttonOpen", openIframe);
   wireClick("#buttonClose", closeIframe);
 
-  // Poblar selector de animaciones
+  // (Opcional) Botón recenter
+  wireClick("#buttonRecenter", () => {
+    if (!currentAvatar) return;
+    frameUpperBody(camera, currentAvatar, {
+      targetHeightRatio: 0.76,
+      heightPortion: 0.42,
+      distanceMultiplier: 0.98,
+    });
+  });
+
   populateAnimationSelector();
 }
 
@@ -755,17 +807,17 @@ function populateAnimationSelector() {
     return;
   }
 
-  // Llenar opciones
+  selector.innerHTML = "";
+
   AVAILABLE_ANIMATIONS.forEach((anim, index) => {
     const option = document.createElement("option");
-    option.value = index;
+    option.value = String(index);
     option.textContent = anim.name;
     selector.appendChild(option);
   });
 
-  // Evento onChange
   selector.addEventListener("change", async (e) => {
-    const index = parseInt(e.target.value);
+    const index = parseInt(e.target.value, 10);
     if (isNaN(index) || index < 0 || index >= AVAILABLE_ANIMATIONS.length) {
       console.log("Ninguna animación seleccionada");
       return;
@@ -795,18 +847,11 @@ async function loadAnimation(fbxPath) {
     let clip = animFbx.animations[0];
     console.log(`Animación encontrada: ${clip.name}`);
 
-    // Retarget
     clip = retargetAnimation(currentAvatar, clip);
 
-    // Detener animación anterior
-    if (currentAnimationAction) {
-      currentAnimationAction.stop();
-    }
-    if (idleAction) {
-      idleAction.stop();
-    }
+    if (currentAnimationAction) currentAnimationAction.stop();
+    if (idleAction) idleAction.stop();
 
-    // Reproducir nueva
     currentAnimationAction = mixer.clipAction(clip);
     currentAnimationAction.reset().play();
 
@@ -825,13 +870,10 @@ function animate() {
   const dt = clock.getDelta();
   const t = clock.elapsedTime;
 
-  // Actualiza orbit (damping)
-  controls?.update?.();
-
-  // Animaciones (idle)
+  // Animaciones
   mixer.update(dt);
 
-  // Aplica gesto encima (si está activo)
+  // Gesto
   updateWave(t);
 
   // Puppet visuals
@@ -869,7 +911,6 @@ function initAvaturn() {
     return;
   }
 
-  // Sustituye por tu subdominio real
   const subdomain = "demo";
   const url = `https://${subdomain}.avaturn.dev`;
 
@@ -893,7 +934,6 @@ function initAvaturn() {
           computeModelBaseY(avatar);
           faceCamera(avatar);
 
-          // Idle si viene
           if (gltf.animations?.length) {
             const idleClip =
               gltf.animations.find((a) => /idle/i.test(a.name)) || gltf.animations[0];
