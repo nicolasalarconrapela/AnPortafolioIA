@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { ViewState } from '../types';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Icon } from './ui/Icon';
+import { Card } from './ui/Card';
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
@@ -7,147 +11,237 @@ interface AuthViewProps {
 }
 
 export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'candidate' }) => {
-  const [isLogin, setIsLogin] = useState(false);
+  const isRecruiter = userType === 'recruiter';
+  
+  const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Form State
+  const [email, setEmail] = useState(isRecruiter ? "recruiter@techcorp.com" : "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{email?: string, password?: string}>({});
+  
+  const handleToggle = () => {
+      setIsLogin(!isLogin);
+      setErrors({});
+  };
 
-  const handleToggle = () => setIsLogin(!isLogin);
+  const validate = () => {
+      const newErrors: any = {};
+      if (!email) newErrors.email = "Email is required";
+      if (!password) newErrors.password = "Password is required";
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
+
+    setIsLoading(true);
+
+    // --- ADMIN BYPASS LOGIC ---
+    if (email === 'Admin' && password === 'Admin') {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setIsLoading(false);
+        
+        if (userType === 'recruiter') {
+            onNavigate('recruiter-flow');
+        } else {
+            onNavigate('candidate-dashboard');
+        }
+        return;
+    }
+    // --------------------------
+
+    // Simular delay de red estándar
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsLoading(false);
+    
     if (userType === 'recruiter') {
         onNavigate('recruiter-flow');
     } else {
-        onNavigate('candidate-onboarding');
+        onNavigate('candidate-onboarding'); 
     }
   };
 
-  const isRecruiter = userType === 'recruiter';
-  const primaryColor = isRecruiter ? 'indigo' : 'cyan';
-  const secondaryColor = isRecruiter ? 'cyan' : 'purple';
-  const glowClass = isRecruiter ? 'shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)]';
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 600));
+    setIsLoading(false);
+    if (userType === 'recruiter') {
+        onNavigate('recruiter-flow');
+    } else {
+        onNavigate('candidate-dashboard'); 
+    }
+  };
 
   return (
-    <div className="relative z-20 flex w-full h-screen bg-[#020408]">
-        {/* Left Side - Marketing / Visuals */}
-        <div className="hidden lg:flex flex-col justify-center w-5/12 p-12 xl:p-20 relative overflow-hidden">
-            <div className={`absolute inset-0 bg-gradient-to-b ${isRecruiter ? 'from-indigo-900/20' : 'from-cyan-900/20'} to-[#020408] z-0`}></div>
-            
-            {/* Abstract Lines */}
-            <div className="absolute top-0 right-0 w-full h-full z-0 opacity-40 pointer-events-none">
-                <div className={`absolute top-[10%] right-[-10%] w-[300px] h-[600px] border ${isRecruiter ? 'border-indigo-500/30' : 'border-cyan-500/30'} rounded-[100px] rotate-[30deg]`}></div>
-                <div className={`absolute top-[20%] right-[0%] w-[300px] h-[600px] border ${isRecruiter ? 'border-cyan-500/30' : 'border-indigo-500/30'} rounded-[100px] rotate-[30deg]`}></div>
-                <div className={`absolute top-[40%] right-[20%] w-[2px] h-[200px] ${isRecruiter ? 'bg-indigo-400' : 'bg-cyan-400'} blur-sm rotate-[30deg]`}></div>
+    <div className="min-h-screen w-full flex bg-surface-variant dark:bg-surface-darkVariant">
+      
+      {/* Left Panel - Branding (Desktop only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary-container relative overflow-hidden flex-col justify-between p-12 transition-colors duration-500">
+        <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-8">
+                <Icon name="diversity_3" className="text-primary text-4xl" />
+                <span className="font-display font-medium text-2xl tracking-tight text-primary-onContainer">PortafolioIA</span>
             </div>
+            <h2 className="text-4xl font-display font-normal text-primary-onContainer max-w-md leading-tight animate-fade-in">
+                {isRecruiter 
+                    ? "Find the perfect match with AI-driven insights." 
+                    : "Showcase your potential, not just your resume."}
+            </h2>
+        </div>
 
-            <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-12">
-                     <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${isRecruiter ? 'from-indigo-500 to-cyan-400' : 'from-cyan-400 to-indigo-600'} flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]`}>
-                        <span className="material-symbols-outlined text-white text-xl">deployed_code</span>
-                     </div>
-                     <div className="flex items-baseline gap-2">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">AnPortafolioIA</h1>
-                        <span className="text-[10px] font-bold bg-white/10 px-2 py-0.5 rounded-full text-white/70 border border-white/5 uppercase tracking-wider">v0.5.0 Beta</span>
-                     </div>
+        {/* Abstract shapes */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-white/20 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] bg-primary/10 rounded-full blur-2xl"></div>
+
+        <div className="relative z-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="flex gap-4 mb-4">
+                <div className="flex -space-x-4">
+                    {[1,2,3,4].map(i => (
+                        <div key={i} className="w-10 h-10 rounded-full border-2 border-primary-container bg-surface flex items-center justify-center overflow-hidden">
+                             <img src={`https://i.pravatar.cc/150?u=${i+10 + (isRecruiter ? 50 : 0)}`} alt="User" className="w-full h-full object-cover" />
+                        </div>
+                    ))}
                 </div>
-
-                <h2 className="text-5xl xl:text-6xl font-bold text-white leading-tight mb-6 neon-text-glow">
-                    {isRecruiter ? 'Discover Top' : 'Future of'} <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white">
-                        {isRecruiter ? 'Talent Instantly' : 'Hiring is Here'}
-                    </span>
-                </h2>
-                
-                <p className="text-slate-400 text-lg leading-relaxed max-w-md mb-8 font-light">
-                    {isRecruiter 
-                        ? "AI-powered candidate screening, immersive portfolio matching, and automated interview simulations."
-                        : "Practice interviews with lifelike AI avatars, build a showcase portfolio, and get discovered by top tech companies."}
-                </p>
-
-                <div className="glass-panel inline-flex items-center gap-4 p-3 rounded-2xl pr-8 border border-slate-700/50">
-                    <div className="flex -space-x-3">
-                         {[1,2,3].map(i => (
-                             <img key={i} src={`https://picsum.photos/40/40?random=${i+10}`} className="w-10 h-10 rounded-full border-2 border-[#020408]" alt="User" />
-                         ))}
-                    </div>
-                    <div>
-                        <p className="text-white font-bold">{isRecruiter ? '500+ Companies' : '10k+ Candidates'}</p>
-                        <p className="text-slate-400 text-xs">{isRecruiter ? 'Hiring now' : 'Hired this month'}</p>
-                    </div>
+                <div className="flex flex-col justify-center">
+                    <span className="text-sm font-bold text-primary-onContainer">2k+ {isRecruiter ? 'Candidates' : 'Professionals'}</span>
+                    <span className="text-xs text-primary-onContainer/70">Joined this week</span>
                 </div>
             </div>
         </div>
+      </div>
 
-        {/* Right Side - Form */}
-        <div className="w-full lg:w-7/12 flex flex-col items-center justify-center p-6 relative">
-            <button 
-                onClick={() => onNavigate('landing')} 
-                className="absolute top-8 right-8 text-slate-400 hover:text-white flex items-center gap-2 transition-colors z-50"
-            >
-                <span className="material-symbols-outlined">close</span>
-            </button>
+      {/* Right Panel - Auth Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
+        <Card variant="elevated" className="w-full max-w-[420px] bg-[var(--md-sys-color-background)] animate-fade-scale">
             
-            <div className="w-full max-w-[420px]">
-                <div className="glass-panel p-8 md:p-10 rounded-3xl w-full border border-slate-700/50 shadow-2xl relative overflow-hidden">
-                    {/* Inner Glow */}
-                    <div className={`absolute top-0 right-0 w-64 h-64 ${isRecruiter ? 'bg-indigo-500/10' : 'bg-cyan-500/10'} blur-[80px] rounded-full pointer-events-none`}></div>
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
+                <Icon name="diversity_3" className="text-primary text-3xl" />
+                <span className="font-display font-medium text-xl tracking-tight">PortafolioIA</span>
+            </div>
 
-                    <div className="relative z-10 flex items-center gap-2 mb-2">
-                        {isRecruiter && <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/30">Recruiter Access</span>}
-                        {userType === 'candidate' && <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-wider border border-cyan-500/30">Candidate Access</span>}
-                    </div>
-
-                    <h2 className="text-3xl font-bold text-white mb-2 relative z-10">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-                    <p className="text-slate-400 mb-8 relative z-10 text-sm">
-                        {isLogin 
-                            ? "Log in to continue." 
-                            : (isRecruiter ? "Join the AI recruitment revolution." : "Join the AI-powered recruitment revolution.")}
-                    </p>
-
-                    <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1">{isRecruiter ? 'Work Email' : 'Email'}</label>
-                            <input 
-                                type="email" 
-                                defaultValue={isRecruiter ? "recruiter@company.com" : "test@test.com"}
-                                className={`w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-${primaryColor}-500 focus:ring-1 focus:ring-${primaryColor}-500 transition-all text-sm`}
-                                placeholder="name@work-email.com"
-                            />
-                        </div>
-                        
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1">Password</label>
-                            <div className="relative">
-                                <input 
-                                    type="password" 
-                                    className={`w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-${primaryColor}-500 focus:ring-1 focus:ring-${primaryColor}-500 transition-all text-sm`}
-                                    placeholder={isLogin ? "Enter your password" : "Create a strong password"}
-                                />
-                                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg cursor-pointer hover:text-white">visibility</span>
-                            </div>
-                            {!isLogin && <p className="text-[10px] text-slate-500 mt-1 ml-1">Min. 8 characters</p>}
-                        </div>
-
-                        <button 
-                            type="submit" 
-                            className={`w-full h-12 mt-6 rounded-xl border border-${primaryColor}-500/50 text-white font-bold ${glowClass} transition-all transform active:scale-95 bg-[#0a101f] relative overflow-hidden group`}
-                        >
-                            <div className={`absolute inset-0 bg-gradient-to-r from-${primaryColor}-500/20 to-${secondaryColor}-500/20 opacity-100 group-hover:opacity-80 transition-opacity`}></div>
-                            <span className="relative z-10">{isLogin ? 'Log In' : (isRecruiter ? 'Start Hiring' : 'Sign Up')}</span>
-                        </button>
-                    </form>
-
-                    <p className="text-center mt-6 text-slate-500 text-xs">
-                        by signing up, you agree to our <a href="#" className="text-slate-400 hover:text-white underline">Terms</a> and <a href="#" className="text-slate-400 hover:text-white underline">Privacy Policy</a>.
-                    </p>
+            <div className="mb-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container text-secondary-onContainer text-xs font-bold mb-3">
+                    <Icon name={isRecruiter ? 'business_center' : 'person'} size="sm" />
+                    {isRecruiter ? 'Recruiter Portal' : 'Candidate Portal'}
                 </div>
-                
-                <p className="text-center mt-8 text-slate-500 text-sm">
-                    {isLogin ? "Don't have an account? " : "Already have an account? "}
-                    <button onClick={handleToggle} className={`text-${primaryColor}-400 hover:text-${primaryColor}-300 font-bold ml-1`}>
-                        {isLogin ? 'Sign Up' : 'Log In'}
+                <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
+                    {isLogin ? 'Welcome back' : 'Get started'}
+                </h1>
+                <p className="text-outline text-base">
+                    {isLogin 
+                        ? `Sign in to your ${isRecruiter ? 'company' : 'professional'} account` 
+                        : `Create your ${isRecruiter ? 'company' : 'professional'} profile`
+                    }
+                </p>
+            </div>
+
+            {/* Social Login */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                <Button variant="outlined" fullWidth className="gap-2">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                    Google
+                </Button>
+                <Button variant="outlined" fullWidth className="gap-2">
+                    <img src="https://www.svgrepo.com/show/448234/linkedin.svg" className="w-5 h-5" alt="LinkedIn" />
+                    LinkedIn
+                </Button>
+            </div>
+
+            <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-outline-variant"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-[var(--md-sys-color-background)] px-2 text-outline">Or continue with email</span>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <Input 
+                    id="email"
+                    label="Email or Username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    error={errors.email}
+                    startIcon="mail"
+                />
+
+                <Input 
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    label="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    error={errors.password}
+                    startIcon="lock"
+                    endIcon={showPassword ? "visibility_off" : "visibility"}
+                    onEndIconClick={() => setShowPassword(!showPassword)}
+                />
+
+                {isLogin && (
+                    <div className="flex justify-end">
+                        <Button variant="text" size="sm" type="button" className="px-0">
+                            Forgot password?
+                        </Button>
+                    </div>
+                )}
+
+                <Button 
+                    type="submit" 
+                    variant="filled"
+                    fullWidth
+                    loading={isLoading}
+                    className="mt-2"
+                >
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                </Button>
+            </form>
+
+            {/* Toggle Login/Signup */}
+            <div className="mt-8 text-center">
+                <p className="text-sm text-outline">
+                    {isLogin ? "Don't have an account?" : "Already have an account?"}
+                    <button 
+                        onClick={handleToggle}
+                        className="ml-2 text-primary font-medium hover:underline focus:outline-none"
+                    >
+                        {isLogin ? 'Sign up' : 'Log in'}
                     </button>
                 </p>
             </div>
-        </div>
+
+            {/* Demo Bypass - Para desarrollo y pruebas rápidas */}
+            <div className="mt-8 pt-6 border-t border-outline-variant/50">
+                <Button 
+                    variant="text" 
+                    fullWidth 
+                    onClick={handleDemoLogin}
+                    icon="play_circle"
+                    className="uppercase tracking-wider font-bold"
+                >
+                    Skip Login (Demo Mode)
+                </Button>
+            </div>
+
+            <Button 
+                variant="text" 
+                fullWidth 
+                onClick={() => onNavigate('landing')}
+                icon="arrow_back"
+                size="sm"
+                className="mt-2 text-outline"
+            >
+                Back to Home
+            </Button>
+
+        </Card>
+      </div>
     </div>
   );
 };

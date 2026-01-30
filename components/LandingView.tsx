@@ -1,7 +1,9 @@
 import React from 'react';
-import { FloatingNode } from './FloatingNode';
 import { AvatarScanner } from './AvatarScanner';
 import { ViewState } from '../types';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { Icon } from './ui/Icon';
 
 interface LandingViewProps {
   onNavigate: (view: ViewState) => void;
@@ -9,138 +11,115 @@ interface LandingViewProps {
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   return (
-    <main className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen overflow-x-hidden p-4 lg:overflow-hidden">
+    <div className="flex flex-col min-h-screen text-[var(--md-sys-color-on-background)]">
       
-      {/* Version Label */}
-      <div className="fixed bottom-4 right-4 z-50 text-[10px] font-mono text-slate-500 opacity-60 bg-black/20 px-2 py-1 rounded-md border border-white/5">
-        v0.5.0 Beta
-      </div>
-
-      <div className="relative w-full max-w-7xl h-full flex flex-col lg:flex-row items-center justify-center">
-        {/* Central Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-full z-0 pointer-events-none"></div>
-
-        {/* Recruiter Access Button */}
-        <button 
+      {/* Top App Bar */}
+      <header className="sticky top-0 z-50 bg-[var(--md-sys-color-background)]/90 backdrop-blur-sm border-b border-outline-variant/20 px-4 py-3 md:px-8 flex items-center justify-between transition-colors">
+        <div className="flex items-center gap-2">
+          <Icon name="diversity_3" className="text-primary text-3xl" />
+          <span className="font-display font-medium text-xl tracking-tight">PortafolioIA</span>
+        </div>
+        
+        <div className="flex items-center gap-2 md:gap-4">
+          <Button 
+            variant="outlined" 
             onClick={() => onNavigate('auth-recruiter')}
-            className="absolute top-6 right-6 lg:top-10 lg:right-10 z-50 px-5 py-2.5 rounded-full bg-slate-900/50 hover:bg-indigo-900/30 border border-slate-700/50 hover:border-indigo-500/50 text-slate-400 hover:text-indigo-300 font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 backdrop-blur-md group"
-        >
-            <span className="material-symbols-outlined text-lg group-hover:text-indigo-400">business_center</span>
-            For Companies
-        </button>
-
-        {/* Mobile Spacer to push avatar up */}
-        <div className="h-12 lg:hidden"></div>
-
-        <AvatarScanner />
-
-        {/* Desktop Floating Nodes - Absolute Positioning */}
-        <div className="hidden lg:block">
-            <FloatingNode 
-              title="Experience"
-              subtitle="Senior Product Designer"
-              detail="TechFlow Systems • 4 Years"
-              icon="work"
-              position="top-[25%] left-[5%] xl:left-[18%]"
-              delay="0.5s"
-              type="cyan"
-              align="left"
-            />
-
-            <FloatingNode 
-              title="Key Skills"
-              subtitle=""
-              detail=""
-              icon="psychology"
-              position="top-[20%] right-[5%] xl:right-[18%]"
-              delay="1.5s"
-              type="indigo"
-              align="right"
-              tags={['React', 'WebGL', 'Three.js', 'UI/UX']}
-            />
-
-            <FloatingNode 
-              title="Education"
-              subtitle="M.S. Comp. Science"
-              detail="Stanford University • 2021"
-              icon="school"
-              position="bottom-[25%] left-[8%] xl:left-[20%]"
-              delay="2.5s"
-              type="cyan"
-              align="left"
-            />
-
-            <FloatingNode 
-              title="Achievements"
-              subtitle="Awwwards SOTD x3"
-              detail="Best Innovation 2023"
-              icon="trophy"
-              position="bottom-[30%] right-[8%] xl:right-[20%]"
-              delay="1.0s"
-              type="indigo"
-              align="right"
-            />
-        </div>
-
-        {/* Mobile Info Grid - Static Layout */}
-        <div className="lg:hidden grid grid-cols-2 gap-3 w-full max-w-md mt-8 animate-fade-in relative z-20">
-             <div className="glass-panel p-3 rounded-xl border border-cyan-500/30">
-                 <div className="flex items-center gap-2 mb-1">
-                     <span className="material-symbols-outlined text-cyan-400 text-lg">work</span>
-                     <span className="text-xs font-bold text-cyan-400 uppercase">Experience</span>
-                 </div>
-                 <p className="text-white text-xs font-bold">Senior Designer</p>
-                 <p className="text-slate-400 text-[10px]">TechFlow • 4 Years</p>
-             </div>
-             <div className="glass-panel p-3 rounded-xl border border-indigo-500/30">
-                 <div className="flex items-center gap-2 mb-1">
-                     <span className="material-symbols-outlined text-indigo-400 text-lg">psychology</span>
-                     <span className="text-xs font-bold text-indigo-400 uppercase">Skills</span>
-                 </div>
-                 <div className="flex flex-wrap gap-1">
-                     {['React', 'UX', 'AI'].map(t => (
-                         <span key={t} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-[9px] text-indigo-200">{t}</span>
-                     ))}
-                 </div>
-             </div>
-             <div className="glass-panel p-3 rounded-xl border border-cyan-500/30">
-                 <div className="flex items-center gap-2 mb-1">
-                     <span className="material-symbols-outlined text-cyan-400 text-lg">school</span>
-                     <span className="text-xs font-bold text-cyan-400 uppercase">Education</span>
-                 </div>
-                 <p className="text-white text-xs font-bold">M.S. CS</p>
-                 <p className="text-slate-400 text-[10px]">Stanford '21</p>
-             </div>
-             <div className="glass-panel p-3 rounded-xl border border-indigo-500/30">
-                 <div className="flex items-center gap-2 mb-1">
-                     <span className="material-symbols-outlined text-indigo-400 text-lg">trophy</span>
-                     <span className="text-xs font-bold text-indigo-400 uppercase">Awards</span>
-                 </div>
-                 <p className="text-white text-xs font-bold">Best Innovation</p>
-                 <p className="text-slate-400 text-[10px]">2023 Winner</p>
-             </div>
-        </div>
-      </div>
-
-      <nav className="fixed bottom-8 lg:absolute lg:bottom-12 z-50 animate-fade-in w-full flex justify-center px-4 pointer-events-none">
-          <button 
-            onClick={() => onNavigate('auth-candidate')}
-            className="pointer-events-auto group relative px-6 py-3 lg:px-8 lg:py-4 bg-slate-900/80 hover:bg-slate-800/90 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-4 lg:gap-5 transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(34,211,238,0.2)] shadow-2xl"
+            className="hidden md:inline-flex"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            
-            <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-600 flex items-center justify-center shadow-lg group-hover:shadow-cyan-500/50 transition-all">
-                <span className="material-symbols-outlined text-white text-xl lg:text-3xl">rocket_launch</span>
+            For Companies
+          </Button>
+          <Button 
+            variant="filled" 
+            onClick={() => onNavigate('auth-candidate')}
+          >
+            Sign In
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 flex flex-col">
+        
+        {/* Hero Section */}
+        <section className="px-4 md:px-8 py-12 md:py-24 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          
+          <div className="flex flex-col gap-6 items-start animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container text-primary-onContainer text-sm font-medium">
+              <Icon name="auto_awesome" size="sm" />
+              <span>New AI Features Available</span>
             </div>
             
-            <div className="flex flex-col items-start text-left mr-1 lg:mr-2">
-              <span className="text-white font-bold text-sm lg:text-lg leading-none mb-0.5 lg:mb-1">Start Career Journey</span>
-              <span className="text-cyan-400 text-[10px] lg:text-xs font-bold uppercase tracking-widest">Build your AI Portfolio</span>
-            </div>
+            <h1 className="font-display text-4xl md:text-6xl font-normal leading-[1.1] text-[var(--md-sys-color-on-background)]">
+              The future of hiring is <span className="text-primary font-medium">human-centric</span>.
+            </h1>
             
-            <span className="material-symbols-outlined text-slate-400 group-hover:text-white transition-colors group-hover:translate-x-1 text-lg lg:text-2xl">arrow_forward</span>
-          </button>
-      </nav>
-    </main>
+            <p className="text-lg text-outline leading-relaxed max-w-lg">
+              Automated candidate matching, immersive portfolio showcases, and unbiased AI screening tools designed for modern recruitment.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto pt-4">
+              <Button 
+                size="lg" 
+                variant="filled" 
+                onClick={() => onNavigate('auth-candidate')}
+                endIcon="arrow_forward"
+              >
+                Get Started
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outlined"
+                onClick={() => window.open('https://ai.google.dev/', '_blank')}
+                icon="play_circle"
+              >
+                Watch Demo
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-center lg:justify-end items-center relative animate-fade-scale">
+            <div className="relative z-10">
+                <AvatarScanner />
+            </div>
+            {/* Abstract clean decoration */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-surface-variant rounded-full opacity-50 z-0 blur-3xl"></div>
+          </div>
+
+        </section>
+
+        {/* Features Section */}
+        <section className="bg-surface-variant dark:bg-surface-darkVariant py-20 px-4 md:px-8 rounded-t-[32px] mt-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-16">
+              <h2 className="font-display text-3xl md:text-4xl font-normal mb-4">Designed for efficiency</h2>
+              <p className="text-outline text-lg">Streamline your hiring process with tools built on Material Design principles.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { icon: 'smart_toy', title: 'AI Analysis', desc: 'Instant profile matching using Gemini Pro models.' },
+                { icon: 'verified', title: 'Verified Skills', desc: 'Automated technical assessments and skill validation.' },
+                { icon: 'lock', title: 'Secure Data', desc: 'Enterprise-grade security with Firestore encryption.' }
+              ].map((feature, i) => (
+                <Card key={i} variant="elevated" hoverable className="bg-[var(--md-sys-color-background)]">
+                  <div className="w-12 h-12 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center mb-6">
+                    <Icon name={feature.icon} size="lg" />
+                  </div>
+                  <h3 className="font-display text-xl font-medium mb-2">{feature.title}</h3>
+                  <p className="text-outline leading-relaxed">{feature.desc}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer className="py-6 text-center text-outline text-sm">
+        <p>© 2024 AnPortafolioIA. All rights reserved.</p>
+        <button onClick={() => onNavigate('design-system')} className="mt-2 text-xs hover:text-primary opacity-50 hover:opacity-100 transition-opacity">
+            Internal Design System
+        </button>
+      </footer>
+    </div>
   );
 };

@@ -73,76 +73,132 @@ export const AITrainingView: React.FC<AITrainingViewProps> = ({ onBack, onComple
   }, [progress, onComplete]);
 
   return (
-    <div className="w-full flex flex-col lg:flex-row gap-8 animate-fade-in relative pb-10">
+    <div className="w-full flex flex-col lg:flex-row gap-8 animate-fade-in relative pb-4 h-full">
         
         {/* LEFT: Visualizer */}
-        <div className="flex flex-col items-center justify-center shrink-0">
-            <div className="relative w-28 h-28 lg:w-56 lg:h-56 flex items-center justify-center">
-                <div className={`absolute inset-0 border border-cyan-500/20 rounded-full border-dashed ${isTraining ? 'animate-spin' : 'animate-spin-slow'}`}></div>
-                <div className={`absolute inset-6 rounded-full bg-gradient-to-br from-cyan-600 to-indigo-500 blur-lg opacity-40 ${isTraining ? 'animate-pulse' : ''}`}></div>
-                <div className="relative z-10 flex flex-col items-center">
-                    <span className="material-symbols-outlined text-3xl lg:text-5xl text-white">school</span>
-                    {isTraining && <span className="text-lg lg:text-xl font-bold text-white mt-1">{progress}%</span>}
+        <div 
+            className="flex flex-col items-center justify-center shrink-0 lg:w-1/3 bg-[var(--md-sys-color-background)] rounded-[24px] p-8 border border-outline-variant/30 shadow-sm"
+            role="region" 
+            aria-label="Training Status Visualizer"
+        >
+            <div className="relative w-40 h-40 flex items-center justify-center mb-6">
+                {/* Outer Ring */}
+                <div className={`absolute inset-0 rounded-full border-4 border-dashed border-primary/20 ${isTraining ? 'animate-spin-slow' : ''}`}></div>
+                
+                {/* Inner Pulse */}
+                <div className={`absolute inset-4 rounded-full bg-primary/5 ${isTraining ? 'animate-pulse' : ''}`}></div>
+                
+                {/* Icon */}
+                <div className="relative z-10 flex flex-col items-center justify-center bg-primary-container w-24 h-24 rounded-full text-primary-onContainer shadow-elevation-1">
+                    <span className="material-symbols-outlined text-4xl" aria-hidden="true">school</span>
+                    {isTraining && (
+                        <span 
+                            className="absolute -bottom-8 text-lg font-bold text-primary"
+                            role="progressbar" 
+                            aria-valuenow={progress} 
+                            aria-valuemin={0} 
+                            aria-valuemax={100}
+                        >
+                            {progress}%
+                        </span>
+                    )}
                 </div>
             </div>
-            <div className="mt-4 text-center">
-                <h3 className="text-base lg:text-xl font-bold text-white">{statusText}</h3>
-                <p className="text-slate-500 text-[10px] lg:text-xs mt-1">Specialized Career & Profile Optimization</p>
+            
+            <div className="text-center max-w-xs" aria-live="polite">
+                <h3 className="text-xl font-display font-medium text-[var(--md-sys-color-on-background)] mb-2">{statusText}</h3>
+                <p className="text-sm text-outline">
+                    {isTraining 
+                        ? "Please wait while we calibrate your personal agent..." 
+                        : "Customize how the AI analyzes your profile and prepares you for interviews."}
+                </p>
             </div>
         </div>
 
         {/* RIGHT: Controls */}
-        <div className={`flex-1 flex flex-col gap-6 transition-all duration-500 ${isTraining ? 'opacity-30 pointer-events-none' : ''}`}>
+        <div className={`flex-1 flex flex-col gap-6 transition-all duration-500 overflow-y-auto pr-2 custom-scrollbar ${isTraining ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
             
-            <div className="space-y-6">
-                <div>
-                    <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                        <span>Feedback Style: {strictnessValue < 40 ? 'Encouraging' : (strictnessValue > 80 ? 'Ruthless' : 'Balanced')}</span>
-                        <span className="text-cyan-400">{strictnessValue}% Intensity</span>
+            <div className="bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-primary" aria-hidden="true">tune</span>
+                        <h4 className="font-medium text-[var(--md-sys-color-on-background)]" id="intensity-label">Feedback Intensity</h4>
                     </div>
-                    <input type="range" min="0" max="100" value={strictnessValue} onChange={(e) => setStrictnessValue(parseInt(e.target.value))} className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
-                    <p className="text-[10px] text-slate-500 mt-2">
-                        Adjusts how critically the AI reviews your Experience, Projects, and Certifications.
-                    </p>
+                    <span className="text-sm font-bold text-primary bg-primary-container px-3 py-1 rounded-full">
+                        {strictnessValue}%
+                    </span>
                 </div>
+                
+                <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={strictnessValue}
+                    aria-labelledby="intensity-label" 
+                    aria-valuetext={`${strictnessValue}% intensity`}
+                    onChange={(e) => setStrictnessValue(parseInt(e.target.value))} 
+                    className="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary hover:accent-primary-hover mb-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" 
+                />
+                
+                <div className="flex justify-between text-xs text-outline font-medium uppercase tracking-wider" aria-hidden="true">
+                    <span>Encouraging</span>
+                    <span>Balanced</span>
+                    <span>Critical</span>
+                </div>
+                <p className="text-xs text-outline mt-3 leading-relaxed">
+                    Higher intensity means the AI will be more critical of gaps in your experience and demand more quantifiable metrics.
+                </p>
+            </div>
 
-                <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4">Coaching Expertise</label>
-                    <div className="grid grid-cols-2 gap-2">
-                        {coachingStyles.map((trait) => (
+            <div className="bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 shadow-sm flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-secondary" aria-hidden="true">psychology</span>
+                    <h4 className="font-medium text-[var(--md-sys-color-on-background)]">Coaching Persona</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="group" aria-label="Select Coaching Styles">
+                    {coachingStyles.map((trait) => {
+                        const isSelected = selectedTraits.includes(trait.id);
+                        return (
                             <button 
                                 key={trait.id} 
-                                onClick={() => handleTraitToggle(trait.id)} 
-                                className={`p-3 rounded-xl border flex items-center gap-3 transition-all text-left group ${
-                                    selectedTraits.includes(trait.id) 
-                                    ? 'bg-indigo-500/10 border-indigo-500/50 text-white' 
-                                    : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'
+                                onClick={() => handleTraitToggle(trait.id)}
+                                aria-pressed={isSelected}
+                                className={`p-4 rounded-[16px] border flex items-start gap-3 transition-all text-left group relative overflow-hidden focus-visible:ring-2 focus-visible:ring-secondary focus-visible:outline-none ${
+                                    isSelected 
+                                    ? 'bg-secondary-container border-secondary-container text-secondary-onContainer shadow-sm' 
+                                    : 'bg-surface-variant/30 border-outline-variant/50 text-[var(--md-sys-color-on-background)] hover:bg-surface-variant hover:border-outline-variant'
                                 }`}
                             >
-                                <span className={`material-symbols-outlined text-lg ${selectedTraits.includes(trait.id) ? 'text-cyan-400' : 'text-slate-600'}`}>{trait.icon}</span>
-                                <div>
-                                    <span className="text-xs font-bold block">{trait.id}</span>
-                                    <span className="text-[9px] opacity-70">{trait.desc}</span>
+                                <span className={`material-symbols-outlined text-2xl ${isSelected ? 'text-secondary-onContainer' : 'text-outline group-hover:text-primary'}`} aria-hidden="true">
+                                    {trait.icon}
+                                </span>
+                                <div className="z-10">
+                                    <span className="text-sm font-bold block mb-0.5">{trait.id}</span>
+                                    <span className={`text-xs ${isSelected ? 'text-secondary-onContainer/80' : 'text-outline'}`}>{trait.desc}</span>
                                 </div>
+                                {isSelected && (
+                                    <span className="absolute top-2 right-2 text-secondary-onContainer/20 material-symbols-outlined" aria-hidden="true">check_circle</span>
+                                )}
                             </button>
-                        ))}
-                    </div>
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center gap-3 pt-6 border-t border-slate-800 mt-4">
+            <div className="flex items-center gap-4 mt-auto pt-2">
                 {!isDashboard && (
-                    <button onClick={onBack} className="px-5 py-3 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800 transition-colors">
+                    <button onClick={onBack} className="px-6 py-3 rounded-full border border-outline text-primary font-medium text-sm hover:bg-surface-variant transition-colors focus-visible:ring-2 focus-visible:ring-primary">
                         Back
                     </button>
                 )}
                 <button 
                     onClick={handleStartTraining} 
-                    className="flex-1 py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-bold text-sm shadow-xl shadow-cyan-900/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 h-12 rounded-full bg-primary text-white hover:bg-primary-hover shadow-elevation-1 hover:shadow-elevation-2 transition-all font-medium text-sm flex items-center justify-center gap-2 state-layer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
                 >
                     {isTraining ? 'Configuring Coach...' : (isDashboard ? 'Update Coach Settings' : 'Initialize Career Coach')}
-                    <span className="material-symbols-outlined text-base">rocket_launch</span>
+                    {!isTraining && <span className="material-symbols-outlined text-lg" aria-hidden="true">auto_awesome</span>}
                 </button>
             </div>
         </div>

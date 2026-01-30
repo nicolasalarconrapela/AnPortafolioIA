@@ -5,6 +5,7 @@ import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
 import { RecruiterFlow } from './components/RecruiterFlow';
+import { DesignSystemView } from './components/DesignSystemView';
 import { ViewState } from './types';
 
 const App: React.FC = () => {
@@ -17,6 +18,10 @@ const App: React.FC = () => {
       
       {view === 'landing' && (
         <LandingView onNavigate={(nextView) => setView(nextView)} />
+      )}
+      
+      {view === 'design-system' && (
+        <DesignSystemView onBack={() => setView('landing')} />
       )}
       
       {view === 'auth-candidate' && (

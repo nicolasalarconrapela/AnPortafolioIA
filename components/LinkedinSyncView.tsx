@@ -15,11 +15,9 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
 
     useEffect(() => {
         try {
-            // Try to parse as JSON (for CSVs or OCR Structure)
             const json = JSON.parse(data);
             if (Array.isArray(json) && json.length > 0) {
                 setParsedData(json);
-                // Check if it's our OCR structure (has region & content)
                 if (json[0].region && json[0].content) {
                     setIsOCRData(true);
                 } else {
@@ -33,51 +31,42 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
         }
     }, [data]);
 
-    if (!data) return <div className="text-slate-500 text-sm italic p-4 flex items-center justify-center h-full border border-dashed border-slate-700 rounded-xl">No content to display.</div>;
+    if (!data) return <div className="text-outline text-sm italic p-8 flex items-center justify-center h-full">No content to display.</div>;
 
     const renderOCRStructure = () => (
-        <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 space-y-4">
-            <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Document Structure Analysis</h4>
+        <div className="overflow-auto custom-scrollbar p-6 space-y-4 h-full bg-surface-variant/30">
+            <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-widest">Document Analysis</h4>
                 <div className="flex gap-2 text-[10px]">
-                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Header</span>
-                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/20 text-green-300 border border-green-500/30"><span className="w-2 h-2 rounded-full bg-green-500"></span> Table</span>
-                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Text</span>
+                    <span className="px-2 py-1 rounded bg-secondary-container text-secondary-onContainer">Header</span>
+                    <span className="px-2 py-1 rounded bg-green-100 text-green-800">Table</span>
+                    <span className="px-2 py-1 rounded bg-surface-variant text-outline border border-outline-variant">Text</span>
                 </div>
             </div>
             
             {parsedData?.map((block: any, i: number) => {
-                let borderColor = 'border-slate-700';
-                let regionBadge = 'bg-slate-700 text-slate-300';
+                let badgeClass = 'bg-surface-variant text-outline border-outline-variant';
+                let borderClass = 'border-transparent';
                 
                 if (block.region === 'Header') {
-                    borderColor = 'border-purple-500/50';
-                    regionBadge = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+                    badgeClass = 'bg-secondary-container text-secondary-onContainer';
+                    borderClass = 'border-secondary-container';
                 } else if (block.region === 'Table') {
-                    borderColor = 'border-green-500/50';
-                    regionBadge = 'bg-green-500/20 text-green-300 border-green-500/30';
-                } else if (block.region === 'List') {
-                    borderColor = 'border-orange-500/50';
-                    regionBadge = 'bg-orange-500/20 text-orange-300 border-orange-500/30';
-                } else {
-                    borderColor = 'border-blue-500/20';
-                    regionBadge = 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+                    badgeClass = 'bg-green-100 text-green-800';
+                    borderClass = 'border-green-200';
                 }
 
                 return (
-                    <div key={i} className={`p-4 rounded-xl border ${borderColor} bg-[#0a101f]/50 relative group transition-all hover:bg-[#0a101f]`}>
+                    <div key={i} className={`p-4 rounded-xl border bg-[var(--md-sys-color-background)] ${borderClass} shadow-sm`}>
                         <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${regionBadge} uppercase tracking-wider`}>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${badgeClass}`}>
                                 {block.region}
                             </span>
-                            <span className="text-[10px] text-slate-500 font-mono">Conf: {block.confidence}%</span>
+                            <span className="text-[10px] text-outline font-mono">Conf: {block.confidence}%</span>
                         </div>
-                        <p className={`text-sm text-slate-300 whitespace-pre-wrap leading-relaxed ${block.region === 'Header' ? 'font-bold text-white text-base' : ''} ${block.region === 'Table' ? 'font-mono text-xs' : ''}`}>
+                        <p className={`text-sm text-[var(--md-sys-color-on-background)] whitespace-pre-wrap leading-relaxed ${block.region === 'Header' ? 'font-medium' : ''} ${block.region === 'Table' ? 'font-mono text-xs' : ''}`}>
                             {block.content}
                         </p>
-                        
-                        {/* Simulated BBox visualization on hover */}
-                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-dashed group-hover:border-cyan-500/20 pointer-events-none rounded-xl"></div>
                     </div>
                 );
             })}
@@ -85,53 +74,53 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
     );
 
     return (
-        <div className="flex flex-col h-full min-h-[300px]">
+        <div className="flex flex-col h-full min-h-[400px]">
             {/* View Toggles */}
-            <div className="flex items-center gap-2 mb-4 px-4 pt-2">
+            <div className="flex items-center gap-2 mb-4 px-1">
                 <button 
                     onClick={() => setViewMode('visual')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'visual' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-2 border ${viewMode === 'visual' ? 'bg-secondary-container text-secondary-onContainer border-secondary-container' : 'border-outline-variant text-outline hover:bg-surface-variant'}`}
                 >
                     <span className="material-symbols-outlined text-sm">wysiwyg</span>
-                    {isOCRData ? 'Structure View' : 'Table View'}
+                    {isOCRData ? 'Structure' : 'Table'}
                 </button>
                 <button 
                     onClick={() => setViewMode('raw')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'raw' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-slate-400 hover:text-white'}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-2 border ${viewMode === 'raw' ? 'bg-secondary-container text-secondary-onContainer border-secondary-container' : 'border-outline-variant text-outline hover:bg-surface-variant'}`}
                 >
                     <span className="material-symbols-outlined text-sm">code</span>
-                    Raw Data
+                    Raw JSON
                 </button>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 bg-[#050b14]/50 rounded-xl border border-slate-700/50 overflow-hidden mx-4 mb-4 relative">
+            <div className="flex-1 bg-[var(--md-sys-color-background)] rounded-xl border border-outline-variant/50 overflow-hidden relative">
                 {viewMode === 'raw' ? (
-                     <div className="absolute inset-0 overflow-auto custom-scrollbar p-4">
-                        <pre className="text-xs text-slate-400 font-mono whitespace-pre-wrap break-words leading-relaxed">
+                     <div className="absolute inset-0 overflow-auto custom-scrollbar p-4 bg-surface-variant/30">
+                        <pre className="text-xs text-[var(--md-sys-color-on-background)] font-mono whitespace-pre-wrap break-words">
                             {data}
                         </pre>
                     </div>
                 ) : isOCRData ? (
                     renderOCRStructure()
                 ) : parsedData ? (
-                    // TABLE VIEW (For CSVs)
+                    // TABLE VIEW
                     <div className="absolute inset-0 overflow-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-800/80 sticky top-0 z-10 backdrop-blur-sm">
+                            <thead className="bg-surface-variant sticky top-0 z-10">
                                 <tr>
                                     {Object.keys(parsedData[0]).map((key) => (
-                                        <th key={key} className="p-3 text-xs font-bold text-slate-300 uppercase tracking-wider border-b border-slate-700 whitespace-nowrap">
+                                        <th key={key} className="p-3 text-xs font-bold text-outline uppercase tracking-wider border-b border-outline-variant whitespace-nowrap">
                                             {key}
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800/50">
+                            <tbody className="divide-y divide-outline-variant/30">
                                 {parsedData.map((row, i) => (
-                                    <tr key={i} className="hover:bg-slate-800/30 transition-colors">
+                                    <tr key={i} className="hover:bg-surface-variant/50 transition-colors">
                                         {Object.values(row).map((val: any, j) => (
-                                            <td key={j} className="p-3 text-xs text-slate-400 border-r border-slate-800/30 last:border-0 truncate max-w-[200px]" title={String(val)}>
+                                            <td key={j} className="p-3 text-xs text-[var(--md-sys-color-on-background)] border-r border-outline-variant/10 last:border-0 truncate max-w-[200px]" title={String(val)}>
                                                 {String(val)}
                                             </td>
                                         ))}
@@ -141,8 +130,8 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
                         </table>
                     </div>
                 ) : (
-                    // PLAIN TEXT VIEW (Fallback)
-                    <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 lg:p-8 bg-white/5">
+                    // PLAIN TEXT FALLBACK
+                    <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 bg-surface-variant/10">
                         <div className="max-w-2xl mx-auto space-y-4">
                             {data.split('\n').map((line, i) => {
                                 const cleanLine = line.trim();
@@ -152,17 +141,17 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
                                 const isHeader = cleanLine.length < 50 && cleanLine.toUpperCase() === cleanLine && !isBullet;
                                 
                                 if (isHeader) {
-                                    return <h4 key={i} className="text-white font-bold text-sm mt-4 pb-1 border-b border-slate-700">{cleanLine}</h4>;
+                                    return <h4 key={i} className="font-bold text-sm mt-4 pb-1 border-b border-outline-variant text-primary">{cleanLine}</h4>;
                                 }
                                 if (isBullet) {
                                     return (
-                                        <div key={i} className="flex gap-2 text-xs text-slate-300 ml-4">
-                                            <span className="text-cyan-500 mt-0.5">•</span>
+                                        <div key={i} className="flex gap-2 text-xs text-[var(--md-sys-color-on-background)] ml-4">
+                                            <span className="text-primary mt-0.5">•</span>
                                             <span>{cleanLine.replace(/^[•-]\s*/, '')}</span>
                                         </div>
                                     );
                                 }
-                                return <p key={i} className="text-xs text-slate-400 leading-relaxed">{cleanLine}</p>;
+                                return <p key={i} className="text-xs text-[var(--md-sys-color-on-background)] leading-relaxed">{cleanLine}</p>;
                             })}
                         </div>
                     </div>
@@ -177,22 +166,19 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
 export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onComplete, uploadedFiles }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
-  
   const currentFile = uploadedFiles[activeFileIndex];
 
-  // Cleaned chat history
   const [messages, setMessages] = useState([
     { id: 1, sender: 'ai', text: "System initialized. Analyzing your documents...", time: 'Now' },
   ]);
 
-  // Update chat when data arrives
   useEffect(() => {
       if(uploadedFiles.length > 0) {
           const type = currentFile?.type;
           let msg = `${uploadedFiles.length} file(s) loaded.`;
           
           if (type === 'PNG' || type === 'JPG' || type === 'JPEG') {
-              msg = "Image Layout Analysis complete. I've segmented headers, tables, and text regions similar to PP-Structure.";
+              msg = "Image Layout Analysis complete. I've segmented headers, tables, and text regions.";
           } else {
               msg = `Context switched to "${currentFile?.name}". Data parsing successful.`;
           }
@@ -213,173 +199,108 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
   }, [messages]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-5 animate-fade-in text-left relative min-h-full">
+    <div className="w-full h-full flex flex-col gap-6 animate-fade-in relative min-h-full p-6">
         
-        {/* Header Profile Card - Generic */}
-        <div className="flex flex-col md:flex-row gap-5 p-5 rounded-2xl bg-[#0a101f]/80 border border-slate-700/50 items-start md:items-center shadow-lg shrink-0">
-             {/* Avatar & Info */}
+        {/* Header Profile Card */}
+        <div className="flex flex-col md:flex-row gap-5 p-6 rounded-[24px] bg-surface-variant border border-outline-variant/30 items-start md:items-center shadow-sm shrink-0">
              <div className="relative shrink-0">
-                 <div className="w-20 h-20 rounded-2xl bg-slate-800 border border-slate-600 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-4xl text-slate-500">folder_open</span>
+                 <div className="w-14 h-14 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl">folder_open</span>
                  </div>
              </div>
              <div className="flex-1 min-w-0">
-                 <h2 className="text-xl md:text-2xl font-bold text-white leading-tight truncate">
-                     {uploadedFiles.length > 1 ? "Multiple Documents" : (currentFile?.name || "Imported Data")}
+                 <h2 className="text-xl font-display font-medium text-[var(--md-sys-color-on-background)] truncate">
+                     {uploadedFiles.length > 1 ? "Imported Documents" : (currentFile?.name || "Imported Data")}
                  </h2>
-                 <p className="text-cyan-400 font-medium text-sm mt-0.5">
+                 <p className="text-outline text-sm mt-0.5">
                     {uploadedFiles.length} File{uploadedFiles.length !== 1 ? 's' : ''} Processed
-                    <span className="text-slate-600 mx-1">|</span> 
-                    <span className="text-slate-300">Structure Extracted</span>
                  </p>
-                 <div className="flex flex-wrap gap-4 mt-2 text-[11px] text-slate-400 font-medium">
-                     <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">verified_user</span> Secure Batch Upload</span>
-                 </div>
              </div>
-             <div className="flex flex-col items-end gap-2 shrink-0 w-full md:w-auto">
-                 <div className="flex gap-2 w-full md:w-auto">
-                    <button onClick={onBack} className="flex-1 md:flex-none px-4 py-2 border border-slate-700 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-white">
-                        <span className="material-symbols-outlined text-sm">upload_file</span>
-                        Manage Files
-                    </button>
-                    <button className="flex-1 md:flex-none px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-default">
-                        <span className="material-symbols-outlined text-sm text-green-400">check_circle</span>
-                        Parsing Complete
-                    </button>
-                 </div>
+             <div className="flex gap-2">
+                <button onClick={onBack} className="h-10 px-4 rounded-full border border-outline text-primary font-medium text-sm hover:bg-white transition-colors">
+                    Manage Files
+                </button>
              </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 overflow-visible lg:overflow-hidden">
-            {/* Left Column: Data Review / Extracted Text */}
-            <div className="flex-1 overflow-visible lg:overflow-y-auto pr-0 lg:pr-2 custom-scrollbar space-y-5 flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
+            
+            {/* Left Column: Data Review */}
+            <div className="flex-1 flex flex-col bg-[var(--md-sys-color-background)] border border-outline-variant/30 rounded-[24px] overflow-hidden shadow-sm">
+                {/* Tabs */}
+                <div className="flex overflow-x-auto no-scrollbar border-b border-outline-variant/30 bg-surface-variant/30 p-2 gap-2">
+                    {uploadedFiles.map((file, idx) => (
+                        <button 
+                            key={idx}
+                            onClick={() => setActiveFileIndex(idx)}
+                            className={`px-4 py-2 text-xs font-medium rounded-full flex items-center gap-2 whitespace-nowrap transition-all ${
+                                activeFileIndex === idx 
+                                ? 'bg-primary text-white shadow-elevation-1' 
+                                : 'text-outline hover:bg-surface-variant'
+                            }`}
+                        >
+                            <span className="material-symbols-outlined text-base">
+                                {['PNG', 'JPG', 'JPEG'].includes(file.type) ? 'image' : 'description'}
+                            </span>
+                            {file.name}
+                        </button>
+                    ))}
+                </div>
                 
-                {/* Data Visualizer Container */}
-                <div className="bg-[#0f1623] border border-slate-700/50 rounded-2xl overflow-hidden flex flex-col min-h-[400px] h-full">
-                    
-                    {/* File Tabs / Selector */}
-                    <div className="flex overflow-x-auto no-scrollbar border-b border-slate-700/50 bg-slate-900/30">
-                        {uploadedFiles.map((file, idx) => (
-                            <button 
-                                key={idx}
-                                onClick={() => setActiveFileIndex(idx)}
-                                className={`px-4 py-3 text-xs font-bold border-r border-slate-700/50 flex items-center gap-2 whitespace-nowrap transition-all ${
-                                    activeFileIndex === idx 
-                                    ? 'bg-slate-800 text-cyan-400 shadow-[inset_0_-2px_0_#22d3ee]' 
-                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
-                                }`}
-                            >
-                                <span className="material-symbols-outlined text-sm">
-                                    {['PNG', 'JPG', 'JPEG'].includes(file.type) ? 'image_search' : (file.type === 'PDF' ? 'picture_as_pdf' : 'description')}
-                                </span>
-                                {file.name}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
-                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                            <span className="material-symbols-outlined text-cyan-400 text-base">description</span> 
-                            {currentFile?.name}
-                        </h3>
-                        {currentFile && (
-                             <span className="text-[10px] text-slate-500 bg-slate-800 px-2 py-1 rounded-md border border-slate-700">
-                                {currentFile.size > 1024 ? `${(currentFile.size / 1024).toFixed(1)} KB` : `${currentFile.size} B`}
-                             </span>
-                        )}
-                    </div>
-                    
+                <div className="flex-1 p-4 overflow-hidden">
                     <DataVisualizer data={currentFile?.data || ""} />
                 </div>
             </div>
 
-            {/* Right Column: Chat (TalentFlow AI) */}
-            <div className="w-full lg:w-[380px] flex flex-col bg-[#0a101f] border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl shrink-0 h-[500px] lg:h-auto ring-1 ring-white/5 order-first lg:order-last">
-                {/* Chat Header */}
-                <div className="px-5 py-4 border-b border-slate-800 bg-[#0f1623] flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.3)]">
-                                <span className="material-symbols-outlined text-white text-xl">smart_toy</span>
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-[#0f1623] rounded-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-bold text-white leading-none">TalentFlow AI</h4>
-                            <span className="text-[10px] text-slate-400 font-medium tracking-wide">Interviewing Agent</span>
-                        </div>
+            {/* Right Column: Chat */}
+            <div className="w-full lg:w-[360px] flex flex-col bg-surface-variant rounded-[24px] overflow-hidden border border-outline-variant/30 shrink-0 h-[500px] lg:h-auto">
+                <div className="p-4 border-b border-outline-variant/30 bg-[var(--md-sys-color-background)] flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-secondary-container text-secondary-onContainer flex items-center justify-center">
+                        <span className="material-symbols-outlined text-xl">smart_toy</span>
                     </div>
-                    <button className="w-8 h-8 rounded-full hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-                        <span className="material-symbols-outlined text-lg">more_vert</span>
-                    </button>
-                </div>
-
-                {/* Context Bar */}
-                <div className="px-4 py-2 bg-[#0a101f]/80 backdrop-blur-sm border-b border-slate-800 flex items-center justify-between z-10">
-                    <div className="flex items-center gap-2 text-[10px] text-purple-400 font-bold bg-purple-500/10 px-2 py-1 rounded-md border border-purple-500/20">
-                        <span className="material-symbols-outlined text-xs">target</span>
-                        Focus: {currentFile?.name.substring(0, 15)}...
+                    <div>
+                        <h4 className="text-sm font-bold text-[var(--md-sys-color-on-background)]">Talent Agent</h4>
+                        <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span> Online
+                        </span>
                     </div>
                 </div>
 
-                {/* Chat Messages */}
-                <div ref={scrollRef} className="flex-1 p-4 space-y-5 overflow-y-auto bg-slate-900/20 scroll-smooth min-h-[300px]">
+                <div ref={scrollRef} className="flex-1 p-4 space-y-4 overflow-y-auto">
                     {messages.map((msg) => (
-                         <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-sm mt-1 ${
-                                msg.sender === 'ai' 
-                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' 
-                                : 'border-slate-600 overflow-hidden bg-slate-800'
-                            }`}>
-                                {msg.sender === 'ai' 
-                                    ? <span className="material-symbols-outlined text-xs">smart_toy</span> 
-                                    : <span className="material-symbols-outlined text-xs text-slate-400">person</span>
-                                }
-                            </div>
-                            <div className={`max-w-[85%] flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                                <div className={`px-4 py-3 text-xs leading-relaxed shadow-md ${
-                                    msg.sender === 'ai' 
-                                    ? 'bg-[#1e293b] text-slate-200 rounded-2xl rounded-tl-sm border border-slate-700/50' 
-                                    : 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm bg-gradient-to-br from-indigo-600 to-indigo-700 border border-indigo-500/50'
-                                }`}>
-                                    {typeof msg.text === 'string' ? msg.text : msg.text}
+                         <div key={msg.id} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                            {msg.sender === 'ai' && (
+                                <div className="w-8 h-8 rounded-full bg-secondary-container text-secondary-onContainer flex items-center justify-center shrink-0 text-xs font-bold">
+                                    AI
                                 </div>
-                                <span className="text-[9px] text-slate-500 mt-1.5 px-1 font-medium">{msg.time}</span>
+                            )}
+                            <div className={`max-w-[85%] p-3 rounded-2xl text-xs leading-relaxed ${
+                                msg.sender === 'ai' 
+                                ? 'bg-[var(--md-sys-color-background)] text-[var(--md-sys-color-on-background)] rounded-tl-none shadow-sm' 
+                                : 'bg-primary text-white rounded-tr-none shadow-sm'
+                            }`}>
+                                {msg.text}
                             </div>
                         </div>
                     ))}
-                    
                 </div>
 
-                {/* Input Area */}
-                <div className="p-4 border-t border-slate-700/50 bg-[#0f1623] relative z-20">
-                    {/* Glowing Input */}
-                    <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl opacity-20 group-hover:opacity-50 transition duration-500 blur"></div>
-                        <div className="relative bg-[#0a101f] rounded-xl p-1.5 flex gap-2 border border-slate-700 group-hover:border-slate-600 transition-colors">
-                            <input 
-                                className="bg-transparent flex-1 text-xs text-white px-3 py-2.5 outline-none placeholder-slate-500 font-medium" 
-                                placeholder="Type your answer..." 
-                            />
-                            <div className="flex items-center gap-1 pr-1">
-                                 <button className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800 active:scale-95"><span className="material-symbols-outlined text-lg">mic</span></button>
-                                 <button className="p-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-white transition-colors shadow-lg shadow-indigo-500/20 active:scale-95"><span className="material-symbols-outlined text-lg">send</span></button>
-                            </div>
-                        </div>
+                <div className="p-3 bg-[var(--md-sys-color-background)] border-t border-outline-variant/30">
+                    <div className="relative">
+                        <input 
+                            className="w-full bg-surface-variant text-sm px-4 py-3 rounded-full outline-none focus:ring-2 focus:ring-primary/20 transition-all pr-10 text-[var(--md-sys-color-on-background)] placeholder-outline" 
+                            placeholder="Ask about this document..." 
+                        />
+                        <button className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors">
+                            <span className="material-symbols-outlined text-base block">arrow_upward</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Footer actions */}
-        <div className="pt-4 border-t border-slate-700/50 flex items-center justify-between shrink-0">
-             <button onClick={onBack} className="text-slate-500 hover:text-white text-xs font-bold px-4 py-2 transition-colors flex items-center gap-2 group">
-                <span className="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                Back
-             </button>
-             <button onClick={onComplete} className="px-6 py-2.5 bg-white text-black font-bold text-sm rounded-xl hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2 active:scale-95">
+        <div className="pt-4 border-t border-outline-variant/30 flex justify-end shrink-0">
+             <button onClick={onComplete} className="h-12 px-8 bg-primary text-white font-medium text-sm rounded-full hover:bg-primary-hover shadow-elevation-1 transition-all flex items-center gap-2 state-layer">
                 Confirm & Continue
                 <span className="material-symbols-outlined text-lg">arrow_forward</span>
              </button>
