@@ -46,16 +46,21 @@ function AvatarPage() {
     // Efecto para cargar automáticamente la primera animación una vez disponible la lista y el engine
     useEffect(() => {
         if (animations.length > 0 && engineRef.current && (status === 'ready' || status === 'rendering')) {
-            // Si no tenemos ninguna seleccionada todavía, cogemos la primera
+            // Si no tenemos ninguna seleccionada todavía, auto-cargamos una IDLE
             if (!selectedAnim) {
-                const firstAnim = animations[0];
-                console.log('[AvatarPage] Auto-loading first animation:', firstAnim.name);
-                setSelectedAnim(firstAnim.path);
+                // Buscamos una que parezca 'Idle' o 'Standing'
+                const idleAnim = animations.find(a =>
+                    /standing/i.test(a.name) || /idle/i.test(a.name) || /greeting/i.test(a.name)
+                ) || animations[0]; // Fallback a la primera
 
-                // Darle un pequeño respiro al render inicial
-                setTimeout(() => {
-                    engineRef.current?.loadAnimationFromUrl(firstAnim.path);
-                }, 100);
+                if (idleAnim) {
+                    console.log('[AvatarPage] Auto-loading DEFAULT animation:', idleAnim.name);
+                    setSelectedAnim(idleAnim.path);
+
+                    setTimeout(() => {
+                        engineRef.current?.loadAnimationFromUrl(idleAnim.path);
+                    }, 100);
+                }
             }
         }
     }, [animations, status, selectedAnim]);

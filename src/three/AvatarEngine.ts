@@ -380,30 +380,39 @@ export class AvatarEngine {
   }
 
   private faceCameraSetup(root: THREE.Object3D): void {
-    root.position.x = 0; // Centrado en X? main.js decia 10? no, main.js tenia x=10 en faceCamera pero luego el frameUpperBody mueve la camara.
-    // Voy a ponerlo en 0,0,0 por simplicidad y que frameUpperBody ajuste la CAMARA.
+    // Centrado absoluto
     root.position.set(0, 0, 0);
-    // main.js hacía rotación Y 32 deg
-    root.rotation.set(0, THREE.MathUtils.degToRad(32), 0);
+
+    // Mirar de frente: sin yaw (rotación Y)
+    root.rotation.set(0, 0, 0);
+
+    // Si el GLB viene con una rotación base rara, puedes preferir:
+     root.quaternion.identity();
   }
 
-  // --- Frame Camera Logic (Intervista) ---
+  // --- Frame Camera Logic (Entrevista / Plano Medio) ---
+  // AQUI SE CONFIGURA LA POSICIÓN Y ZOOM DE LA CÁMARA
 
   public frameUpperBody(): void {
     if (!this.camera || !this.currentAvatar) return;
 
-    const root = this.currentAvatar;
+    // CONFIGURACIÓN DE CÁMARA
+    // Ajusta estos valores para cambiar el encuadre
     const opts = {
-      targetHeightRatio: 0.79,
-      heightPortion: 0.55,
-      distanceMultiplier: 1.5,
-      offsetY: -0.01,
-      minDistance: 1.6,
+      targetHeightRatio: 0.79, // Altura del punto de mira (0.79 = ~pecho/cuello)
+      heightPortion: 0.55, // Qué porción del avatar debe ocupar la pantalla (menor = más zoom)
+
+      distanceMultiplier: 1.5, // Multiplicador de distancia final (mayor = más lejos)
+      offsetY: -0.01, // Ajuste fino vertical (+ sube cámara, - baja cámara)
+
+      // Límites de seguridad
+      minDistance: 1.0,
       maxDistance: 6.0,
-      nearFactor: 0.02,
       minNear: 0.01,
+      nearFactor: 0.02,
     };
 
+    const root = this.currentAvatar;
     root.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(root);
     if (box.isEmpty()) return;
