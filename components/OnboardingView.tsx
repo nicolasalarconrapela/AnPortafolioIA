@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { LinkedinSyncView } from './LinkedinSyncView';
 import { AITrainingView } from './AITrainingView';
 import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
@@ -60,6 +60,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSteps = STEPS_CONFIG.filter(step => selectedItems.includes(step.id));
   const currentStep = activeSteps[currentStepIndex];
+
+  // Ref for the steps container to manage scrolling
+  const stepsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to active step on mobile
+  useEffect(() => {
+      if (stepsContainerRef.current) {
+          const activeElement = stepsContainerRef.current.children[currentStepIndex] as HTMLElement;
+          if (activeElement) {
+              activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+      }
+  }, [currentStepIndex]);
 
   const handleNext = () => {
       if (currentStepIndex < activeSteps.length - 1) {
@@ -198,34 +211,49 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   return (
     <div className="relative w-full min-h-screen bg-surface-variant dark:bg-surface-darkVariant flex flex-col md:flex-row">
         
-        {/* Sidebar Desktop */}
-        <div className="w-full md:w-80 bg-[var(--md-sys-color-background)] border-b md:border-r border-outline-variant p-6 flex flex-col shrink-0">
-            <div className="flex items-center gap-2 mb-8">
-                <span className="material-symbols-outlined text-primary text-2xl">diversity_3</span>
-                <span className="font-display font-medium text-lg">Setup Guide</span>
+        {/* Sidebar Desktop / Topbar Mobile */}
+        <div className="w-full md:w-80 bg-[var(--md-sys-color-background)] border-b md:border-b-0 md:border-r border-outline-variant p-4 md:p-6 flex flex-col shrink-0 md:h-screen z-10 shadow-sm md:shadow-none">
+            <div className="flex items-center justify-between md:justify-start gap-2 mb-2 md:mb-8">
+                <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl md:text-2xl">diversity_3</span>
+                    <span className="font-display font-medium text-base md:text-lg">Setup Guide</span>
+                </div>
+                {/* Mobile exit button shows here for easy access */}
+                <button onClick={onExit} className="md:hidden p-2 text-outline hover:text-primary active:bg-surface-variant rounded-full transition-colors">
+                    <span className="material-symbols-outlined">close</span>
+                </button>
             </div>
             
-            <div className="space-y-2">
-                {activeSteps.map((step, index) => {
-                    const isActive = index === currentStepIndex;
-                    const isCompleted = index < currentStepIndex;
-                    
-                    return (
-                        <div key={step.id} className={`flex items-center gap-4 p-3 rounded-2xl transition-colors ${isActive ? 'bg-secondary-container text-secondary-onContainer' : 'text-outline hover:bg-surface-variant'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isActive ? 'bg-secondary-onContainer text-secondary-container' : (isCompleted ? 'bg-green-100 text-green-700' : 'bg-surface-variant text-outline')}`}>
-                                {isCompleted ? <span className="material-symbols-outlined text-sm">check</span> : <span className="material-symbols-outlined text-sm">{step.icon}</span>}
+            {/* Steps Container - Improved Mobile Scrolling */}
+            <div className="relative md:flex-1">
+                {/* Scroll Mask for Mobile */}
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--md-sys-color-background)] to-transparent pointer-events-none md:hidden z-10" />
+                
+                <div 
+                    ref={stepsContainerRef}
+                    className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide snap-x snap-mandatory pr-8 md:pr-0"
+                >
+                    {activeSteps.map((step, index) => {
+                        const isActive = index === currentStepIndex;
+                        const isCompleted = index < currentStepIndex;
+                        
+                        return (
+                            <div key={step.id} className={`snap-center flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-full md:rounded-2xl transition-colors whitespace-nowrap md:whitespace-normal shrink-0 border border-transparent ${isActive ? 'bg-secondary-container text-secondary-onContainer border-secondary-container/50' : 'text-outline hover:bg-surface-variant'}`}>
+                                <div className={`w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-secondary-onContainer text-secondary-container' : (isCompleted ? 'bg-green-100 text-green-700' : 'bg-surface-variant text-outline')}`}>
+                                    {isCompleted ? <span className="material-symbols-outlined text-sm font-bold">check</span> : <span className="material-symbols-outlined text-sm">{step.icon}</span>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className={`text-xs md:text-sm font-bold ${isActive ? 'text-secondary-onContainer' : 'text-[var(--md-sys-color-on-background)]'}`}>{step.title}</span>
+                                    <span className="hidden md:inline text-xs opacity-80">{step.desc}</span>
+                                </div>
                             </div>
-                            <div className="flex flex-col">
-                                <span className={`text-sm font-bold ${isActive ? 'text-secondary-onContainer' : 'text-[var(--md-sys-color-on-background)]'}`}>{step.title}</span>
-                                <span className="text-xs opacity-80">{step.desc}</span>
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
 
-            <div className="mt-auto pt-6">
-                <button onClick={onExit} className="flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors">
+            <div className="mt-auto pt-6 hidden md:block">
+                <button onClick={onExit} className="flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors hover:translate-x-1 duration-200">
                     <span className="material-symbols-outlined text-lg">arrow_back</span>
                     Cancel Setup
                 </button>
@@ -233,12 +261,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto">
+        <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto h-[calc(100dvh-80px)] md:h-screen">
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
                 
                 {currentStep?.id === 'import' && (
                     !dataLoaded ? (
-                        <div className="flex-1 flex flex-col items-center justify-center animate-fade-in bg-[var(--md-sys-color-background)] rounded-[28px] p-8 shadow-sm border border-outline-variant/30">
+                        <div className="flex-1 flex flex-col items-center justify-center animate-fade-in bg-[var(--md-sys-color-background)] rounded-[24px] md:rounded-[28px] p-6 md:p-8 shadow-sm border border-outline-variant/30">
                             {isUploading ? (
                                 <div className="text-center w-full max-w-sm">
                                     <div className="w-16 h-16 rounded-full bg-secondary-container border-4 border-[var(--md-sys-color-background)] mx-auto mb-6 flex items-center justify-center relative">
@@ -250,11 +278,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                 </div>
                             ) : (
                                 <>
-                                    <div className="w-16 h-16 rounded-2xl bg-primary-container text-primary-onContainer flex items-center justify-center mb-6">
-                                        <span className="material-symbols-outlined text-3xl">cloud_upload</span>
+                                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary-container text-primary-onContainer flex items-center justify-center mb-4 md:mb-6">
+                                        <span className="material-symbols-outlined text-2xl md:text-3xl">cloud_upload</span>
                                     </div>
-                                    <h2 className="text-3xl font-display font-normal text-[var(--md-sys-color-on-background)] mb-3 text-center">Import Profile Data</h2>
-                                    <p className="text-outline text-center max-w-md mb-8">
+                                    <h2 className="text-2xl md:text-3xl font-display font-normal text-[var(--md-sys-color-on-background)] mb-2 md:mb-3 text-center">Import Profile Data</h2>
+                                    <p className="text-outline text-center text-sm md:text-base max-w-md mb-6 md:mb-8">
                                         Upload your Resume (PDF), Portfolio (PDF/Images), or LinkedIn Archive (ZIP).
                                     </p>
                                     
@@ -264,7 +292,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         onDragLeave={handleDragLeave}
                                         onDrop={handleDrop}
                                         onClick={() => fileInputRef.current?.click()}
-                                        className={`w-full max-w-xl p-10 rounded-[24px] border border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative ${
+                                        className={`w-full max-w-xl p-6 md:p-10 rounded-[20px] md:rounded-[24px] border border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative ${
                                             isDragging 
                                             ? 'border-primary bg-primary-container/30' 
                                             : 'border-outline-variant hover:border-primary hover:bg-surface-variant'
@@ -272,15 +300,15 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                     >
                                         <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.csv,.zip,.txt,.png,.jpg,.jpeg" onChange={handleFileInputChange} />
                                         
-                                        <div className={`w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110' : 'group-hover:scale-110'}`}>
-                                            <span className="material-symbols-outlined text-2xl text-primary">upload_file</span>
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface-variant flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                            <span className="material-symbols-outlined text-xl md:text-2xl text-primary">upload_file</span>
                                         </div>
                                         
                                         <div className="text-center">
-                                            <h3 className="text-base font-medium text-[var(--md-sys-color-on-background)] mb-1">
+                                            <h3 className="text-sm md:text-base font-medium text-[var(--md-sys-color-on-background)] mb-1">
                                                 {isDragging ? 'Drop files here' : 'Click or Drag files here'}
                                             </h3>
-                                            <p className="text-xs text-outline">Max 15MB per file • PDF, DOCX, IMG, ZIP</p>
+                                            <p className="text-[10px] md:text-xs text-outline">Max 15MB per file • PDF, DOCX, IMG, ZIP</p>
                                         </div>
                                     </div>
 
@@ -294,21 +322,21 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                         </div>
                                     )}
 
-                                    <button onClick={handleNext} className="mt-8 text-primary font-medium text-sm hover:underline">
+                                    <button onClick={handleNext} className="mt-6 md:mt-8 text-primary font-medium text-sm hover:underline p-2">
                                         Skip this step
                                     </button>
                                 </>
                             )}
                         </div>
                     ) : (
-                        <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-sm border border-outline-variant/30 h-full overflow-hidden">
+                        <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-sm border border-outline-variant/30 h-full overflow-hidden flex flex-col">
                             <LinkedinSyncView onBack={() => { setDataLoaded(false); setUploadedFiles([]); }} onComplete={handleNext} uploadedFiles={uploadedFiles} />
                         </div>
                     )
                 )}
 
                 {currentStep?.id === 'ai' && (
-                    <div className="bg-[var(--md-sys-color-background)] rounded-[28px] p-8 shadow-sm border border-outline-variant/30 h-full overflow-auto">
+                    <div className="bg-[var(--md-sys-color-background)] rounded-[28px] p-4 md:p-8 shadow-sm border border-outline-variant/30 h-full overflow-auto">
                         <AITrainingView onBack={handleBack} onComplete={onComplete} />
                     </div>
                 )}

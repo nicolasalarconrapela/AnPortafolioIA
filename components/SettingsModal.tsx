@@ -24,19 +24,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
   return (
     <div 
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4 animate-fade-in"
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
         onKeyDown={handleKeyDown}
     >
-      <div className="bg-[var(--md-sys-color-background)] w-full max-w-5xl h-[85vh] rounded-[28px] shadow-elevation-3 flex flex-col md:flex-row overflow-hidden border border-outline-variant/20 animate-fade-scale">
+      {/* 
+         UX Stress Test Fix: 
+         - Mobile: w-full h-full (inset-0) to maximize space in landscape/keyboard scenarios.
+         - Desktop: max-w-5xl h-[85vh] rounded borders.
+      */}
+      <div className="bg-[var(--md-sys-color-background)] w-full h-full md:max-w-5xl md:h-[85vh] md:rounded-[28px] shadow-elevation-3 flex flex-col md:flex-row overflow-hidden border-none md:border border-outline-variant/20 animate-fade-scale">
         
         {/* Sidebar */}
-        <aside className="w-full md:w-72 bg-surface-variant/50 border-b md:border-b-0 md:border-r border-outline-variant/20 p-6 flex flex-col shrink-0">
-          <h2 id="settings-title" className="text-2xl font-display font-medium text-[var(--md-sys-color-on-background)] mb-8 px-2">Settings</h2>
+        <aside className="w-full md:w-72 bg-surface-variant/50 border-b md:border-b-0 md:border-r border-outline-variant/20 p-4 md:p-6 flex flex-col shrink-0">
+          <div className="flex items-center justify-between md:block mb-4 md:mb-8">
+             <h2 id="settings-title" className="text-xl md:text-2xl font-display font-medium text-[var(--md-sys-color-on-background)] px-2">Settings</h2>
+             {/* Mobile Close Button visible in header */}
+             <button onClick={onClose} className="md:hidden p-2 text-outline hover:text-primary">
+                <span className="material-symbols-outlined">close</span>
+             </button>
+          </div>
           
-          <nav role="tablist" aria-orientation="vertical" className="space-y-1 flex-1 overflow-y-auto">
+          <nav role="tablist" aria-orientation="vertical" className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -45,13 +56,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                 aria-selected={activeTab === tab.id}
                 aria-controls={`panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-4 px-4 py-3 rounded-full text-sm font-medium transition-all duration-200 state-layer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
+                className={`whitespace-nowrap flex-shrink-0 md:w-full flex items-center gap-2 md:gap-4 px-4 py-2 md:py-3 rounded-full text-sm font-medium transition-all duration-200 state-layer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   activeTab === tab.id
                     ? 'bg-secondary-container text-secondary-onContainer shadow-sm'
                     : 'text-outline hover:bg-surface-variant hover:text-[var(--md-sys-color-on-background)]'
                 }`}
               >
-                <span className={`material-symbols-outlined text-xl ${activeTab === tab.id ? 'fill-1' : ''}`} aria-hidden="true">
+                <span className={`material-symbols-outlined text-lg md:text-xl ${activeTab === tab.id ? 'fill-1' : ''}`} aria-hidden="true">
                   {tab.icon}
                 </span>
                 {tab.label}
@@ -59,16 +70,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
             ))}
           </nav>
 
-          <div className="mt-6 pt-6 border-t border-outline-variant/30 px-2">
+          <div className="hidden md:block mt-6 pt-6 border-t border-outline-variant/30 px-2">
             <p className="text-xs text-outline font-medium">AnPortafolioIA v0.5.0</p>
             <p className="text-[10px] text-outline/70 mt-1">Build 2024.05.12</p>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--md-sys-color-background)]">
-          {/* Header */}
-          <div className="h-16 flex items-center justify-between px-8 border-b border-outline-variant/20 shrink-0">
+        <main className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-[var(--md-sys-color-background)]">
+          {/* Desktop Header */}
+          <div className="hidden md:flex h-16 items-center justify-between px-8 border-b border-outline-variant/20 shrink-0">
             <h3 className="text-lg font-medium text-[var(--md-sys-color-on-background)] capitalize">
               {tabs.find(t => t.id === activeTab)?.label}
             </h3>
@@ -86,22 +97,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
             id={`panel-${activeTab}`}
             role="tabpanel"
             aria-labelledby={`tab-${activeTab}`}
-            className="flex-1 overflow-y-auto p-8 custom-scrollbar focus:outline-none"
+            className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar focus:outline-none"
             tabIndex={0}
           >
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl mx-auto pb-20 md:pb-0">
               
               {activeTab === 'general' && (
                 <div className="space-y-8 animate-fade-in">
                   <section>
                     <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Appearance</h4>
-                    <div className="bg-surface-variant/30 rounded-[20px] p-6 border border-outline-variant/30 space-y-6">
-                      <div className="flex items-center justify-between">
+                    <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                           <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Theme Mode</p>
                           <p className="text-sm text-outline">Adjust the interface brightness</p>
                         </div>
-                        <div className="flex bg-surface-variant rounded-full p-1" role="radiogroup" aria-label="Theme Selection">
+                        <div className="flex bg-surface-variant rounded-full p-1 self-start md:self-auto" role="radiogroup" aria-label="Theme Selection">
                           <button role="radio" aria-checked="true" className="px-4 py-1.5 rounded-full bg-[var(--md-sys-color-background)] shadow-sm text-xs font-bold text-[var(--md-sys-color-on-background)] transition-all">System</button>
                           <button role="radio" aria-checked="false" className="px-4 py-1.5 rounded-full text-xs font-medium text-outline hover:text-primary transition-all">Light</button>
                           <button role="radio" aria-checked="false" className="px-4 py-1.5 rounded-full text-xs font-medium text-outline hover:text-primary transition-all">Dark</button>
@@ -112,7 +123,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
                   <section>
                     <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Language & Region</h4>
-                    <div className="bg-surface-variant/30 rounded-[20px] p-6 border border-outline-variant/30 space-y-6">
+                    <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
                       <div className="flex flex-col gap-2">
                         <label htmlFor="lang-select" className="text-sm font-medium text-[var(--md-sys-color-on-background)]">Interface Language</label>
                         <select id="lang-select" className="w-full h-12 px-4 rounded-xl bg-[var(--md-sys-color-background)] border border-outline-variant text-sm focus:border-primary outline-none transition-shadow focus:ring-2 focus:ring-primary/20">
@@ -128,13 +139,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
               {activeTab === 'account' && (
                 <div className="space-y-8 animate-fade-in">
-                  <div className="flex items-center gap-6 mb-8">
-                    <div className="w-20 h-20 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-3xl font-bold shadow-sm" aria-hidden="true">
+                  <div className="flex items-center gap-4 md:gap-6 mb-8">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-2xl md:text-3xl font-bold shadow-sm shrink-0" aria-hidden="true">
                       A
                     </div>
-                    <div>
-                      <h4 className="text-xl font-display font-medium text-[var(--md-sys-color-on-background)]">Alex Morgan</h4>
-                      <p className="text-outline">alex.morgan@example.com</p>
+                    <div className="min-w-0">
+                      <h4 className="text-lg md:text-xl font-display font-medium text-[var(--md-sys-color-on-background)] truncate">Alex Morgan</h4>
+                      <p className="text-sm text-outline truncate">alex.morgan@example.com</p>
                       <button className="mt-2 text-sm text-primary font-medium hover:underline">Change Avatar</button>
                     </div>
                   </div>
@@ -160,13 +171,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                   <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Email Preferences</h4>
                   <div className="bg-surface-variant/30 rounded-[20px] divide-y divide-outline-variant/20 border border-outline-variant/30" role="group" aria-label="Email Notifications">
                     {['Job Alerts', 'Application Status Updates', 'New Message Notifications', 'Weekly Newsletter'].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-5 hover:bg-surface-variant/50 transition-colors">
-                        <label htmlFor={`notify-${i}`} className="text-sm font-medium text-[var(--md-sys-color-on-background)] cursor-pointer flex-1">{item}</label>
+                      <div key={i} className="flex items-center justify-between p-4 md:p-5 hover:bg-surface-variant/50 transition-colors">
+                        <label htmlFor={`notify-${i}`} className="text-sm font-medium text-[var(--md-sys-color-on-background)] cursor-pointer flex-1 mr-4">{item}</label>
                         <button 
                             id={`notify-${i}`}
                             role="switch"
                             aria-checked={i !== 3}
-                            className="relative inline-block w-12 h-6 rounded-full bg-secondary-container cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                            className="relative inline-block w-12 h-6 rounded-full bg-secondary-container cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none shrink-0"
                         >
                           <span className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-200 ${i === 3 ? 'translate-x-0 bg-outline' : 'translate-x-6'}`}></span>
                         </button>
@@ -196,9 +207,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
             </div>
           </div>
           
-          {/* Footer Actions (Only for form-based tabs) */}
+          {/* Footer Actions (Only for form-based tabs) - Sticky bottom on mobile */}
           {activeTab !== 'storage' && (
-            <div className="p-6 border-t border-outline-variant/20 bg-surface-variant/30 flex justify-end gap-4">
+            <div className="p-4 md:p-6 border-t border-outline-variant/20 bg-surface-variant/30 flex justify-end gap-4 shrink-0 safe-pb">
                 <button onClick={onClose} className="px-6 py-2 rounded-full text-sm font-medium text-outline hover:bg-surface-variant transition-colors focus-visible:ring-2 focus-visible:ring-primary active:scale-95">
                     Cancel
                 </button>

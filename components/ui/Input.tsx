@@ -35,7 +35,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         </div>
       )}
 
-      {/* Input Field */}
+      {/* Input Field 
+          UX Improvement: text-base on mobile prevents iOS zoom. text-sm on desktop increases information density.
+          Accessibility: Using focus-visible ring instead of just border color for better visibility.
+      */}
       <input
         ref={ref}
         id={inputId}
@@ -45,11 +48,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
         className={`
           peer w-full h-14 bg-surface rounded-[4px] border border-outline 
           text-[var(--md-sys-color-on-background)] placeholder-transparent 
-          focus:border-primary focus:border-2 focus:outline-none 
+          focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary
           disabled:bg-surface-variant/50 disabled:text-outline
-          transition-all pt-4 pb-1 px-4
+          transition-all pt-4 pb-1 px-4 text-base md:text-sm
           ${hasStartIcon ? 'pl-11' : ''}
-          ${error ? 'border-error focus:border-error text-error' : ''}
+          ${error ? 'border-error focus:border-error focus:ring-error text-error' : ''}
           ${className}
         `}
         {...props}
@@ -75,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           type="button"
           onClick={onEndIconClick}
           aria-label={onEndIconClick ? "Toggle action" : undefined}
-          className={`absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors ${!onEndIconClick ? 'pointer-events-none' : 'focus:outline-none focus:text-primary'}`}
+          className={`absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors rounded-full p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${!onEndIconClick ? 'pointer-events-none' : 'cursor-pointer'}`}
           tabIndex={onEndIconClick ? 0 : -1}
         >
           <Icon name={endIcon} size="md" />
