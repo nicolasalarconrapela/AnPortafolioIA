@@ -2,141 +2,15 @@
 <html lang="es">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-
-  <title>Avaturn + Three.js (Wave + JSON)</title>
-
-  <!-- Tipografía opcional -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,300&display=swap"
-    rel="stylesheet" />
-
-  <link href="./main.css" rel="stylesheet" />
-
-  <style>
-    /* Ajustes mínimos por si main.css no existe o para mejorar UX */
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      font-family: Roboto, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-      background: #e6e6e6;
-      overflow: hidden;
-    }
-
-    #container {
-      position: fixed;
-      inset: 0;
-    }
-
-    /* Panel de UI superpuesto */
-    .ui-panel {
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      padding: 10px 12px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      z-index: 10;
-    }
-
-    .ui-panel button {
-      border: 0;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      background: #111;
-      color: #fff;
-    }
-
-    .ui-panel button.secondary {
-      background: #ffffff;
-      color: #111;
-      border: 1px solid rgba(0, 0, 0, 0.15);
-    }
-
-    .ui-panel button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Avaturn container (si lo habilitas) */
-    #avaturn-sdk-container {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.65);
-      z-index: 20;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avatar Three.js + React</title>
 </head>
 
 <body>
-  <!-- Canvas three.js se inyecta en #container desde main.js -->
-  <div id="container"></div>
-
-  <!-- Panel de control -->
-  <div class="ui-panel">
-    <!-- MVP -->
-    <button id="buttonWave">Saludar 👋</button>
-
-    <!-- Grabación -->
-    <button id="buttonRecord" class="secondary">Record</button>
-    <button id="buttonStop" class="secondary">Stop</button>
-    <button id="buttonPlay" class="secondary">Play</button>
-
-    <!-- JSON -->
-    <button id="buttonSaveJson" class="secondary">Save JSON</button>
-    <button id="buttonLoadJson" class="secondary">Load JSON</button>
-    <input id="fileJson" type="file" accept="application/json" hidden />
-
-    <!-- Selector de Animaciones FBX -->
-    <label for="animationSelector" style="font-size: 14px; font-weight: 600;">Animación:</label>
-    <select id="animationSelector"
-      style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.2); font-size: 14px; cursor: pointer;">
-      <option value="">-- Seleccionar --</option>
-    </select>
-  </div>
-
-  <!-- ===========================
-         Avaturn SDK (opcional)
-         - Si lo quieres reactivar, descomenta este bloque
-         - main.js ya tiene openIframe/closeIframe preparados
-         =========================== -->
-
-  <!--
-    <div class="ui-panel" style="top: auto; bottom: 14px;">
-      <button id="buttonOpen">Open Avaturn</button>
-      <button id="buttonClose" class="secondary">Close Avaturn</button>
-    </div>
-
-    <div id="avaturn-sdk-container" hidden></div>
-    -->
-
-  <!-- Import maps polyfill (para navegadores sin soporte completo) -->
-  <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
-  <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/"
-        }
-      }
-    </script>
-
-  <script type="module" src="main.js"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
 </body>
 
 </html>

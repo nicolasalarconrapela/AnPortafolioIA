@@ -1,14 +1,14 @@
 [
   {
     "name": "Block With Rifle",
-    "path": "public/movements/Block With Rifle.fbx"
+    "path": "/movements/Block With Rifle.fbx"
   },
   {
     "name": "Hip Hop Dancing",
-    "path": "public/movements/Hip Hop Dancing.fbx"
+    "path": "/movements/Hip Hop Dancing.fbx"
   },
   {
-    "name": "standing",
-    "path": "public/movements/Standing Greeting.fbx"
+    "name": "Standing Greeting",
+    "path": "/movements/Standing Greeting.fbx"
   }
 ]
