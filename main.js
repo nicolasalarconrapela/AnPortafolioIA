@@ -131,12 +131,11 @@ function computeModelBaseY(root) {
 }
 
 function faceCamera(root) {
-  root.position.x = 0;
+  root.position.x = 10;
   root.position.z = 0;
   root.rotation.set(0, 0, 0);
+  root.rotation.y = THREE.MathUtils.degToRad(32);
 
-  // Si lo ves de espaldas, descomenta:
-  // root.rotation.y = Math.PI;
 }
 
 // ============================================================
@@ -607,13 +606,23 @@ function replaceAvatar(newAvatar) {
 
   // ✅ Auto-encuadre usando bounding box
   frameUpperBody(camera, currentAvatar, {
-    targetHeightRatio: 0.76,
-    heightPortion: 0.42,
-    distanceMultiplier: 1.0,
-    minDistance: 1.2,
-    maxDistance: 5.0,
-    nearFactor: 0.02,
-    minNear: 0.01,
+// Baja el punto de mira un pelín para que no corte la cabeza
+  targetHeightRatio: 0.79,
+
+  // Que el cálculo de distancia use un trozo mayor (más “torso visible”)
+  heightPortion: 0.55,
+
+  // Aléjate un poco
+  distanceMultiplier: 1.5,
+
+  // Sube muy poco el target si quieres (con UI arriba mejor NO subir)
+  offsetY: -0.01,
+
+  // Seguridad
+  minDistance: 1.6,
+  maxDistance: 6.0,
+  nearFactor: 0.02,
+  minNear: 0.01,
   });
 }
 
@@ -734,18 +743,6 @@ async function init() {
     await loadAnimation(AVAILABLE_ANIMATIONS[0].path);
   }
 
-  console.log(
-    [
-      "CONTROLES PUPPET:",
-      "- Click en un punto (marker) del esqueleto para seleccionar hueso",
-      "- R: modo ROTATE",
-      "- T: modo TRANSLATE",
-      "- L: alterna Local/World",
-      "- M: toggle markers",
-      "- K: toggle skeleton",
-      "- Esc: deseleccionar",
-    ].join("\n")
-  );
 
   animate();
 }
