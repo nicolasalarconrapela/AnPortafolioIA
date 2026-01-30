@@ -56,6 +56,29 @@ const puppet = {
 };
 
 // ============================================================
+// Animation Library
+// ============================================================
+// Se cargará dinámicamente desde public/movements.json
+let AVAILABLE_ANIMATIONS = [];
+
+let currentAnimationAction = null;
+
+// Cargar lista de animaciones disponibles
+async function loadAvailableAnimations() {
+  try {
+    const response = await fetch('public/movements.json');
+    if (!response.ok) {
+      console.warn('No se pudo cargar movements.json, usando lista vacía');
+      return;
+    }
+    AVAILABLE_ANIMATIONS = await response.json();
+    console.log(`📋 Cargadas ${AVAILABLE_ANIMATIONS.length} animaciones disponibles`);
+  } catch (err) {
+    console.warn('Error cargando movements.json:', err);
+  }
+}
+
+// ============================================================
 // Utils (easing)
 // ============================================================
 function easeInOutCubic(x) {
@@ -660,47 +683,6 @@ async function init() {
   const avatar = await loadAvatar("public/model.glb");
   replaceAvatar(avatar);
 
-  // 2. Cargar Animación (FBX) e integrarla
-  try {
-    const loader = new FBXLoader();
-    const animFbx = await loader.loadAsync("public/Block With Rifle.fbx");
-
-    if (animFbx.animations && animFbx.animations.length > 0) {
-      console.log("Animación FBX encontrada:", animFbx.animations[0].name);
-
-      // DEBUG: Ver nombres de huesos del avatar
-      const avatarBones = [];
-      avatar.traverse((o) => { if (o.isBone) avatarBones.push(o.name); });
-      console.log("Huesos del avatar:", avatarBones.slice(0, 10));
-
-      // DEBUG: Ver nombres de tracks originales
-      let clip = animFbx.animations[0];
-      console.log("Tracks originales (muestra):", clip.tracks.slice(0, 5).map(t => t.name));
-
-      // Retarget
-      clip = retargetAnimation(avatar, clip);
-      console.log("Tracks retargeteados (muestra):", clip.tracks.slice(0, 5).map(t => t.name));
-      console.log("Total tracks:", clip.tracks.length);
-      console.log("Todos los tracks retargeteados:", clip.tracks.map(t => t.name));
-
-      // Opcional: si la animación viene de Mixamo sin prefijo "mixamorig:" 
-      // y tu avatar SÍ lo tiene (o viceversa), a veces hay que renombrar tracks.
-      // Por ahora probamos directo:
-
-      // Limpiamos acción anterior (idle)
-      if (idleAction) idleAction.stop();
-
-      // Reproducir nueva
-      const action = mixer.clipAction(clip);
-      action.reset().play();
-
-      console.log("Reproduciendo animación del FBX en el avatar.");
-    } else {
-      console.warn("El FBX no tiene animaciones.");
-    }
-  } catch (err) {
-    console.warn("Error cargando animación FBX:", err);
-  }
 
   // Stats
   stats = new Stats();
@@ -708,7 +690,15 @@ async function init() {
 
   window.addEventListener("resize", onWindowResize);
 
+  // Cargar lista de animaciones disponibles
+  await loadAvailableAnimations();
+
   wireUI();
+
+  // 3. Cargar animación inicial si hay disponible
+  if (AVAILABLE_ANIMATIONS.length > 0) {
+    await loadAnimation(AVAILABLE_ANIMATIONS[0].path);
+  }
 
   console.log(
     [
@@ -750,6 +740,80 @@ function wireUI() {
   // (Opcional) Avaturn si lo reactivas en HTML
   wireClick("#buttonOpen", openIframe);
   wireClick("#buttonClose", closeIframe);
+
+  // Poblar selector de animaciones
+  populateAnimationSelector();
+}
+
+// ============================================================
+// Animation Loader
+// ============================================================
+function populateAnimationSelector() {
+  const selector = document.querySelector("#animationSelector");
+  if (!selector) {
+    console.warn("Falta #animationSelector en HTML");
+    return;
+  }
+
+  // Llenar opciones
+  AVAILABLE_ANIMATIONS.forEach((anim, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = anim.name;
+    selector.appendChild(option);
+  });
+
+  // Evento onChange
+  selector.addEventListener("change", async (e) => {
+    const index = parseInt(e.target.value);
+    if (isNaN(index) || index < 0 || index >= AVAILABLE_ANIMATIONS.length) {
+      console.log("Ninguna animación seleccionada");
+      return;
+    }
+
+    const animData = AVAILABLE_ANIMATIONS[index];
+    console.log(`Cargando animación: ${animData.name}`);
+    await loadAnimation(animData.path);
+  });
+}
+
+async function loadAnimation(fbxPath) {
+  if (!currentAvatar) {
+    console.warn("No hay avatar cargado para aplicar animación");
+    return;
+  }
+
+  try {
+    const loader = new FBXLoader();
+    const animFbx = await loader.loadAsync(fbxPath);
+
+    if (!animFbx.animations || animFbx.animations.length === 0) {
+      console.warn(`El FBX ${fbxPath} no contiene animaciones`);
+      return;
+    }
+
+    let clip = animFbx.animations[0];
+    console.log(`Animación encontrada: ${clip.name}`);
+
+    // Retarget
+    clip = retargetAnimation(currentAvatar, clip);
+
+    // Detener animación anterior
+    if (currentAnimationAction) {
+      currentAnimationAction.stop();
+    }
+    if (idleAction) {
+      idleAction.stop();
+    }
+
+    // Reproducir nueva
+    currentAnimationAction = mixer.clipAction(clip);
+    currentAnimationAction.reset().play();
+
+    console.log(`✅ Reproduciendo: ${clip.name}`);
+  } catch (err) {
+    console.error(`Error cargando animación desde ${fbxPath}:`, err);
+  }
 }
 
 // ============================================================

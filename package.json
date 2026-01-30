@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "movements": "node generate-movements.mjs"
+  },
   "dependencies": {
     "local-web-server": "^5.4.0"
   },
