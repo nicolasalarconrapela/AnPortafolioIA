@@ -27,14 +27,33 @@ export function initializeFirebaseAdmin() {
             throw new Error('Missing required Firebase environment variables: FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL');
         }
 
-        // Process private key: 
-        // 1. Remove surrounding quotes if present (sometimes .env parsers leave them)
-        // 2. Replace literal \n with actual newlines
+        // --- Private Key Sanitization ---
         let processedPrivateKey = privateKey.trim();
+
+        // 1. Remove surrounding quotes if present
         if (processedPrivateKey.startsWith('"') && processedPrivateKey.endsWith('"')) {
             processedPrivateKey = processedPrivateKey.slice(1, -1);
         }
+
+        // 2. Unescape newlines (convert literal \n to real newline)
         processedPrivateKey = processedPrivateKey.replace(/\\n/g, '\n');
+
+        // 3. Fix common copy-paste errors (missing dashes)
+        const BEGIN_HEADER = "-----BEGIN PRIVATE KEY-----";
+        const END_HEADER = "-----END PRIVATE KEY-----";
+
+        if (processedPrivateKey.startsWith("----BEGIN PRIVATE KEY")) {
+            console.warn("[WARN] Fixed malformed private key header (missing dash).");
+            processedPrivateKey = "-" + processedPrivateKey;
+        }
+
+        if (!processedPrivateKey.startsWith(BEGIN_HEADER)) {
+            // Try to find the header index if there is garbage before it
+            const startIndex = processedPrivateKey.indexOf(BEGIN_HEADER);
+            if (startIndex > 0) {
+                processedPrivateKey = processedPrivateKey.substring(startIndex);
+            }
+        }
 
         const credential = admin.credential.cert({
             projectId,
@@ -50,7 +69,9 @@ export function initializeFirebaseAdmin() {
         return { firestore };
     } catch (error) {
         console.error('[ERROR] Failed to initialize Firebase Admin:', error.message);
-        throw error;
+        // Do not re-throw here to allow server to start, but API calls will fail later.
+        // Re-throwing causes the whole backend to crash on startup.
+        // throw error; 
     }
 }
 
