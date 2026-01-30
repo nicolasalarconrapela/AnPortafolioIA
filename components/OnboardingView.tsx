@@ -32,35 +32,29 @@ const STEPS_CONFIG = [
     }
 ];
 
-// SECURITY CONSTANTS
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // Increased to 10MB to handle larger exports
-const MAX_TOTAL_FILES = 25; // Increased limit to handle full LinkedIn export (approx 18 files)
-
-// SECURITY STATUS MESSAGES
-const SCANNING_STEPS = [
-    "Verifying signatures...",
-    "Initializing secure parser...",
-    "Extracting layers...",
-    "Structuring data..."
+const KNOWN_LINKEDIN_NOISE_FILES = [
+    'Ad_Targeting.csv', 'Company Follows.csv', 'Connections.csv', 'Email Addresses.csv',
+    'guide_messages.csv', 'Learning.csv', 'learning_coach_messages.csv',
+    'learning_role_play_messages.csv', 'messages.csv', 'PhoneNumbers.csv',
+    'Registration.csv', 'Rich_Media.csv', 'SavedJobAlerts.csv'
 ];
+
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // Increased to 15MB
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit }) => {
   const [selectedItems] = useState<string[]>(['import', 'ai']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  
-  // Data State
   const [dataLoaded, setDataLoaded] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   
-  // File Upload States
+  // Upload State
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [scanStep, setScanStep] = useState(0);
-  const [processingFileIndex, setProcessingFileIndex] = useState(0);
-  const [totalFilesToProcess, setTotalFilesToProcess] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState("Ready");
+  const [progressPercent, setProgressPercent] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const activeSteps = STEPS_CONFIG.filter(step => selectedItems.includes(step.id));
   const currentStep = activeSteps[currentStepIndex];
 
@@ -75,365 +69,264 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const handleBack = () => {
       if (currentStep?.id === 'import' && dataLoaded) {
           setDataLoaded(false);
-          setUploadError(null);
           setUploadedFiles([]);
           return;
       }
-
-      if (currentStepIndex > 0) {
-          setCurrentStepIndex(prev => prev - 1);
-          if (activeSteps[currentStepIndex - 1]?.id === 'import') {
-              setDataLoaded(true);
-          }
-      }
+      if (currentStepIndex > 0) setCurrentStepIndex(prev => prev - 1);
   };
 
-  const handleStepClick = (index: number) => {
-      if (index < currentStepIndex) {
-          setCurrentStepIndex(index);
-          if (activeSteps[index].id === 'import') {
-              setDataLoaded(true);
-          }
-      }
-  };
-
-  /**
-   * SECURITY CHECK: VALIDATE MAGIC NUMBERS
-   */
-  const validateFileSignature = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = (e) => {
-            if (!e.target || !e.target.result) return resolve(false);
-            const arr = (new Uint8Array(e.target.result as ArrayBuffer)).subarray(0, 4);
-            let header = "";
-            for (let i = 0; i < arr.length; i++) {
-                // Pad with '0' to ensure we get '03' instead of '3' for byte values < 16
-                header += arr[i].toString(16).padStart(2, '0');
-            }
-            
-            // PDF: 25 50 44 46
-            if (header.startsWith('25504446')) return resolve(true);
-            // DOCX/ZIP: 50 4b 03 04
-            if (header.startsWith('504b0304')) return resolve(true);
-            // DOC: d0 cf 11 e0
-            if (header.startsWith('d0cf11e0')) return resolve(true);
-
-            // CSV Logic (text files usually don't have magic numbers, so we rely on extension + absence of binary headers)
-            if (file.name.toLowerCase().endsWith('.csv')) {
-                 if (header.startsWith('4d5a')) return resolve(false); // EXE (Windows)
-                 if (header.startsWith('7f454c46')) return resolve(false); // ELF (Linux)
-                 return resolve(true);
-            }
-
-            console.warn(`Security Audit: Invalid file signature for ${file.name}:`, header);
-            resolve(false);
-        };
-        reader.readAsArrayBuffer(file.slice(0, 4));
-    });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const rawFiles = e.target.files;
-      setUploadError(null);
-
-      if (!rawFiles || rawFiles.length === 0) return;
-
+  const processFiles = async (files: FileList | File[]) => {
+      if (!files || files.length === 0) return;
+      
       setIsUploading(true);
-      setScanStep(0);
-      setProcessingFileIndex(0);
-
-      const processedFiles: UploadedFile[] = [];
-      let filesToProcess: File[] = [];
+      setUploadError(null);
+      setProgressPercent(0);
+      setProcessingStatus("Initializing scan...");
 
       try {
-          // 1. EXPANSION PHASE: Handle ZIPs and create flat list
-          setScanStep(0); // "Verifying signatures..."
-          
+          let filesToProcess: File[] = [];
+          const rawFiles = Array.from(files);
+          const errors: string[] = [];
+
+          // Phase 1: Expansion & Validation
           for (let i = 0; i < rawFiles.length; i++) {
               const file = rawFiles[i];
+              setProcessingStatus(`Analyzing ${file.name}...`);
+              
               const ext = file.name.split('.').pop()?.toLowerCase();
               
               if (ext === 'zip') {
-                  // Validate ZIP Signature
-                  const isZipSig = await validateFileSignature(file);
-                  if (!isZipSig) throw new Error(`ZIP File ${file.name} signature invalid.`);
-                  
-                  // Extract contents
-                  const extracted = await extractFilesFromZip(file);
-                  filesToProcess.push(...extracted);
+                  try {
+                      setProcessingStatus(`Unpacking ${file.name}...`);
+                      const extracted = await extractFilesFromZip(file);
+                      filesToProcess.push(...extracted);
+                  } catch (e) {
+                      console.warn(`Skipping invalid zip: ${file.name}`);
+                      errors.push(`${file.name}: Invalid ZIP archive`);
+                  }
               } else {
                   filesToProcess.push(file);
               }
           }
 
-          // 2. LIMIT CHECK
-          if (filesToProcess.length === 0) {
-              throw new Error("No valid files found (checked for PDF, DOCX, CSV).");
-          }
-          if (filesToProcess.length > MAX_TOTAL_FILES) {
-              throw new Error(`Security Alert: Total extracted files (${filesToProcess.length}) exceeds limit of ${MAX_TOTAL_FILES}.`);
-          }
+          // Phase 2: Filtering
+          const filteredFiles = filesToProcess.filter(f => !KNOWN_LINKEDIN_NOISE_FILES.includes(f.name));
+          
+          if (filteredFiles.length === 0 && errors.length === 0) throw new Error("No valid files found (PDF, DOCX, CSV, IMG supported).");
 
-          setTotalFilesToProcess(filesToProcess.length);
-
-          // 3. PROCESSING PHASE
-          for (let i = 0; i < filesToProcess.length; i++) {
-              const file = filesToProcess[i];
-              setProcessingFileIndex(i + 1);
-
-              // Basic Security Checks per file
-              if (file.size === 0) throw new Error(`File ${file.name} is empty.`);
-              if (file.size > MAX_FILE_SIZE) throw new Error(`File ${file.name} exceeds 10MB limit.`);
+          // Phase 3: Content Parsing
+          const processed: UploadedFile[] = [];
+          for (let i = 0; i < filteredFiles.length; i++) {
+              const file = filteredFiles[i];
+              const progress = Math.round(((i + 1) / filteredFiles.length) * 100);
+              setProgressPercent(progress);
               
-              const safeNameRegex = /^[a-zA-Z0-9._\-\s()]+$/;
-              // We relax this regex slightly for extracted files which might have weird names, 
-              // but purely for parsing, we just ensure no path traversal chars like '/' or '\'
-              if (file.name.includes('/') || file.name.includes('\\')) throw new Error(`File ${file.name} has unsafe characters.`);
-
-              // Validate Signature
-              const isValidSignature = await validateFileSignature(file);
-              if (!isValidSignature) throw new Error(`File ${file.name} failed security signature check.`);
-
-              // Simulate Visual Scan
-              for (let step = 1; step < SCANNING_STEPS.length; step++) {
-                  setScanStep(step);
-                  await new Promise(r => setTimeout(r, 150)); 
+              const isImage = ['jpg','jpeg','png'].includes(file.name.split('.').pop()?.toLowerCase() || '');
+              
+              if (isImage) {
+                   setProcessingStatus(`Layout Analysis (PP-Structure Sim): ${file.name}...`);
+              } else {
+                   setProcessingStatus(`Parsing ${file.name}...`);
+              }
+              
+              if (file.size > MAX_FILE_SIZE) {
+                  console.warn(`Skipping ${file.name}: File too large`);
+                  errors.push(`${file.name}: File too large (>15MB)`);
+                  continue;
               }
 
-              // Real Parsing
-              const text = await parseFileContent(file);
-              
-              processedFiles.push({
-                  name: file.name,
-                  data: text,
-                  size: file.size,
-                  type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN'
-              });
+              try {
+                  const text = await parseFileContent(file);
+                  // Relaxed check: Accept any non-empty text
+                  if (text && text.trim().length > 0) { 
+                       processed.push({ 
+                          name: file.name, 
+                          data: text, 
+                          size: file.size, 
+                          type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN' 
+                      });
+                  } else {
+                      errors.push(`${file.name}: No readable text found`);
+                  }
+              } catch (parseErr: any) {
+                  console.error(`Failed to parse ${file.name}`, parseErr);
+                  errors.push(`${file.name}: ${parseErr.message}`);
+              }
+          }
+          
+          if (processed.length === 0) {
+              const errorDetails = errors.length > 0 ? errors.slice(0, 3).join('. ') + (errors.length > 3 ? '...' : '') : "Unknown error";
+              throw new Error(`Could not extract text. ${errorDetails}`);
           }
 
-          setUploadedFiles(processedFiles);
+          setUploadedFiles(processed);
           setDataLoaded(true);
-
       } catch (err: any) {
-          console.error(err);
-          setUploadError(err.message || "Failed to parse files.");
-          setUploadedFiles([]);
+          console.error("Upload Error:", err);
+          setUploadError(err.message || "An error occurred during upload.");
       } finally {
           setIsUploading(false);
-          setProcessingFileIndex(0);
+          setIsDragging(false);
+      }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      processFiles(e.dataTransfer.files);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+          processFiles(e.target.files);
       }
   };
 
   return (
-    <div className="relative z-20 flex w-full h-screen bg-[#020408] items-center justify-center p-4 overflow-hidden">
-        {/* Background Elements */}
+    <div className="relative z-20 flex w-full h-screen bg-[#020408] overflow-hidden">
+        {/* BG Glows */}
         <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-500/10 blur-[120px] rounded-full opacity-50 scale-150"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-500/10 blur-[120px] rounded-full opacity-50 scale-150"></div>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 blur-[100px]"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 blur-[100px]"></div>
         </div>
 
-        {/* Exit Button */}
-        <button 
-            onClick={onExit}
-            className="absolute top-6 right-6 z-50 p-2 lg:p-3 rounded-full bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-700/80 backdrop-blur-sm border border-slate-700/50 transition-all group"
-            title="Return to Home"
-        >
-            <span className="material-symbols-outlined group-hover:rotate-90 transition-transform">power_settings_new</span>
-        </button>
-
-        {/* WIZARD FLOW */}
-        <div className="glass-panel w-full max-w-6xl h-full lg:h-[650px] lg:min-h-[650px] rounded-3xl border border-slate-700/50 flex flex-col lg:flex-row overflow-hidden shadow-2xl relative animate-fade-in">
+        <div className="glass-panel w-full max-w-6xl h-full lg:h-[750px] lg:my-auto lg:mx-auto lg:rounded-3xl border-0 lg:border border-slate-700/50 flex flex-col lg:flex-row overflow-hidden shadow-2xl relative">
             
-            {/* Desktop Progress Bar */}
-            <div className="hidden lg:block absolute top-0 left-0 w-full h-1 bg-slate-800 z-20">
-                <div 
-                    className="h-full bg-cyan-400 transition-all duration-500 ease-out" 
-                    style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}
-                ></div>
-            </div>
-
-            {/* Steps Sidebar (Desktop) */}
+            {/* Sidebar Desktop */}
             <div className="w-64 border-r border-slate-700/50 p-8 hidden lg:block bg-slate-900/30 shrink-0">
-                <h3 className="text-xl font-bold text-white mb-2">Setup Progress</h3>
-                <p className="text-slate-400 text-sm mb-8">Your personalized setup plan.</p>
-
-                <div className="space-y-6">
+                <div className="space-y-6 mt-10">
                     {activeSteps.map((step, index) => (
-                        <StepItem 
-                            key={step.id}
-                            icon={step.icon} 
-                            title={step.title} 
-                            desc={step.desc}
-                            active={index === currentStepIndex}
-                            completed={index < currentStepIndex}
-                            onClick={() => handleStepClick(index)}
-                        />
+                        <div key={step.id} className={`flex gap-4 p-3 rounded-xl ${index === currentStepIndex ? 'bg-slate-800 border border-cyan-500/30' : 'opacity-40'}`}>
+                            <span className="material-symbols-outlined text-cyan-400">{step.icon}</span>
+                            <span className="text-sm font-bold text-white">{step.title}</span>
+                        </div>
                     ))}
                 </div>
             </div>
 
-            {/* Mobile Header / Steps */}
-            <div className="lg:hidden p-6 pb-2 bg-[#050b14] border-b border-slate-800 shrink-0">
-                 <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">
-                    <span>Step {currentStepIndex + 1} of {activeSteps.length}</span>
+            {/* Mobile Header */}
+            <div className="lg:hidden p-4 bg-[#050b14] border-b border-slate-800 shrink-0 z-30">
+                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    <span>Step {currentStepIndex + 1} / {activeSteps.length}</span>
                     <span className="text-cyan-400">{currentStep.title}</span>
-                 </div>
-                 <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-400 transition-all duration-500 ease-out" style={{ width: `${((currentStepIndex + 1) / activeSteps.length) * 100}%` }}></div>
-                 </div>
+                </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="flex-1 p-4 lg:p-10 flex flex-col items-center justify-center relative overflow-y-auto custom-scrollbar">
-                
-                {/* DYNAMIC CONTENT SWITCHER */}
-                {currentStep?.id === 'import' && (
-                    !dataLoaded ? (
-                        <div className="text-center animate-fade-in max-w-2xl w-full flex flex-col items-center my-auto">
-                            
-                            {isUploading ? (
-                                <div className="flex flex-col items-center justify-center py-12">
-                                    <div className="relative w-24 h-24 mb-6">
-                                        <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
-                                        <div className="absolute inset-0 border-4 border-cyan-400 rounded-full border-t-transparent animate-spin"></div>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-3xl text-cyan-400 animate-pulse">folder_zip</span>
+            {/* Main Area with Scroll */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-start lg:justify-center p-6 lg:p-12">
+                <div className="w-full max-w-2xl py-8 lg:py-0">
+                    {currentStep?.id === 'import' && (
+                        !dataLoaded ? (
+                            <div className="text-center animate-fade-in flex flex-col items-center">
+                                {isUploading ? (
+                                    <div className="py-12 flex flex-col items-center w-full max-w-md">
+                                        <div className="w-20 h-20 relative mb-6">
+                                            <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
+                                            <div className="absolute inset-0 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xs text-cyan-400">{progressPercent}%</div>
                                         </div>
+                                        <p className="text-white font-bold text-lg mb-2">Analyzing Structure</p>
+                                        <p className="text-slate-400 text-sm animate-pulse">{processingStatus}</p>
                                     </div>
-                                    <h3 className="text-xl font-bold text-white mb-2">{SCANNING_STEPS[scanStep]}</h3>
-                                    <p className="text-slate-400 text-xs font-mono uppercase tracking-wider flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                        {processingFileIndex > 0 ? `Processing File ${processingFileIndex} of ${totalFilesToProcess}` : 'Expanding Archives...'}
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="mb-4 lg:mb-6 flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                                        <span className="material-symbols-outlined text-2xl lg:text-3xl">shield_lock</span>
-                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6 mx-auto">
+                                            <span className="material-symbols-outlined text-3xl">cloud_upload</span>
+                                        </div>
+                                        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2">Upload Profile Data</h2>
+                                        <p className="text-slate-400 mb-8 text-sm lg:text-base max-w-md mx-auto">
+                                            We support Resumes, CVs, LinkedIn Archives, and Image Portfolios (Layout Analysis enabled).
+                                        </p>
+                                        
+                                        {/* UX Enhanced Upload Box */}
+                                        <div 
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={`w-full p-8 lg:p-12 rounded-3xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative overflow-hidden ${
+                                                isDragging 
+                                                ? 'border-cyan-500 bg-cyan-500/10 scale-[1.02]' 
+                                                : 'border-slate-700 hover:border-cyan-500/50 bg-slate-900/40 hover:bg-slate-800/60'
+                                            }`}
+                                        >
+                                            <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.csv,.zip,.txt,.png,.jpg,.jpeg" onChange={handleFileInputChange} />
+                                            
+                                            <div className={`w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110 bg-cyan-500/20' : 'group-hover:scale-110'}`}>
+                                                <span className={`material-symbols-outlined text-3xl ${isDragging ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-400'}`}>upload_file</span>
+                                            </div>
+                                            
+                                            <div className="text-center relative z-10">
+                                                <h3 className={`text-lg font-bold mb-1 ${isDragging ? 'text-cyan-400' : 'text-white'}`}>
+                                                    {isDragging ? 'Drop files here' : 'Click or Drag files here'}
+                                                </h3>
+                                                <p className="text-xs text-slate-500 font-medium">Max 15MB per file</p>
+                                            </div>
 
-                                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2 lg:mb-4">Secure Batch Import</h2>
-                                    <p className="text-slate-400 mb-6 lg:mb-8 max-w-lg text-sm lg:text-base">
-                                        Upload resumes, portfolios, or data sheets. Supports <strong>ZIP archives</strong> for bulk upload.
-                                        <br/>
-                                        <span className="text-xs text-slate-500 mt-2 block">
-                                            <span className="material-symbols-outlined text-[10px] align-middle mr-1">check_circle</span>
-                                            Secure client-side extraction. Up to {MAX_TOTAL_FILES} total files.
-                                        </span>
-                                    </p>
-                                    
-                                    <div className="flex flex-col items-center w-full mb-8">
-                                        {/* Error Message */}
+                                            {/* Supported Formats Grid */}
+                                            <div className="grid grid-cols-5 gap-3 mt-4 w-full max-w-xs opacity-60 group-hover:opacity-100 transition-opacity">
+                                                <FormatBadge ext="PDF" color="red" />
+                                                <FormatBadge ext="DOCX" color="blue" />
+                                                <FormatBadge ext="CSV" color="green" />
+                                                <FormatBadge ext="ZIP" color="yellow" />
+                                                <FormatBadge ext="IMG" color="purple" />
+                                            </div>
+                                        </div>
+
                                         {uploadError && (
-                                            <div className="mb-6 w-full max-w-md p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3 animate-fade-in">
-                                                <span className="material-symbols-outlined text-red-500 shrink-0">gpp_bad</span>
-                                                <div className="text-left">
-                                                    <h4 className="text-red-400 font-bold text-sm">Upload Rejected</h4>
-                                                    <p className="text-red-300/80 text-xs mt-1">{uploadError}</p>
+                                            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-start gap-3 w-full max-w-lg animate-fade-in">
+                                                <span className="material-symbols-outlined text-lg mt-0.5">error</span>
+                                                <div className="flex-1">
+                                                    <p className="font-bold mb-1">Upload Failed</p>
+                                                    <p className="text-xs opacity-80 break-words">{uploadError}</p>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* Secure Upload Box */}
-                                        <div 
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className={`group relative p-6 lg:p-10 rounded-2xl bg-slate-800/30 border-2 border-dashed ${uploadError ? 'border-red-500/30' : 'border-slate-700 hover:border-cyan-500/50'} hover:bg-slate-800/50 transition-all flex flex-col items-center gap-4 cursor-pointer hover:-translate-y-1 w-full max-w-md`}
-                                        >
-                                            <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-slate-800 flex items-center justify-center border border-slate-600 group-hover:border-cyan-500/30 group-hover:text-cyan-400 text-slate-400 transition-colors shadow-lg relative">
-                                                <span className="material-symbols-outlined text-3xl lg:text-4xl">upload_file</span>
-                                                {/* Multiple Badge */}
-                                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 rounded-full border border-slate-600 flex items-center justify-center z-10">
-                                                    <span className="material-symbols-outlined text-[12px] text-green-400">library_add</span>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-white text-lg lg:text-xl">Upload Files or ZIPs</h3>
-                                                <p className="text-sm text-slate-400 mt-2 font-mono text-[10px] uppercase tracking-wider">
-                                                    PDF, DOCX, CSV, ZIP • Max 10MB
-                                                </p>
-                                            </div>
-                                            <input 
-                                                type="file" 
-                                                ref={fileInputRef}
-                                                className="hidden" 
-                                                multiple
-                                                accept=".pdf,.doc,.docx,.csv,.zip,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/zip,application/x-zip-compressed"
-                                                onChange={handleFileUpload}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col items-center gap-4">
-                                        <div className="flex items-center gap-3 w-full max-w-xs">
-                                            <div className="h-px bg-slate-800 flex-1"></div>
-                                            <span className="text-xs text-slate-600 font-bold uppercase">Or start fresh</span>
-                                            <div className="h-px bg-slate-800 flex-1"></div>
-                                        </div>
-                                        <button onClick={handleNext} className="text-slate-500 hover:text-white text-sm font-medium transition-colors">
-                                            Skip and enter manually
+                                        <button onClick={handleNext} className="mt-8 text-slate-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest">
+                                            Skip Import Step
                                         </button>
-                                    </div>
-                                </>
-                            )}
-                            
-                            {currentStepIndex > 0 && (
-                                <button onClick={handleBack} className="mt-8 text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors">
-                                    Go Back
-                                </button>
-                            )}
-                        </div>
-                    ) : (
-                        <LinkedinSyncView 
-                            onBack={() => {
-                                setDataLoaded(false);
-                                setUploadedFiles([]);
-                            }} 
-                            onComplete={handleNext}
-                            uploadedFiles={uploadedFiles}
-                        />
-                    )
-                )}
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <LinkedinSyncView onBack={() => { setDataLoaded(false); setUploadedFiles([]); }} onComplete={handleNext} uploadedFiles={uploadedFiles} />
+                        )
+                    )}
 
-                {currentStep?.id === 'ai' && (
-                    <AITrainingView onBack={currentStepIndex > 0 ? handleBack : undefined} onComplete={() => {
-                        if (currentStepIndex === activeSteps.length - 1) {
-                            onComplete();
-                        } else {
-                            handleNext();
-                        }
-                    }} />
-                )}
+                    {currentStep?.id === 'ai' && (
+                        <AITrainingView onBack={handleBack} onComplete={onComplete} />
+                    )}
+                </div>
+                {/* Spacer for mobile to prevent button hiding */}
+                <div className="h-20 lg:hidden"></div>
             </div>
         </div>
     </div>
   );
 };
 
-// Item for the Sidebar Wizard
-const StepItem: React.FC<{
-    icon: string, 
-    title: string, 
-    desc: string, 
-    active: boolean, 
-    completed: boolean,
-    onClick: () => void 
-}> = ({ icon, title, desc, active, completed, onClick }) => {
+const FormatBadge: React.FC<{ext: string, color: string}> = ({ext, color}) => {
+    const colorClasses: {[key: string]: string} = {
+        red: 'bg-red-500/10 text-red-400 border-red-500/20',
+        blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        green: 'bg-green-500/10 text-green-400 border-green-500/20',
+        yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+        purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    };
     return (
-        <div 
-            onClick={onClick}
-            className={`flex gap-4 p-4 rounded-xl transition-all ${
-                active ? 'bg-slate-800/50 border border-cyan-500/30' : 
-                completed ? 'opacity-60 hover:opacity-100 cursor-pointer hover:bg-slate-800/30' : 'opacity-40'
-            }`}
-        >
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${active || completed ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
-                {completed ? <span className="material-symbols-outlined">check</span> : <span className="material-symbols-outlined">{icon}</span>}
-            </div>
-            <div>
-                <h4 className={`font-bold text-sm ${active || completed ? 'text-white' : 'text-slate-400'}`}>{title}</h4>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">{desc}</p>
-            </div>
+        <div className={`flex flex-col items-center justify-center p-2 rounded-lg border ${colorClasses[color] || colorClasses.blue}`}>
+            <span className="text-[10px] font-bold">{ext}</span>
         </div>
-    )
+    );
 }

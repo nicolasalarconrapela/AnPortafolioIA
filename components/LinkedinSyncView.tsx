@@ -11,13 +11,20 @@ interface LinkedinSyncViewProps {
 const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
     const [parsedData, setParsedData] = useState<any[] | null>(null);
     const [viewMode, setViewMode] = useState<'visual' | 'raw'>('visual');
+    const [isOCRData, setIsOCRData] = useState(false);
 
     useEffect(() => {
         try {
-            // Try to parse as JSON (for CSVs converted to JSON)
+            // Try to parse as JSON (for CSVs or OCR Structure)
             const json = JSON.parse(data);
             if (Array.isArray(json) && json.length > 0) {
                 setParsedData(json);
+                // Check if it's our OCR structure (has region & content)
+                if (json[0].region && json[0].content) {
+                    setIsOCRData(true);
+                } else {
+                    setIsOCRData(false);
+                }
             } else {
                 setParsedData(null);
             }
@@ -28,6 +35,55 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
 
     if (!data) return <div className="text-slate-500 text-sm italic p-4 flex items-center justify-center h-full border border-dashed border-slate-700 rounded-xl">No content to display.</div>;
 
+    const renderOCRStructure = () => (
+        <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 space-y-4">
+            <div className="flex items-center justify-between mb-4">
+                <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-widest">Document Structure Analysis</h4>
+                <div className="flex gap-2 text-[10px]">
+                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Header</span>
+                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/20 text-green-300 border border-green-500/30"><span className="w-2 h-2 rounded-full bg-green-500"></span> Table</span>
+                    <span className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Text</span>
+                </div>
+            </div>
+            
+            {parsedData?.map((block: any, i: number) => {
+                let borderColor = 'border-slate-700';
+                let regionBadge = 'bg-slate-700 text-slate-300';
+                
+                if (block.region === 'Header') {
+                    borderColor = 'border-purple-500/50';
+                    regionBadge = 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+                } else if (block.region === 'Table') {
+                    borderColor = 'border-green-500/50';
+                    regionBadge = 'bg-green-500/20 text-green-300 border-green-500/30';
+                } else if (block.region === 'List') {
+                    borderColor = 'border-orange-500/50';
+                    regionBadge = 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+                } else {
+                    borderColor = 'border-blue-500/20';
+                    regionBadge = 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+                }
+
+                return (
+                    <div key={i} className={`p-4 rounded-xl border ${borderColor} bg-[#0a101f]/50 relative group transition-all hover:bg-[#0a101f]`}>
+                        <div className="flex justify-between items-start mb-2">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${regionBadge} uppercase tracking-wider`}>
+                                {block.region}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono">Conf: {block.confidence}%</span>
+                        </div>
+                        <p className={`text-sm text-slate-300 whitespace-pre-wrap leading-relaxed ${block.region === 'Header' ? 'font-bold text-white text-base' : ''} ${block.region === 'Table' ? 'font-mono text-xs' : ''}`}>
+                            {block.content}
+                        </p>
+                        
+                        {/* Simulated BBox visualization on hover */}
+                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-dashed group-hover:border-cyan-500/20 pointer-events-none rounded-xl"></div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+
     return (
         <div className="flex flex-col h-full min-h-[300px]">
             {/* View Toggles */}
@@ -37,7 +93,7 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'visual' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'text-slate-400 hover:text-white'}`}
                 >
                     <span className="material-symbols-outlined text-sm">wysiwyg</span>
-                    {parsedData ? 'Table View' : 'Document View'}
+                    {isOCRData ? 'Structure View' : 'Table View'}
                 </button>
                 <button 
                     onClick={() => setViewMode('raw')}
@@ -56,6 +112,8 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
                             {data}
                         </pre>
                     </div>
+                ) : isOCRData ? (
+                    renderOCRStructure()
                 ) : parsedData ? (
                     // TABLE VIEW (For CSVs)
                     <div className="absolute inset-0 overflow-auto custom-scrollbar">
@@ -83,14 +141,13 @@ const DataVisualizer: React.FC<{ data: string }> = ({ data }) => {
                         </table>
                     </div>
                 ) : (
-                    // DOCUMENT VIEW (For PDF/DOCX)
+                    // PLAIN TEXT VIEW (Fallback)
                     <div className="absolute inset-0 overflow-auto custom-scrollbar p-6 lg:p-8 bg-white/5">
                         <div className="max-w-2xl mx-auto space-y-4">
                             {data.split('\n').map((line, i) => {
                                 const cleanLine = line.trim();
                                 if (!cleanLine) return <br key={i} />;
                                 
-                                // Heuristics for formatting
                                 const isBullet = cleanLine.startsWith('•') || cleanLine.startsWith('-') || cleanLine.match(/^\d+\./);
                                 const isHeader = cleanLine.length < 50 && cleanLine.toUpperCase() === cleanLine && !isBullet;
                                 
@@ -131,10 +188,19 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
   // Update chat when data arrives
   useEffect(() => {
       if(uploadedFiles.length > 0) {
+          const type = currentFile?.type;
+          let msg = `${uploadedFiles.length} file(s) loaded.`;
+          
+          if (type === 'PNG' || type === 'JPG' || type === 'JPEG') {
+              msg = "Image Layout Analysis complete. I've segmented headers, tables, and text regions similar to PP-Structure.";
+          } else {
+              msg = `Context switched to "${currentFile?.name}". Data parsing successful.`;
+          }
+
           setMessages(prev => [...prev, {
               id: Date.now(),
               sender: 'ai',
-              text: `${uploadedFiles.length} file(s) loaded securely. I've switched context to "${currentFile?.name}".`,
+              text: msg,
               time: 'Now'
           }]);
       }
@@ -164,7 +230,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                  <p className="text-cyan-400 font-medium text-sm mt-0.5">
                     {uploadedFiles.length} File{uploadedFiles.length !== 1 ? 's' : ''} Processed
                     <span className="text-slate-600 mx-1">|</span> 
-                    <span className="text-slate-300">Ready for Extraction</span>
+                    <span className="text-slate-300">Structure Extracted</span>
                  </p>
                  <div className="flex flex-wrap gap-4 mt-2 text-[11px] text-slate-400 font-medium">
                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-xs">verified_user</span> Secure Batch Upload</span>
@@ -204,7 +270,7 @@ export const LinkedinSyncView: React.FC<LinkedinSyncViewProps> = ({ onBack, onCo
                                 }`}
                             >
                                 <span className="material-symbols-outlined text-sm">
-                                    {file.type === 'PDF' ? 'picture_as_pdf' : 'description'}
+                                    {['PNG', 'JPG', 'JPEG'].includes(file.type) ? 'image_search' : (file.type === 'PDF' ? 'picture_as_pdf' : 'description')}
                                 </span>
                                 {file.name}
                             </button>
