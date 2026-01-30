@@ -10,5 +10,13 @@
   {
     "name": "Standing Greeting",
     "path": "/movements/Standing Greeting.fbx"
+  },
+  {
+    "name": "Typing",
+    "path": "/movements/Typing.fbx"
+  },
+  {
+    "name": "Scared",
+    "path": "/movements/Scared.fbx"
   }
 ]
