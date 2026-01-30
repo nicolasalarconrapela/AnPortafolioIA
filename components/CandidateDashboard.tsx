@@ -3,13 +3,65 @@ import { AITrainingView } from './AITrainingView';
 
 type DashboardView = 'profile' | 'ai-training' | 'settings';
 type SettingsTab = 'account' | 'privacy' | 'notifications' | 'avatar-prefs' | 'training-data';
-type AIChatMode = 'optimizer' | 'market';
+type OptimizationCategory = 'experience' | 'skills' | 'education' | 'licenses' | 'volunteering' | 'projects';
 
 interface CandidateDashboardProps {
     onLogout: () => void;
 }
 
-// --- SUB-COMPONENTS (Defined first to avoid hoisting issues) ---
+// --- CONFIGURATION: AI SYSTEM PROMPTS PER CATEGORY ---
+const CATEGORY_CONFIG: Record<OptimizationCategory, { 
+    label: string; 
+    icon: string; 
+    color: string;
+    systemPrompt: string;
+    suggestedSkills: string[];
+}> = {
+    experience: {
+        label: "Experience",
+        icon: "work_history",
+        color: "text-cyan-400",
+        systemPrompt: "ACT AS: Expert Resume Auditor. GOAL: Maximize impact of work history. INSTRUCTIONS: 1. Demand 'Action Verb + Task + Result' structure. 2. Ask for quantified metrics (%, $, time saved). 3. Identify gaps in employment. 4. Suggest translation of passive tasks into active achievements.",
+        suggestedSkills: ["Strategic Planning", "Team Leadership", "Project Management", "Process Optimization"]
+    },
+    skills: {
+        label: "Skills",
+        icon: "psychology",
+        color: "text-indigo-400",
+        systemPrompt: "ACT AS: Technical Recruiter & Keyword Strategist. GOAL: Optimize ATS ranking. INSTRUCTIONS: 1. Validate hard vs. soft skills balance. 2. Suggest industry-standard tools missing from the profile based on the job title. 3. Rate proficiency levels (Beginner to Expert).",
+        suggestedSkills: ["Python", "React", "Data Analysis", "Public Speaking", "Agile Methodologies"]
+    },
+    education: {
+        label: "Studies",
+        icon: "school",
+        color: "text-blue-400",
+        systemPrompt: "ACT AS: Academic Advisor. GOAL: Highlight relevant education. INSTRUCTIONS: 1. If Recent Grad: Focus on coursework, GPA (if high), and thesis. 2. If Experienced: De-emphasize dates/details, focus on degree relevance. 3. format dates correctly.",
+        suggestedSkills: ["Research", "Academic Writing", "Critical Thinking", "Thesis Defense"]
+    },
+    licenses: {
+        label: "Licenses",
+        icon: "verified",
+        color: "text-emerald-400",
+        systemPrompt: "ACT AS: Credential Verifier. GOAL: Validate professional standing. INSTRUCTIONS: 1. Ensure 'Issuing Organization' and 'Issue Date' are present. 2. Ask if the cert has an ID/URL. 3. Prioritize active certifications over expired ones.",
+        suggestedSkills: ["PMP", "AWS Certified", "Scrum Master", "CPA", "Six Sigma"]
+    },
+    volunteering: {
+        label: "Volunteer",
+        icon: "volunteer_activism",
+        color: "text-pink-400",
+        systemPrompt: "ACT AS: Holistic Recruiter. GOAL: Extract transferable soft skills. INSTRUCTIONS: 1. Treat volunteer roles like work experience. 2. Highlight leadership, empathy, and community organization skills. 3. Connect cause to company values.",
+        suggestedSkills: ["Community Outreach", "Fundraising", "Mentoring", "Event Planning"]
+    },
+    projects: {
+        label: "Projects",
+        icon: "rocket_launch",
+        color: "text-orange-400",
+        systemPrompt: "ACT AS: Tech Lead / Portfolio Reviewer. GOAL: Showcase practical application. INSTRUCTIONS: 1. Require 'Tech Stack' used. 2. Ask for the user's specific role (Solo vs Team). 3. Demand a Link (Repo/Live). 4. Focus on the 'Problem Solved'.",
+        suggestedSkills: ["System Design", "Prototyping", "Full Stack Development", "UX Research"]
+    }
+};
+
+// --- SUB-COMPONENTS ---
 
 const NavButton: React.FC<{label: string, active: boolean, onClick: () => void, icon: string}> = ({label, active, onClick, icon}) => (
     <button 
@@ -77,12 +129,12 @@ const ExperienceCard: React.FC<{role: string, company: string, period: string, d
 const ProfileView: React.FC = () => {
     // Chat & Logic State
     const [messages, setMessages] = useState([
-        { id: 1, sender: 'ai', text: "Welcome to your dashboard. I am ready to analyze your profile and market fit. Please add your experience to get started." }
+        { id: 1, sender: 'ai', text: "Hello! I'm your Career Coach. Select a category (Experience, Skills, Projects...) to start a specialized audit." }
     ]);
     const [inputText, setInputText] = useState("");
     const [isThinking, setIsThinking] = useState(false);
-    const [chatMode, setChatMode] = useState<AIChatMode>('optimizer');
-    const [quickReplies, setQuickReplies] = useState<string[]>(["Analyze my resume", "Market Trends"]);
+    const [activeCategory, setActiveCategory] = useState<OptimizationCategory>('experience');
+    const [quickReplies, setQuickReplies] = useState<string[]>([]);
     
     // Data State (Empty by default)
     const [experiences, setExperiences] = useState<any[]>([]); 
@@ -90,11 +142,64 @@ const ProfileView: React.FC = () => {
 
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    // Initial load suggestions
+    useEffect(() => {
+        setQuickReplies(["Audit my profile", "Suggest Keywords", "Optimize summary"]);
+    }, []);
+
+    const changeCategory = (cat: OptimizationCategory) => {
+        setActiveCategory(cat);
+        const config = CATEGORY_CONFIG[cat];
+        
+        // Inject system message to UI to show context switch
+        setMessages(prev => [...prev, {
+            id: Date.now(),
+            sender: 'ai',
+            text: `Context switched to **${config.label}**. ${config.systemPrompt.split('GOAL:')[1].split('.')[0]}. How can I help?`
+        }]);
+        setQuickReplies(config.suggestedSkills.slice(0, 3));
+    };
+
     // AI Logic Engine
-    const generateAIResponse = (input: string, mode: AIChatMode): { text: string, replies: string[] } => {
+    const generateAIResponse = (input: string, category: OptimizationCategory): { text: string, replies: string[] } => {
+        const lowerInput = input.toLowerCase();
+        const config = CATEGORY_CONFIG[category];
+        
+        // Simulating the AI utilizing the specific prompt
+        if (category === 'experience') {
+            return {
+                text: "I'm analyzing your Experience as a Resume Auditor. Please paste a bullet point from your CV, and I will rewrite it using the STAR method.",
+                replies: ["Paste Bullet Point", "Review Action Verbs", "Switch Category"]
+            };
+        }
+        if (category === 'projects') {
+             return {
+                text: "Acting as Tech Lead. For your project, please tell me: 1. The core problem it solved. 2. The exact tech stack used. 3. Your specific contribution (not the team's).",
+                replies: ["Describe Project", "List Tech Stack", "Upload Repo Link"]
+            };
+        }
+        if (category === 'skills') {
+             return {
+                text: `Scanning for ${config.label}. Based on current market trends, have you considered adding: ${config.suggestedSkills[0]} or ${config.suggestedSkills[1]}? Validate your proficiency level for me.`,
+                replies: [`Add ${config.suggestedSkills[0]}`, `Add ${config.suggestedSkills[1]}`, "Verify Levels"]
+            };
+        }
+        if (category === 'education' || category === 'licenses') {
+             return {
+                text: `Verifying ${config.label}. ensure you include the Issue Date and Authority. Does your certification have a credential ID URL?`,
+                replies: ["Add Date", "Add Credential ID", "Skip"]
+            };
+        }
+        if (category === 'volunteering') {
+            return {
+                text: "Let's translate this volunteering into soft skills. Did you lead a team or organize events? I can help you list 'Leadership' or 'Event Management' as transferable skills.",
+                replies: ["Analyze Soft Skills", "List Leadership", "Skip"]
+            };
+        }
+
         return {
-            text: "I am a simulated agent. Once connected to real data, I can provide optimizations and market insights.",
-            replies: ["Update Profile", "Search Jobs"]
+            text: `I am focused on ${config.label}. Provide details so I can apply the optimization prompt: "${config.systemPrompt.substring(0, 50)}..."`,
+            replies: config.suggestedSkills.slice(0, 3)
         };
     };
 
@@ -108,10 +213,10 @@ const ProfileView: React.FC = () => {
         setQuickReplies([]); // Clear old replies while thinking
 
         // Simulate AI Latency
-        const thinkingTime = Math.random() * 1000 + 1000; // 1-2 seconds
+        const thinkingTime = Math.random() * 1000 + 800;
 
         setTimeout(() => {
-            const response = generateAIResponse(text, chatMode);
+            const response = generateAIResponse(text, activeCategory);
             setIsThinking(false);
             setMessages(prev => [...prev, { 
                 id: Date.now() + 1, 
@@ -211,46 +316,54 @@ const ProfileView: React.FC = () => {
                 </div>
             </div>
 
-            {/* Right Column: Chat (TalentFlow AI) */}
+            {/* Right Column: Chat (Career Coach AI) */}
             <div className="w-full lg:w-[400px] flex flex-col bg-[#0f1623] border border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl shrink-0 h-[600px] lg:h-[calc(100vh-140px)] lg:sticky lg:top-0 transition-all duration-300">
                 {/* Chat Header */}
                 <div className="p-4 border-b border-slate-700/50 bg-[#0f1623] flex flex-col gap-3 z-10 relative">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-colors duration-500 ${chatMode === 'optimizer' ? 'from-indigo-500 to-purple-600' : 'from-orange-500 to-red-600'}`}>
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-colors duration-500 from-indigo-500 to-purple-600`}>
                                 <span className="material-symbols-outlined text-white text-xl">
-                                    {chatMode === 'optimizer' ? 'smart_toy' : 'query_stats'}
+                                    {CATEGORY_CONFIG[activeCategory].icon}
                                 </span>
                             </div>
                             <div>
-                                <h4 className="text-base font-bold text-white leading-none">TalentFlow AI</h4>
+                                <h4 className="text-base font-bold text-white leading-none">Career Coach AI</h4>
                                 <div className="flex items-center gap-1.5 mt-1.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${chatMode === 'optimizer' ? 'bg-purple-400' : 'bg-orange-400'}`}></span>
-                                    <span className={`text-[10px] font-bold tracking-wider uppercase ${chatMode === 'optimizer' ? 'text-purple-400' : 'text-orange-400'}`}>
-                                        {chatMode === 'optimizer' ? 'Profile Optimizer' : 'Market Analyst'}
+                                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse bg-cyan-400`}></span>
+                                    <span className={`text-[10px] font-bold tracking-wider uppercase text-cyan-400`}>
+                                        Mode: {CATEGORY_CONFIG[activeCategory].label}
                                     </span>
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setMessages([{ id: Date.now(), sender: 'ai', text: "Chat cleared. How can I help you now?" }])} className="text-slate-500 hover:text-white p-2 rounded-lg hover:bg-slate-800"><span className="material-symbols-outlined text-lg">refresh</span></button>
+                        <button onClick={() => setMessages([{ id: Date.now(), sender: 'ai', text: "Chat reset. Select a category below." }])} className="text-slate-500 hover:text-white p-2 rounded-lg hover:bg-slate-800"><span className="material-symbols-outlined text-lg">refresh</span></button>
                     </div>
                     
-                    {/* Mode Selector */}
-                    <div className="flex p-1 bg-slate-900 rounded-lg border border-slate-800">
-                        <button onClick={() => setChatMode('optimizer')} className={`flex-1 py-1.5 text-[10px] font-bold rounded flex items-center justify-center gap-1 ${chatMode === 'optimizer' ? 'bg-slate-800 text-purple-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
-                             <span className="material-symbols-outlined text-sm">auto_fix_high</span> Optimize
-                        </button>
-                        <button onClick={() => setChatMode('market')} className={`flex-1 py-1.5 text-[10px] font-bold rounded flex items-center justify-center gap-1 ${chatMode === 'market' ? 'bg-slate-800 text-orange-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
-                             <span className="material-symbols-outlined text-sm">trending_up</span> Market
-                        </button>
+                    {/* Category Selector (Scrollable) */}
+                    <div className="flex overflow-x-auto no-scrollbar gap-2 pb-1 mask-linear-fade-right">
+                        {(Object.keys(CATEGORY_CONFIG) as OptimizationCategory[]).map((cat) => (
+                             <button 
+                                key={cat}
+                                onClick={() => changeCategory(cat)}
+                                className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5 ${
+                                    activeCategory === cat 
+                                    ? `bg-slate-800 border-slate-600 ${CATEGORY_CONFIG[cat].color}` 
+                                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                                }`}
+                             >
+                                <span className="material-symbols-outlined text-sm">{CATEGORY_CONFIG[cat].icon}</span>
+                                {CATEGORY_CONFIG[cat].label}
+                             </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Context Bar ... */}
+                {/* Context Bar */}
                 <div className="px-5 py-2 bg-[#0a101f] border-b border-slate-700/30 flex items-center justify-between z-10 relative shadow-sm">
                     <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold">
-                        <span className="material-symbols-outlined text-xs">target</span>
-                        Focus: <span className="text-white">Profile Context</span>
+                        <span className="material-symbols-outlined text-xs">smart_toy</span>
+                        Active Prompt: <span className="text-white truncate max-w-[200px]">{CATEGORY_CONFIG[activeCategory].systemPrompt.substring(8, 40)}...</span>
                     </div>
                 </div>
 
@@ -259,7 +372,7 @@ const ProfileView: React.FC = () => {
                     {messages.map((msg) => (
                         <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                             {msg.sender === 'ai' && (
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border mt-1 shadow-lg ${chatMode === 'optimizer' ? 'bg-purple-900/30 text-purple-400 border-purple-500/30' : 'bg-orange-900/30 text-orange-400 border-orange-500/30'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border mt-1 shadow-lg bg-indigo-900/30 text-indigo-400 border-indigo-500/30`}>
                                     <span className="material-symbols-outlined text-sm">smart_toy</span>
                                 </div>
                             )}
@@ -309,10 +422,10 @@ const ProfileView: React.FC = () => {
                         ))}
                     </div>
 
-                    <div className="bg-[#0a101f] rounded-2xl p-1.5 flex gap-2 border border-slate-700 focus-within:border-purple-500/50 transition-colors shadow-inner">
+                    <div className="bg-[#0a101f] rounded-2xl p-1.5 flex gap-2 border border-slate-700 focus-within:border-cyan-500/50 transition-colors shadow-inner">
                         <input 
                             className="bg-transparent flex-1 text-sm text-white px-4 py-3 outline-none placeholder-slate-600" 
-                            placeholder={isThinking ? "AI is typing..." : "Ask about your profile..."}
+                            placeholder={isThinking ? "Coach is thinking..." : `Ask about ${CATEGORY_CONFIG[activeCategory].label}...`}
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -320,7 +433,7 @@ const ProfileView: React.FC = () => {
                         />
                         <div className="flex items-center gap-1 pr-1">
                             <button className="p-2.5 text-slate-500 hover:text-white transition-colors rounded-xl hover:bg-slate-800"><span className="material-symbols-outlined text-xl">mic</span></button>
-                            <button onClick={() => handleSendMessage()} disabled={!inputText.trim() || isThinking} className="p-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 rounded-xl text-white transition-colors shadow-lg"><span className="material-symbols-outlined text-xl">send</span></button>
+                            <button onClick={() => handleSendMessage()} disabled={!inputText.trim() || isThinking} className="p-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 rounded-xl text-white transition-colors shadow-lg"><span className="material-symbols-outlined text-xl">send</span></button>
                         </div>
                     </div>
                 </div>
@@ -506,7 +619,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center gap-1 lg:gap-2">
                     <NavButton label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
-                    <NavButton label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
+                    <NavButton label="Career Coach" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="school" />
                     <NavButton label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
                 </nav>
             </div>
@@ -563,7 +676,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
         {isMobileMenuOpen && (
             <div className="absolute top-16 left-0 right-0 bg-[#050b14]/95 backdrop-blur-xl border-b border-slate-800 z-40 p-4 md:hidden animate-fade-in flex flex-col gap-2 shadow-2xl h-[calc(100vh-4rem)] overflow-y-auto">
                 <MobileNavItem label="Profile" active={activeView === 'profile'} onClick={() => handleViewChange('profile')} icon="id_card" />
-                <MobileNavItem label="AI Agent" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="smart_toy" />
+                <MobileNavItem label="Career Coach" active={activeView === 'ai-training'} onClick={() => handleViewChange('ai-training')} icon="school" />
                 <MobileNavItem label="Settings" active={activeView === 'settings'} onClick={() => handleViewChange('settings')} icon="settings" />
                 <div className="h-px bg-slate-800 my-2"></div>
                 <button 
@@ -594,8 +707,8 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                     {activeView === 'ai-training' && (
                         <div className="flex-1 flex flex-col h-full animate-fade-in">
                             <div className="mb-6">
-                                <h1 className="text-2xl font-bold text-white mb-2">AI Neural Core</h1>
-                                <p className="text-slate-400 text-sm">Re-calibrate your agent's responses and personality traits.</p>
+                                <h1 className="text-2xl font-bold text-white mb-2">Career Coach Configuration</h1>
+                                <p className="text-slate-400 text-sm">Customize how your AI agent analyzes your profile and prepares you for interviews.</p>
                             </div>
                             <div className="flex-1 bg-[#0a101f]/50 border border-slate-800 rounded-3xl overflow-hidden p-4 md:p-6 lg:p-8">
                                 <AITrainingView 

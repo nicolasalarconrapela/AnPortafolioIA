@@ -39,7 +39,10 @@ const KNOWN_LINKEDIN_NOISE_FILES = [
     'Registration.csv', 'Rich_Media.csv', 'SavedJobAlerts.csv'
 ];
 
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // Increased to 15MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+
+// Simple filename sanitizer for UI display safety
+const sanitizeFileNameUI = (name: string) => name.replace(/[^\w\s.\-\(\)]/gi, '_');
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit }) => {
   const [selectedItems] = useState<string[]>(['import', 'ai']);
@@ -81,7 +84,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
       setIsUploading(true);
       setUploadError(null);
       setProgressPercent(0);
-      setProcessingStatus("Initializing scan...");
+      setProcessingStatus("Initializing secure scan...");
 
       try {
           let filesToProcess: File[] = [];
@@ -100,9 +103,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                       setProcessingStatus(`Unpacking ${file.name}...`);
                       const extracted = await extractFilesFromZip(file);
                       filesToProcess.push(...extracted);
-                  } catch (e) {
+                  } catch (e: any) {
                       console.warn(`Skipping invalid zip: ${file.name}`);
-                      errors.push(`${file.name}: Invalid ZIP archive`);
+                      errors.push(`${file.name}: ${e.message}`);
                   }
               } else {
                   filesToProcess.push(file);
@@ -113,6 +116,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
           const filteredFiles = filesToProcess.filter(f => !KNOWN_LINKEDIN_NOISE_FILES.includes(f.name));
           
           if (filteredFiles.length === 0 && errors.length === 0) throw new Error("No valid files found (PDF, DOCX, CSV, IMG supported).");
+          if (filteredFiles.length === 0 && errors.length > 0) throw new Error(errors[0]);
 
           // Phase 3: Content Parsing
           const processed: UploadedFile[] = [];
@@ -126,7 +130,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
               if (isImage) {
                    setProcessingStatus(`Layout Analysis (PP-Structure Sim): ${file.name}...`);
               } else {
-                   setProcessingStatus(`Parsing ${file.name}...`);
+                   setProcessingStatus(`Secure Parsing ${file.name}...`);
               }
               
               if (file.size > MAX_FILE_SIZE) {
@@ -140,7 +144,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                   // Relaxed check: Accept any non-empty text
                   if (text && text.trim().length > 0) { 
                        processed.push({ 
-                          name: file.name, 
+                          name: sanitizeFileNameUI(file.name), // Security: UI Sanitization
                           data: text, 
                           size: file.size, 
                           type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN' 
@@ -156,14 +160,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
           
           if (processed.length === 0) {
               const errorDetails = errors.length > 0 ? errors.slice(0, 3).join('. ') + (errors.length > 3 ? '...' : '') : "Unknown error";
-              throw new Error(`Could not extract text. ${errorDetails}`);
+              throw new Error(`Security/Parsing Error: ${errorDetails}`);
           }
 
           setUploadedFiles(processed);
           setDataLoaded(true);
       } catch (err: any) {
           console.error("Upload Error:", err);
-          setUploadError(err.message || "An error occurred during upload.");
+          setUploadError(err.message || "An error occurred during secure upload.");
       } finally {
           setIsUploading(false);
           setIsDragging(false);
@@ -285,9 +289,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
                                         {uploadError && (
                                             <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-start gap-3 w-full max-w-lg animate-fade-in">
-                                                <span className="material-symbols-outlined text-lg mt-0.5">error</span>
+                                                <span className="material-symbols-outlined text-lg mt-0.5">security</span>
                                                 <div className="flex-1">
-                                                    <p className="font-bold mb-1">Upload Failed</p>
+                                                    <p className="font-bold mb-1">Security / Upload Failed</p>
                                                     <p className="text-xs opacity-80 break-words">{uploadError}</p>
                                                 </div>
                                             </div>
