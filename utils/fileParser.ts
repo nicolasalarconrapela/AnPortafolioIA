@@ -1,8 +1,13 @@
-import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
+import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import Papa from 'papaparse';
 import JSZip from 'jszip';
 import Tesseract from 'tesseract.js';
+
+// Configure PDF.js worker
+// Fix: Use CDN for worker to avoid "Failed to construct 'URL': Invalid URL" errors 
+// when import.meta.url is not correctly handled by the bundler or runtime environment.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
 // --- SECURITY CONSTANTS ---
 const MAX_ZIP_EXPANDING_RATIO = 10; // Max compression ratio allowed (prevention against zip bombs)
@@ -16,22 +21,6 @@ const ALLOWED_MAGIC_NUMBERS: { [key: string]: string[] } = {
     'jpeg': ['ffd8ff'],
     // CSV and TXT do not have magic numbers, validated by content heuristic
 };
-
-// Helper to handle ESM default exports safely
-const getModule = (mod: any) => mod && mod.default ? mod.default : mod;
-
-// --- PDF.js Configuration ---
-const pdfjs = getModule(pdfjsLib);
-const PDFJS_VERSION = '3.11.174';
-const CDN_BASE = `https://esm.sh/pdfjs-dist@${PDFJS_VERSION}`;
-
-if (pdfjs && typeof window !== 'undefined' && !pdfjs.GlobalWorkerOptions.workerSrc) {
-    pdfjs.GlobalWorkerOptions.workerSrc = `${CDN_BASE}/build/pdf.worker.mjs`;
-}
-
-// Helper to get Mammoth & Tesseract
-const getMammoth = () => getModule(mammoth);
-const getTesseract = () => getModule(Tesseract);
 
 /**
  * SECURITY: Sanitize strings to prevent XSS or Control Character Injection
@@ -131,8 +120,7 @@ export const extractFilesFromZip = async (zipFile: File): Promise<File[]> => {
         // Validate ZIP signature first
         await validateFileSignature(zipFile);
 
-        const JSZipConstructor = getModule(JSZip);
-        const zip = new JSZipConstructor();
+        const zip = new JSZip();
         
         const loadedZip = await zip.loadAsync(zipFile);
         const extractedFiles: File[] = [];
@@ -146,8 +134,6 @@ export const extractFilesFromZip = async (zipFile: File): Promise<File[]> => {
             if (entry.name.startsWith('__MACOSX') || entry.name.startsWith('.') || entry.name.includes('../')) continue;
 
             // Security: Check for Zip Bomb (Size Bomb)
-            // Note: _data.uncompressedSize is internal API, entry.unsafeOriginalSize might be available depending on version
-            // We use a heuristic or check after blob creation if needed, but checking metadata is better.
             const size = (entry as any)._data?.uncompressedSize || 0;
             totalUncompressedSize += size;
 
@@ -187,16 +173,9 @@ export const extractFilesFromZip = async (zipFile: File): Promise<File[]> => {
 const parsePDF = async (file: File): Promise<string> => {
     try {
         const arrayBuffer = await file.arrayBuffer();
-        
-        if (pdfjs && !pdfjs.GlobalWorkerOptions.workerSrc) {
-            pdfjs.GlobalWorkerOptions.workerSrc = `${CDN_BASE}/build/pdf.worker.mjs`;
-        }
 
-        const loadingTask = pdfjs.getDocument({ 
+        const loadingTask = pdfjsLib.getDocument({ 
             data: arrayBuffer,
-            cMapUrl: `${CDN_BASE}/cmaps/`,
-            cMapPacked: true,
-            standardFontDataUrl: `${CDN_BASE}/standard_fonts/`,
             // Security: Disable external links/scripts execution context if possible in config
             isEvalSupported: false 
         });
@@ -228,13 +207,12 @@ const parsePDF = async (file: File): Promise<string> => {
 const parseDOCX = async (file: File): Promise<string> => {
     try {
         const arrayBuffer = await file.arrayBuffer();
-        const mammothClient = getMammoth();
         
-        if (!mammothClient || !mammothClient.extractRawText) {
+        if (!mammoth || !mammoth.extractRawText) {
             throw new Error("DOCX parser library not loaded.");
         }
         
-        const result = await mammothClient.extractRawText({ arrayBuffer: arrayBuffer });
+        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
         return result.value.trim();
     } catch (e: any) {
         throw new Error(`DOCX Error: ${e.message}`);
@@ -256,10 +234,7 @@ const parseCSV = (file: File): Promise<string> => {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                // Security: Basic sanitization of CSV fields is handled by returning JSON string,
-                // but we ensure we don't crash on huge data structures.
                 if (results.data && results.data.length > 0) {
-                    // Truncate rows if too many (prevent memory exhaustion)
                     const safeData = results.data.slice(0, 5000); 
                     resolve(JSON.stringify(safeData, null, 2));
                 } else {
@@ -278,15 +253,14 @@ const parseCSV = (file: File): Promise<string> => {
  */
 const parseImage = async (file: File): Promise<string> => {
     try {
-        const tesseract = getTesseract();
-        if (!tesseract) throw new Error("OCR library not initialized.");
+        if (!Tesseract) throw new Error("OCR library not initialized.");
 
         // Security: Limit image size to prevent memory crash during OCR
         if (file.size > 10 * 1024 * 1024) {
              throw new Error("Security: Image too large for OCR processing.");
         }
 
-        const result = await tesseract.recognize(
+        const result = await Tesseract.recognize(
             file,
             'eng', 
             { logger: () => {} }
