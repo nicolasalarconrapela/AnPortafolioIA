@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { AITrainingView } from './AITrainingView';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
@@ -75,7 +76,6 @@ const ExperienceCard: React.FC<{ role: string, company: string, period: string, 
     <Card 
         variant={active ? 'filled' : 'outlined'} 
         hoverable 
-        // UX: Group focus within enables buttons to show when focused via keyboard
         className={`group transition-all p-4 md:p-5 ${active ? 'bg-secondary-container border-transparent' : 'bg-surface-variant/50 border-transparent hover:bg-surface-variant'}`}
     >
         <div className="flex justify-between items-start mb-2">
@@ -182,20 +182,16 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 />
             )}
 
-            {/* Top Bar */}
-            <header className="bg-[var(--md-sys-color-background)] px-4 py-3 shadow-sm flex items-center justify-between sticky top-0 z-20 shrink-0">
+            {/* Top Bar - Simplified for Mobile */}
+            <header className="bg-[var(--md-sys-color-background)] px-4 py-2 md:py-3 shadow-sm flex items-center justify-between sticky top-0 z-20 shrink-0 border-b border-outline-variant/10">
                 <div className="flex items-center gap-3 md:gap-4 min-w-0">
                     <Icon name="diversity_3" className="text-primary text-xl md:text-2xl shrink-0" />
-                    <h1 className="font-display text-base md:text-lg font-medium truncate">Candidate Portal</h1>
+                    <h1 className="font-display text-base md:text-lg font-medium truncate">
+                        {activeTab === 'profile' ? 'Profile' : 'AI Coach'}
+                    </h1>
                 </div>
+                
                 <div className="flex items-center gap-1 md:gap-2 shrink-0">
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container/50 mr-2">
-                        <span className="text-xs font-bold text-secondary-onContainer">Profile Strength</span>
-                        <div className="w-16 h-2 bg-white rounded-full overflow-hidden" role="progressbar" aria-valuenow={70} aria-valuemin={0} aria-valuemax={100} aria-label="Profile Strength 70%">
-                            <div className="h-full bg-green-500 w-[70%]"></div>
-                        </div>
-                    </div>
-                    
                     <Button 
                         variant="text" 
                         icon="settings" 
@@ -216,21 +212,16 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             </header>
 
             {/* Main Content Area - Scroll handling logic updated for mobile */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-2 md:p-6 lg:p-8 flex flex-col h-full overflow-hidden">
+            <main className="flex-1 max-w-7xl w-full mx-auto p-0 md:p-6 lg:p-8 flex flex-col h-full overflow-hidden relative">
                 
-                {/* Main Tabs - Semantic Tablist */}
-                <div className="flex border-b border-outline-variant mb-2 md:mb-4 shrink-0 px-2" role="tablist" aria-label="Dashboard Views">
+                {/* Desktop Tabs */}
+                <div className="hidden md:flex border-b border-outline-variant mb-4 shrink-0 px-2" role="tablist" aria-label="Dashboard Views">
                     <Button 
                         variant="text"
                         onClick={() => setActiveTab('profile')}
                         role="tab"
                         aria-selected={activeTab === 'profile'}
-                        aria-controls="panel-profile"
-                        className={`rounded-b-none rounded-t-lg border-b-2 flex-1 md:flex-none justify-center transition-colors focus-visible:ring-inset ${
-                            activeTab === 'profile' 
-                            ? 'border-primary text-primary bg-primary/5 font-medium' 
-                            : 'border-transparent text-outline hover:text-[var(--md-sys-color-on-background)]'
-                        }`}
+                        className={`rounded-b-none rounded-t-lg border-b-2 flex-1 md:flex-none justify-center transition-colors ${activeTab === 'profile' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-outline'}`}
                         icon="badge"
                     >
                         My Profile
@@ -240,69 +231,54 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                         onClick={() => setActiveTab('training')}
                         role="tab"
                         aria-selected={activeTab === 'training'}
-                        aria-controls="panel-training"
-                        className={`rounded-b-none rounded-t-lg border-b-2 flex-1 md:flex-none justify-center transition-colors focus-visible:ring-inset ${
-                            activeTab === 'training' 
-                            ? 'border-primary text-primary bg-primary/5 font-medium' 
-                            : 'border-transparent text-outline hover:text-[var(--md-sys-color-on-background)]'
-                        }`}
+                        className={`rounded-b-none rounded-t-lg border-b-2 flex-1 md:flex-none justify-center transition-colors ${activeTab === 'training' ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-outline'}`}
                         icon="model_training"
                     >
                         AI Coach
                     </Button>
                 </div>
 
-                {activeTab === 'profile' && (
-                    <div id="panel-profile" role="tabpanel" className="flex flex-col h-full overflow-hidden">
-                        
-                        {/* Mobile View Toggle - Semantic Tablist for View Switching */}
-                        <div className="lg:hidden mx-2 mb-3 shrink-0">
-                            <div className="bg-surface-variant/50 p-1 rounded-full border border-outline-variant/50 flex relative shadow-inner" role="tablist" aria-label="Mobile View Switcher">
-                                <div 
-                                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-gray-700 rounded-full shadow-sm transition-all duration-300 ease-out ${
-                                        mobileView === 'chat' ? 'translate-x-[calc(100%+4px)]' : 'translate-x-0'
-                                    }`} 
-                                    aria-hidden="true"
-                                ></div>
-                                <button 
-                                    role="tab"
-                                    aria-selected={mobileView === 'form'}
-                                    onClick={() => setMobileView('form')}
-                                    className={`flex-1 relative z-10 py-2 text-xs font-medium rounded-full flex items-center justify-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
-                                        mobileView === 'form' ? 'text-primary font-bold' : 'text-outline'
-                                    }`}
-                                >
-                                    <Icon name="edit_note" size={16} filled={mobileView === 'form'} />
-                                    Edit Data
-                                </button>
-                                <button 
-                                    role="tab"
-                                    aria-selected={mobileView === 'chat'}
-                                    onClick={() => setMobileView('chat')}
-                                    className={`flex-1 relative z-10 py-2 text-xs font-medium rounded-full flex items-center justify-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary ${
-                                        mobileView === 'chat' ? 'text-primary font-bold' : 'text-outline'
-                                    }`}
-                                >
-                                    <Icon name="smart_toy" size={16} filled={mobileView === 'chat'} />
-                                    AI Auditor
-                                </button>
-                            </div>
-                        </div>
+                {/* Mobile Tab (View Switcher) - Floating Segmented Button */}
+                <div className="md:hidden px-4 py-2 bg-[var(--md-sys-color-background)] border-b border-outline-variant/10 z-10 sticky top-0">
+                    <div className="flex p-1 bg-surface-variant rounded-full" role="tablist">
+                        <button
+                            onClick={() => { setActiveTab('profile'); setMobileView('form'); }}
+                            className={`flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all ${activeTab === 'profile' && mobileView === 'form' ? 'bg-white shadow-sm text-primary' : 'text-outline'}`}
+                        >
+                            Profile
+                        </button>
+                        <button
+                            onClick={() => { setActiveTab('profile'); setMobileView('chat'); }}
+                            className={`flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all ${activeTab === 'profile' && mobileView === 'chat' ? 'bg-white shadow-sm text-primary' : 'text-outline'}`}
+                        >
+                            AI Audit
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('training')}
+                            className={`flex-1 py-1.5 px-3 rounded-full text-xs font-medium transition-all ${activeTab === 'training' ? 'bg-white shadow-sm text-primary' : 'text-outline'}`}
+                        >
+                            Coach
+                        </button>
+                    </div>
+                </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 animate-fade-in flex-1 min-h-0 px-2 pb-2">
+                {activeTab === 'profile' && (
+                    <div id="panel-profile" role="tabpanel" className="flex flex-col h-full overflow-hidden relative">
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 animate-fade-in flex-1 min-h-0 pb-0 md:pb-2">
                             
-                            {/* LEFT COLUMN: Data Entry & Display */}
-                            <div className={`lg:col-span-7 flex flex-col gap-4 md:gap-6 overflow-y-auto pr-1 custom-scrollbar pb-20 ${mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
+                            {/* LEFT COLUMN: Data Entry */}
+                            <div className={`lg:col-span-7 flex flex-col gap-4 md:gap-6 overflow-y-auto px-4 md:px-0 custom-scrollbar pb-24 md:pb-0 ${mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
                                 
                                 {/* Profile Header Card */}
-                                <Card variant="elevated" className="p-4 md:p-6">
+                                <Card variant="elevated" className="p-4 md:p-6 mt-4 md:mt-0">
                                     <div className="flex items-start justify-between">
                                         <div className="flex gap-4 min-w-0">
                                             <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-xl md:text-2xl font-bold shrink-0" aria-hidden="true">
                                                 {profile.fullName.charAt(0)}
                                             </div>
                                             <div className="min-w-0">
-                                                <h2 className="text-lg md:text-xl font-normal font-display truncate" title={profile.fullName}>{profile.fullName}</h2>
+                                                <h2 className="text-lg md:text-xl font-normal font-display truncate">{profile.fullName}</h2>
                                                 <p className="text-primary font-medium text-sm md:text-base truncate">{profile.jobTitle}</p>
                                                 <div className="flex items-center gap-2 text-xs text-outline mt-1 truncate">
                                                     <Icon name="location_on" size="sm" />
@@ -317,14 +293,14 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                                     </div>
                                 </Card>
 
-                                {/* Section: Experience */}
+                                {/* Experience & Skills */}
                                 <Card variant="elevated" className="p-4 md:p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-base md:text-lg font-medium flex items-center gap-2">
                                             <Icon name="work_history" className="text-blue-600" />
                                             Experience
                                         </h3>
-                                        <Button variant="filled" size="sm" icon="add" className="!rounded-full !px-0 !w-8 !h-8" aria-label="Add Experience" />
+                                        <Button variant="filled" size="sm" icon="add" className="!rounded-full !px-0 !w-8 !h-8" />
                                     </div>
                                     <div className="space-y-3">
                                         {experiences.map((exp, i) => (
@@ -333,50 +309,41 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                                     </div>
                                 </Card>
 
-                                {/* Section: Skills */}
-                                <Card variant="elevated" className="p-4 md:p-6">
+                                <Card variant="elevated" className="p-4 md:p-6 mb-safe">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-base md:text-lg font-medium flex items-center gap-2">
                                             <Icon name="psychology" className="text-purple-600" />
                                             Skills
                                         </h3>
-                                        <Button variant="text" size="sm">Edit All</Button>
+                                        <Button variant="text" size="sm">Edit</Button>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {['React', 'TypeScript', 'Node.js', 'Figma', 'System Design', 'Accessibility'].map((skill, i) => (
-                                            <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-variant border border-outline-variant/50 text-sm font-medium text-[var(--md-sys-color-on-background)] hover:bg-secondary-container hover:text-secondary-onContainer transition-colors cursor-default">
+                                        {['React', 'TypeScript', 'Node.js', 'Figma', 'System Design'].map((skill, i) => (
+                                            <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-variant border border-outline-variant/50 text-sm font-medium text-[var(--md-sys-color-on-background)]">
                                                 {skill}
                                             </span>
                                         ))}
                                         <Button variant="outlined" size="sm" icon="add" className="border-dashed">Add</Button>
                                     </div>
                                 </Card>
-
                             </div>
 
                             {/* RIGHT COLUMN: AI Copilot */}
                             <Card 
                                 variant="elevated" 
                                 padding="none" 
-                                className={`lg:col-span-5 flex flex-col h-full overflow-hidden border border-outline-variant/20 ${mobileView === 'form' ? 'hidden lg:flex' : 'flex'}`}
+                                className={`lg:col-span-5 flex flex-col h-full overflow-hidden border-none md:border border-outline-variant/20 shadow-none md:shadow-elevation-1 rounded-none md:rounded-[24px] bg-[var(--md-sys-color-background)] ${mobileView === 'form' ? 'hidden lg:flex' : 'flex'}`}
                             >
-                                
-                                {/* Chat Header & Category Selector */}
-                                <div className="p-3 md:p-4 border-b border-outline-variant/20 bg-surface-variant/30">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Icon name="auto_awesome" className="text-primary" />
-                                        <span className="font-bold text-sm uppercase tracking-wide text-primary">Profile Auditor</span>
-                                    </div>
-                                    
-                                    {/* Horizontal Scroll Categories */}
-                                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" role="tablist" aria-label="Audit Categories">
+                                {/* Chat Header */}
+                                <div className="p-3 md:p-4 border-b border-outline-variant/20 bg-surface-variant/30 sticky top-0 z-10">
+                                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" role="tablist">
                                         {(Object.keys(CATEGORY_CONFIG) as OptimizationCategory[]).map(cat => (
                                             <button
                                                 key={cat}
                                                 role="tab"
                                                 aria-selected={activeCategory === cat}
                                                 onClick={() => setActiveCategory(cat)}
-                                                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border focus-visible:ring-2 focus-visible:ring-primary ${
+                                                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 border ${
                                                     activeCategory === cat 
                                                     ? 'bg-secondary-container text-secondary-onContainer border-transparent' 
                                                     : 'bg-transparent border-outline text-outline hover:bg-surface-variant'
@@ -389,8 +356,8 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                                     </div>
                                 </div>
 
-                                {/* Chat History */}
-                                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--md-sys-color-background)]" aria-live="polite">
+                                {/* Chat History - Needs padding at bottom for input */}
+                                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[var(--md-sys-color-background)] pb-32" aria-live="polite">
                                     {messages.map((msg: any) => (
                                         <ChatMessage key={msg.id} sender={msg.sender} text={msg.text} />
                                     ))}
@@ -400,44 +367,54 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                                                 <Icon name="sync" size="sm" className="animate-spin" />
                                             </div>
                                             <div className="p-3 rounded-2xl bg-surface-variant rounded-tl-none">
-                                                <div className="flex gap-1">
-                                                    <span className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce"></span>
-                                                    <span className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce delay-100"></span>
-                                                    <span className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce delay-200"></span>
-                                                </div>
                                                 <span className="sr-only">AI is thinking...</span>
+                                                <div className="flex gap-1 h-2 items-center">
+                                                    <div className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce"></div>
+                                                    <div className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce delay-100"></div>
+                                                    <div className="w-1.5 h-1.5 bg-outline rounded-full animate-bounce delay-200"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
                                     <div ref={chatEndRef}></div>
                                 </div>
 
-                                {/* Suggestions */}
-                                <div className="px-4 py-2 bg-surface-variant/30 overflow-x-auto no-scrollbar flex gap-2 border-t border-outline-variant/10 shrink-0">
-                                    {CATEGORY_CONFIG[activeCategory].suggestions.map((suggestion, i) => (
-                                        <button 
-                                            key={i} 
-                                            onClick={() => handleSendMessage(suggestion)}
-                                            className="px-3 py-1 rounded-lg bg-[var(--md-sys-color-background)] border border-outline-variant text-[11px] font-medium text-primary hover:bg-primary-container transition-colors whitespace-nowrap shadow-sm flex-shrink-0 focus-visible:ring-2 focus-visible:ring-primary"
-                                        >
-                                            {suggestion}
-                                        </button>
-                                    ))}
-                                </div>
+                                {/* Input Area - Floating & Blur for Mobile Space */}
+                                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-[var(--md-sys-color-background)]/90 backdrop-blur-md border-t border-outline-variant/20 z-20 pb-safe">
+                                    
+                                    {/* Suggestions Pills */}
+                                    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3">
+                                        {CATEGORY_CONFIG[activeCategory].suggestions.map((suggestion, i) => (
+                                            <button 
+                                                key={i} 
+                                                onClick={() => handleSendMessage(suggestion)}
+                                                className="px-3 py-1 rounded-lg bg-surface-variant border border-outline-variant/50 text-[11px] font-medium text-primary whitespace-nowrap shadow-sm active:scale-95 transition-transform"
+                                            >
+                                                {suggestion}
+                                            </button>
+                                        ))}
+                                    </div>
 
-                                {/* Input Area - Sticky Bottom with safe area padding */}
-                                <div className="p-3 md:p-4 bg-[var(--md-sys-color-background)] border-t border-outline-variant/20 shrink-0 pb-safe">
-                                    <Input 
-                                        label={`Ask about your ${CATEGORY_CONFIG[activeCategory].label.toLowerCase()}...`}
-                                        value={inputText}
-                                        onChange={(e) => setInputText(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                        endIcon="arrow_upward"
-                                        onEndIconClick={() => handleSendMessage()}
-                                        className="!rounded-full"
-                                        disabled={isThinking}
-                                        aria-label="Message to AI Auditor"
-                                    />
+                                    <div className="relative flex items-center gap-2">
+                                        <div className="flex-1 relative">
+                                            <input 
+                                                type="text"
+                                                value={inputText}
+                                                onChange={(e) => setInputText(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                                placeholder={`Ask about ${CATEGORY_CONFIG[activeCategory].label}...`}
+                                                className="w-full h-12 pl-4 pr-12 rounded-full bg-surface border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-sm transition-all"
+                                                disabled={isThinking}
+                                            />
+                                            <button 
+                                                onClick={() => handleSendMessage()}
+                                                disabled={!inputText.trim() || isThinking}
+                                                className="absolute right-1 top-1 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-50 disabled:bg-surface-variant disabled:text-outline transition-all hover:shadow-md active:scale-90"
+                                            >
+                                                <Icon name="arrow_upward" size="sm" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </Card>
@@ -446,7 +423,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 )}
 
                 {activeTab === 'training' && (
-                    <Card id="panel-training" role="tabpanel" variant="elevated" className="p-4 md:p-8 animate-fade-in border border-outline-variant/20 flex-1 overflow-y-auto mx-2 mb-2">
+                    <Card id="panel-training" role="tabpanel" variant="elevated" className="md:p-8 animate-fade-in border-none md:border border-outline-variant/20 flex-1 overflow-y-auto m-0 md:mx-2 md:mb-2 rounded-none md:rounded-[24px]">
                         <AITrainingView onBack={() => setActiveTab('profile')} onComplete={() => {}} isDashboard={true} />
                     </Card>
                 )}
