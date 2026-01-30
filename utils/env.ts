@@ -11,7 +11,7 @@ const metaEnv = (import.meta as any).env || {};
 
 // Fallback for environments where .env cannot be injected (e.g. Google AI Studio)
 // This points to a deployed instance that serves compatible Firestore endpoints.
-const VITE_BACKEND_GAIS_API_URL = "https://ia3-ptx6.onrender.com";
+const VITE_BACKEND_GAIS_API_URL = "https://anportafolioia-egy8.onrender.com";
 const DEFAULT_LOCAL_URL = "http://localhost:3001";
 
 export const env = {
