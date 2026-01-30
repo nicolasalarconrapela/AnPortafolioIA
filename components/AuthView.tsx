@@ -43,7 +43,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${isRecruiter ? 'from-indigo-500 to-cyan-400' : 'from-cyan-400 to-indigo-600'} flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]`}>
                         <span className="material-symbols-outlined text-white text-xl">deployed_code</span>
                      </div>
-                     <h1 className="text-2xl font-bold text-white tracking-tight">AnPortafolioIA</h1>
+                     <div className="flex items-baseline gap-2">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">AnPortafolioIA</h1>
+                        <span className="text-[10px] font-bold bg-white/10 px-2 py-0.5 rounded-full text-white/70 border border-white/5 uppercase tracking-wider">v0.5.0 Beta</span>
+                     </div>
                 </div>
 
                 <h2 className="text-5xl xl:text-6xl font-bold text-white leading-tight mb-6 neon-text-glow">

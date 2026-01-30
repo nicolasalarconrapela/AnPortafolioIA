@@ -51,6 +51,9 @@ export const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({ isAuthentica
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider truncate">Hiring Manager</span>
               </div>
               </div>
+              <div className="mt-3 text-center">
+                <span className="text-[10px] font-mono text-slate-600">v0.5.0 Beta</span>
+              </div>
           </div>
         )}
       </aside>

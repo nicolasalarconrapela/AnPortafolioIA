@@ -10,6 +10,12 @@ interface LandingViewProps {
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
   return (
     <main className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen overflow-x-hidden p-4 lg:overflow-hidden">
+      
+      {/* Version Label */}
+      <div className="fixed bottom-4 right-4 z-50 text-[10px] font-mono text-slate-500 opacity-60 bg-black/20 px-2 py-1 rounded-md border border-white/5">
+        v0.5.0 Beta
+      </div>
+
       <div className="relative w-full max-w-7xl h-full flex flex-col lg:flex-row items-center justify-center">
         {/* Central Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-gradient-to-b from-cyan-500/5 to-transparent blur-3xl rounded-full z-0 pointer-events-none"></div>

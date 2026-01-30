@@ -700,7 +700,10 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                     {/* Logo */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveView('profile')}>
                         <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-purple-900/20">A</div>
-                        <span className="text-xl font-bold text-white tracking-tight hidden sm:block">AnPortafolioIA</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-bold text-white tracking-tight hidden sm:block">AnPortafolioIA</span>
+                            <span className="hidden lg:block text-[10px] font-bold text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded border border-purple-500/20 uppercase">v0.5.0 Beta</span>
+                        </div>
                     </div>
 
                     {/* Desktop Navigation */}
