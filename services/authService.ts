@@ -54,54 +54,67 @@ class AuthService {
   }
 
   /**
-   * Login with Google (Calls Backend OAuth Flow)
+   * Login with Google (Frontend Popup -> Backend Session Cookie)
    */
   async loginGoogle(): Promise<any> {
-    // 1. Get the OAuth URL
-    const response = await fetch(`${BASE_URL}/google/url`);
-    const data = await response.json();
-    if (!response.ok)
-      throw new Error(data.error || "Failed to get Google Auth URL");
-
-    // 2. Open Popup
-    const width = 500;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    const popup = window.open(
-      data.url,
-      "Google Login",
-      `width=${width},height=${height},top=${top},left=${left}`
+    // Dynamic import to avoid hard dependency if Firebase not configured
+    const { GoogleAuthProvider, signInWithPopup } = await import(
+      "firebase/auth"
     );
+    // Use the async getter to ensure config is loaded (Env or Backend Fallback)
+    const { getFirebaseAuth } = await import("./firebaseConfig");
 
-    if (!popup) throw new Error("Popup blocked");
+    // Use the asynchronous getter
+    const authClient = await getFirebaseAuth();
 
-    // 3. Wait for message
-    return new Promise((resolve, reject) => {
-      // Handle message from popup
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data?.success) {
-          window.removeEventListener("message", handleMessage);
-          resolve(event.data.user);
-        } else if (event.data?.success === false) {
-          window.removeEventListener("message", handleMessage);
-          reject(new Error(event.data.error || "Google Auth Failed"));
-        }
-      };
+    const provider = new GoogleAuthProvider();
 
-      window.addEventListener("message", handleMessage);
+    // 1. Open Google Popup
+    const result = await signInWithPopup(authClient, provider);
+    const user = result.user;
 
-      // Detect closed popup
-      const timer = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(timer);
-          window.removeEventListener("message", handleMessage);
-          // If no message received yet, it was closed manually
-          // reject(new Error("Login window closed"));
-        }
-      }, 1000);
+    // 2. Get ID Token
+    const idToken = await user.getIdToken();
+
+    // 3. Send to Backend to create HTTP-only Session Cookie
+    const response = await fetch(`${BASE_URL}/session-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      credentials: "include", // Important!
     });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || "Session creation failed");
+    }
+
+    // Return user info
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+    };
+  }
+
+  /**
+   * Logout
+   */
+  async logout(): Promise<void> {
+    await fetch(`${BASE_URL}/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    // Also sign out from client SDK to clear client-side state
+    const { getFirebaseAuth } = await import("./firebaseConfig");
+    try {
+      const authClient = await getFirebaseAuth();
+      await authClient.signOut();
+    } catch (e) {
+      // Include console log or logging service
+    }
   }
 }
 

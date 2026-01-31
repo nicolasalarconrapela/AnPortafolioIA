@@ -23,6 +23,83 @@ const callFirebaseREST = async (endpoint, body) => {
     return data;
 };
 
+/**
+ * GET /api/auth/config/firebase-public
+ * Serves public Firebase configuration to the frontend.
+ * This allows the frontend to initialize the Client SDK even if .env injection fails (e.g. in some preview environments).
+ */
+router.get('/config/firebase-public', (req, res) => {
+    // These calls read from the Server's environment variables.
+    // Ensure these are set in your Backend deployment / .env
+    const publicConfig = {
+        apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY, // Fallback to either
+        authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+        storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.VITE_FIREBASE_APP_ID,
+    };
+
+    if (!publicConfig.apiKey) {
+        return res.status(500).json({ error: "Firebase Public Config not set on Backend" });
+    }
+
+    res.json(publicConfig);
+});
+
+/**
+ * POST /api/auth/session-login
+ * Exchanges an ID Token (from client SDK) for a Session Cookie.
+ * This is the secure way to manage sessions from the backend.
+ */
+router.post('/session-login', async (req, res) => {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ error: "idToken is required" });
+
+    // Set session expiration to 5 days
+    const expiresIn = 60 * 60 * 24 * 5 * 1000;
+
+    try {
+        const auth = getAuth();
+
+        // 1. Verify the ID Token first to ensure it is valid
+        // Check if token revocation is handled by createSessionCookie implicitly, but explicit verification is good
+        // Actually, createSessionCookie verifies it too.
+
+        // 2. Create the Session Cookie
+        const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
+
+        // 3. Set Cookie Options
+        const options = {
+            maxAge: expiresIn,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Only secure in prod unless configured otherwise
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain prod, 'lax'/ 'strict' for local
+        };
+
+        res.cookie('session', sessionCookie, options);
+        res.json({ success: true, message: "Session created" });
+    } catch (error) {
+        console.error("Session creation failed", error);
+        res.status(401).json({ error: "Unauthorized" });
+    }
+});
+
+/**
+ * POST /api/auth/logout
+ * Clears the session cookie.
+ */
+router.post('/logout', (req, res) => {
+    res.clearCookie('session', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
+    res.json({ success: true, message: "Logged out" });
+});
+
+// --- Legacy/REST Endpoints (Optional helpers) ---
+
 // --- Firebase Auth API Endpoints ---
 
 /**
