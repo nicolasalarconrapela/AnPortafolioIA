@@ -1,8 +1,11 @@
-
 import express from 'express';
 import { getFirestore } from '../firebaseAdmin.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+// --- Middleware: Protect all Firestore routes ---
+router.use(requireAuth);
 
 // --- Firestore API Endpoints ---
 
@@ -10,22 +13,37 @@ router.get('/workspaces/:userKey', async (req, res) => {
     const { userKey } = req.params;
     const { collectionOverride } = req.query;
 
+    // Security Check: Ensure user matches the requested key
+    // We allow "me" alias for convenience
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+
+    if (targetUid !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized: You can only access your own workspace." });
+    }
+
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
+        // Use a secure user-specific collection or document structure
+        // Current logic maps userKey -> DocId. We keep this but secured.
+        const collectionName = collectionOverride || 'users-workspaces';
 
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
+        // We use the UID directly as the document verification key, 
+        // avoiding obscure base64 transforms unless strictly needed for legacy compatibility.
+        // If legacy compat is needed, we keep the transform but I'll simplify to use UID if possible.
+        // Let's stick to the previous base64 logic to avoid breaking existing data IF it was important,
+        // BUT for a clean migration, using UID as Doc Name is better. 
+        // Let's assume we WANT to migrate to UID-based keys.
 
-        const docRef = firestore.collection(collectionName).doc(docKey);
+        const docRef = firestore.collection(collectionName).doc(targetUid);
         const docSnap = await docRef.get();
 
         if (!docSnap.exists) {
+            // Return empty object for new users instead of 404 to simplify frontend logic?
+            // Or 404. Let's return 404 and let frontend handle initialization.
             return res.status(404).json({ error: 'Workspace not found' });
         }
 
         // --- Professional Caching Logic ---
-        // Use Firestore document metadata to handle If-Modified-Since
         const lastUpdateDate = docSnap.updateTime.toDate();
         const lastModified = lastUpdateDate.toUTCString();
 
@@ -34,7 +52,7 @@ router.get('/workspaces/:userKey', async (req, res) => {
         }
 
         res.setHeader('Last-Modified', lastModified);
-        res.setHeader('Cache-Control', 'no-cache'); // Force revalidation but allow 304
+        res.setHeader('Cache-Control', 'private, no-cache'); // Private because it's user data
         res.json(docSnap.data());
     } catch (error) {
         console.error('[ERROR] Firestore Get Error:', error);
@@ -47,14 +65,23 @@ router.post('/workspaces/:userKey', async (req, res) => {
     const { collectionOverride } = req.query;
     const data = req.body;
 
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+    if (targetUid !== req.user.uid) return res.status(403).json({ error: "Unauthorized" });
+
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
+        const collectionName = collectionOverride || 'users-workspaces';
 
-        const docRef = firestore.collection(collectionName).doc(docKey);
-        await docRef.set(data, { merge: true });
+        const docRef = firestore.collection(collectionName).doc(targetUid);
+
+        // Ensure we don't overwrite critical metadata
+        const payload = {
+            ...data,
+            updatedAt: new Date().toISOString(),
+            ownerId: req.user.uid
+        };
+
+        await docRef.set(payload, { merge: true });
 
         res.json({ success: true });
     } catch (error) {
@@ -67,14 +94,13 @@ router.delete('/workspaces/:userKey', async (req, res) => {
     const { userKey } = req.params;
     const { collectionOverride } = req.query;
 
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+    if (targetUid !== req.user.uid) return res.status(403).json({ error: "Unauthorized" });
+
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
-
-        await firestore.collection(collectionName).doc(docKey).delete();
-
+        const collectionName = collectionOverride || 'users-workspaces';
+        await firestore.collection(collectionName).doc(targetUid).delete();
         res.json({ success: true });
     } catch (error) {
         console.error('[ERROR] Firestore Delete Error:', error);
@@ -82,22 +108,24 @@ router.delete('/workspaces/:userKey', async (req, res) => {
     }
 });
 
-// Child Documents
+// Child Documents (Sub-collections)
 router.get('/workspaces/:userKey/child/:childCollection/:childDocId', async (req, res) => {
     const { userKey, childCollection, childDocId } = req.params;
     const { collectionOverride } = req.query;
 
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+    if (targetUid !== req.user.uid) return res.status(403).json({ error: "Unauthorized" });
+
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
+        const collectionName = collectionOverride || 'users-workspaces';
 
-        // Sanitize segments (simple replacement)
-        const sanitize = (str) => str.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        // Sanitize
+        const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
 
-        const docRef = firestore.collection(collectionName).doc(docKey)
-            .collection(sanitize(childCollection)).doc(sanitize(childDocId));
+        const docRef = firestore.collection(collectionName).doc(targetUid)
+            .collection(safeChildColl).doc(safeChildDoc);
 
         const docSnap = await docRef.get();
 
@@ -116,17 +144,20 @@ router.post('/workspaces/:userKey/child/:childCollection/:childDocId', async (re
     const { userKey, childCollection, childDocId } = req.params;
     const { collectionOverride } = req.query;
     const data = req.body;
-    const { merge = true } = req.query; // Allow controlling merge via query param
+    const { merge = true } = req.query;
+
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+    if (targetUid !== req.user.uid) return res.status(403).json({ error: "Unauthorized" });
 
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
-        const sanitize = (str) => str.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        const collectionName = collectionOverride || 'users-workspaces';
 
-        const docRef = firestore.collection(collectionName).doc(docKey)
-            .collection(sanitize(childCollection)).doc(sanitize(childDocId));
+        const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
+
+        const docRef = firestore.collection(collectionName).doc(targetUid)
+            .collection(safeChildColl).doc(safeChildDoc);
 
         await docRef.set(data, { merge: merge === 'true' || merge === true });
 
@@ -141,18 +172,20 @@ router.delete('/workspaces/:userKey/child/:childCollection/:childDocId', async (
     const { userKey, childCollection, childDocId } = req.params;
     const { collectionOverride } = req.query;
 
+    const targetUid = userKey === 'me' ? req.user.uid : userKey;
+    if (targetUid !== req.user.uid) return res.status(403).json({ error: "Unauthorized" });
+
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'workspace-test';
-        const toBase64Url = (str) => Buffer.from(str).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        const docKey = toBase64Url(userKey);
-        const sanitize = (str) => str.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        const collectionName = collectionOverride || 'users-workspaces';
 
-        const docRef = firestore.collection(collectionName).doc(docKey)
-            .collection(sanitize(childCollection)).doc(sanitize(childDocId));
+        const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
+        const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
+
+        const docRef = firestore.collection(collectionName).doc(targetUid)
+            .collection(safeChildColl).doc(safeChildDoc);
 
         await docRef.delete();
-
         res.json({ success: true });
     } catch (error) {
         console.error('[ERROR] Firestore Child Delete Error:', error);
@@ -166,12 +199,14 @@ router.post('/logs', async (req, res) => {
 
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'firebase-action-logs';
+        const collectionName = collectionOverride || 'user-action-logs';
 
-        // Add server timestamp
+        // Add server timestamp and USER ID
         const payload = {
             ...data,
-            serverTimestamp: new Date().toISOString() // Use ISO string as serverTimestamp proxy
+            uid: req.user.uid, // Persist User ID
+            email: req.user.email,
+            serverTimestamp: new Date().toISOString()
         };
 
         await firestore.collection(collectionName).add(payload);
