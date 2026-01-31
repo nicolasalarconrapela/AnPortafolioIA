@@ -13,7 +13,7 @@ import { validateEnvironment } from './validateEnv.js';
 const app = express();
 
 // CORS Config for secure cookies (credentials: true)
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', config.EXTERNAL_URL];
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000', config.EXTERNAL_URL, 'https://anportafolioia.onrender.com', 'https://anportafolioia-egy8.onrender.com'];
 
 app.use(cors({
     origin: function (origin, callback) {
