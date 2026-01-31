@@ -118,8 +118,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
       {/* Right Panel - Clean Form */}
       <div className="w-full lg:w-1/2 flex flex-col relative">
         
-        {/* Top Navigation - Absolute on desktop to keep form centered, relative on mobile */}
-        <div className="p-6 sm:p-8 lg:absolute lg:top-0 lg:left-0 lg:w-full z-10 flex justify-between items-center">
+        {/* Unified Top Header - Flex Row for perfect alignment */}
+        <div className="absolute top-0 left-0 w-full p-6 sm:p-8 flex items-center justify-between z-20">
+             {/* Left: Home Button */}
              <button 
                 onClick={() => onNavigate('landing')}
                 className="text-sm text-outline hover:text-primary flex items-center gap-2 transition-colors px-2 py-1 rounded-md hover:bg-surface-variant/50"
@@ -127,18 +128,18 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
                 <Icon name="arrow_back" size={18} />
                 <span className="font-medium">Home</span>
             </button>
+
+            {/* Right: Branding (Visible ONLY on Mobile) */}
+            <div className="lg:hidden flex items-center gap-2 opacity-90">
+                <Icon name="diversity_3" className="text-primary text-xl" />
+                <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">PortafolioIA</span>
+            </div>
         </div>
 
         {/* Content Container - Centered */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 mt-16 lg:mt-0">
             <div className="w-full max-w-[400px]">
                 
-                {/* Mobile Header */}
-                <div className="lg:hidden flex items-center gap-2 mb-10 justify-center">
-                    <Icon name="diversity_3" className="text-primary text-2xl" />
-                    <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">PortafolioIA</span>
-                </div>
-
                 <div className="mb-10">
                     <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
                         {isLogin ? 'Sign in' : 'Create account'}
