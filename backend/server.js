@@ -195,21 +195,34 @@ function isDevLocalhost(normalized) {
   );
 }
 
+const allowGoogleAiStudio = (origin) =>
+  typeof origin === "string" &&
+  /^https:\/\/[a-z0-9-]+\.scf\.usercontent\.goog$/i.test(origin);
+  
 const corsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true);
 
     const normalized = normalizeOrigin(origin);
 
+    // ✅ Permite Ai Studio / entornos de Google que sirvan desde *.scf.usercontent.goog
+    // (solo HTTPS + host exacto por regex)
+    if (allowGoogleAiStudio(normalized)) {
+      logger.info("cors_allowed_google_ai_studio", { origin, normalized });
+      return cb(null, true);
+    }
+
+    // DEV: permite localhost variants
     if (process.env.NODE_ENV !== "production" && isDevLocalhost(normalized)) {
       return cb(null, true);
     }
 
-    if (normalized && allowedSet.has(normalized)) return cb(null, true);
+    // PROD: allowlist estricta
+    if (normalized && allowedSet.has(normalized)) {
+      return cb(null, true);
+    }
 
-    // Log seguro: origin sí, pero NO cookies, NO auth
     logger.warn("cors_blocked", {
-      rid: undefined, // no tenemos req aquí, pero sirve igual
       origin,
       normalized,
       allowed: [...allowedSet],
@@ -218,6 +231,7 @@ const corsOptions = {
 
     return cb(new Error(`CORS blocked for origin: ${origin}`), false);
   },
+
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
