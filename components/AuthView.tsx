@@ -21,24 +21,63 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
   const [email, setEmail] = useState(isRecruiter ? "recruiter@techcorp.com" : "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{email?: string, password?: string}>({});
   
+  // Validation State
+  const [errors, setErrors] = useState<{email?: string, password?: string}>({});
+
   const handleToggle = () => {
       setIsLogin(!isLogin);
       setErrors({});
+      // Reset fields if switching context, optional depending on UX preference
+      if (!isRecruiter) setEmail(""); 
+      setPassword("");
   };
 
-  const validate = () => {
-      const newErrors: any = {};
-      if (!email) newErrors.email = "Required";
-      if (!password) newErrors.password = "Required";
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+  // Validation Logic - Human friendly, pure JS
+  const validateField = (field: string, value: string) => {
+      if (field === 'email') {
+          if (!value.trim()) return "El correo es obligatorio";
+          // Robust email regex that allows standard formats
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Introduce un email válido";
+      }
+      if (field === 'password') {
+          if (!value) return "La contraseña es obligatoria";
+          if (!isLogin && value.length < 6) return "Mínimo 6 caracteres";
+      }
+      return undefined;
+  };
+
+  // Trigger validation only when user leaves the field
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      const { id, value } = e.target;
+      const error = validateField(id, value);
+      // Only set error if there is one, to avoid clearing existing errors unnecessarily if logic gets complex
+      setErrors(prev => ({ ...prev, [id]: error }));
+  };
+
+  // Clear error immediately when user starts typing to fix it
+  const handleChange = (field: 'email' | 'password', value: string) => {
+      if (field === 'email') setEmail(value);
+      if (field === 'password') setPassword(value);
+
+      if (errors[field]) {
+          setErrors(prev => ({ ...prev, [field]: undefined }));
+      }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    
+    // Validate all fields on submit
+    const emailError = validateField('email', email);
+    const passwordError = validateField('password', password);
+
+    setErrors({
+        email: emailError,
+        password: passwordError
+    });
+
+    if (emailError || passwordError) return;
 
     setIsLoading(true);
 
@@ -181,18 +220,24 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                    {/* Inputs: Clean, no icons */}
+                {/* 
+                    Form Refactor: 
+                    1. noValidate to disable browser bubbles.
+                    2. Handled inputs with onBlur validation.
+                */}
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                     <Input 
                         id="email"
-                        type="email"
+                        // Using 'text' type with 'email' inputMode prevents some browser validation triggers
+                        // while keeping the correct mobile keyboard.
+                        type="text"
                         inputMode="email"
-                        autoComplete="username"
+                        autoComplete="email"
                         label="Email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => handleChange('email', e.target.value)}
+                        onBlur={handleBlur}
                         error={errors.email}
-                        // No startIcon for minimalism
                     />
 
                     <Input 
@@ -201,11 +246,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
                         autoComplete={isLogin ? "current-password" : "new-password"}
                         label="Password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => handleChange('password', e.target.value)}
+                        onBlur={handleBlur}
                         error={errors.password}
                         endIcon={showPassword ? "visibility_off" : "visibility"}
                         onEndIconClick={() => setShowPassword(!showPassword)}
-                        // No startIcon
                     />
 
                     {isLogin && (
