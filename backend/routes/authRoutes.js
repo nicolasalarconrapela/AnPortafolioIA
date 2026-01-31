@@ -47,37 +47,30 @@ router.get('/config/firebase-public', (req, res) => {
     res.json(publicConfig);
 });
 
+// --- Session Helper ---
+const setSessionCookie = async (res, idToken) => {
+    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const auth = getAuth();
+    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
+    const options = {
+        maxAge: expiresIn,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    };
+    res.cookie('session', sessionCookie, options);
+};
+
 /**
  * POST /api/auth/session-login
- * Exchanges an ID Token (from client SDK) for a Session Cookie.
- * This is the secure way to manage sessions from the backend.
+ * Exchanges an ID Token for a Session Cookie.
  */
 router.post('/session-login', async (req, res) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ error: "idToken is required" });
 
-    // Set session expiration to 5 days
-    const expiresIn = 60 * 60 * 24 * 5 * 1000;
-
     try {
-        const auth = getAuth();
-
-        // 1. Verify the ID Token first to ensure it is valid
-        // Check if token revocation is handled by createSessionCookie implicitly, but explicit verification is good
-        // Actually, createSessionCookie verifies it too.
-
-        // 2. Create the Session Cookie
-        const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-
-        // 3. Set Cookie Options
-        const options = {
-            maxAge: expiresIn,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Only secure in prod unless configured otherwise
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain prod, 'lax'/ 'strict' for local
-        };
-
-        res.cookie('session', sessionCookie, options);
+        await setSessionCookie(res, idToken);
         res.json({ success: true, message: "Session created" });
     } catch (error) {
         console.error("Session creation failed", error);
@@ -87,7 +80,6 @@ router.post('/session-login', async (req, res) => {
 
 /**
  * POST /api/auth/logout
- * Clears the session cookie.
  */
 router.post('/logout', (req, res) => {
     res.clearCookie('session', {
@@ -98,53 +90,30 @@ router.post('/logout', (req, res) => {
     res.json({ success: true, message: "Logged out" });
 });
 
-// --- Legacy/REST Endpoints (Optional helpers) ---
 
-// --- Firebase Auth API Endpoints ---
-
-/**
- * POST /api/auth/verify-token
- * Verifica un token de Firebase Auth
- */
-router.post('/verify-token', async (req, res) => {
-    const { token } = req.body;
-
-    if (!token) {
-        return res.status(400).json({ error: 'Token is required' });
-    }
-
-    try {
-        const auth = getAuth();
-        const decodedToken = await auth.verifyIdToken(token);
-
-        res.json({
-            success: true,
-            uid: decodedToken.uid,
-            email: decodedToken.email,
-            emailVerified: decodedToken.email_verified,
-        });
-    } catch (error) {
-        console.error('[ERROR] Token verification failed:', error);
-        res.status(401).json({ error: 'Invalid token', details: error.message });
-    }
-});
+// --- Firebase Auth API Endpoints (Enhanced with Session Cookie) ---
 
 /**
  * POST /api/auth/login
- * Log in with Email/Password via Firebase REST API
+ * Log in with Email/Password -> Sets Session Cookie
  */
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     try {
+        // 1. Authenticate via REST to get ID Token
         const data = await callFirebaseREST('signInWithPassword', { email, password });
+
+        // 2. Create Session Cookie immediately
+        await setSessionCookie(res, data.idToken);
+
         res.json({
             success: true,
             user: {
                 uid: data.localId,
                 email: data.email,
-                idToken: data.idToken,
+                idToken: data.idToken, // Optional to return, but cookie is primary now
                 refreshToken: data.refreshToken
             }
         });
@@ -156,7 +125,7 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /api/auth/register
- * Register with Email/Password via Firebase REST API
+ * Register with Email/Password -> Sets Session Cookie
  */
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -164,6 +133,9 @@ router.post('/register', async (req, res) => {
 
     try {
         const data = await callFirebaseREST('signUp', { email, password });
+
+        await setSessionCookie(res, data.idToken);
+
         res.json({
             success: true,
             user: {
@@ -181,12 +153,14 @@ router.post('/register', async (req, res) => {
 
 /**
  * POST /api/auth/guest
- * Create Anonymous User via Firebase REST API
+ * Guest Login -> Sets Session Cookie
  */
 router.post('/guest', async (req, res) => {
     try {
-        // Calling signUp without email/password creates anonymous account
         const data = await callFirebaseREST('signUp', {});
+
+        await setSessionCookie(res, data.idToken);
+
         res.json({
             success: true,
             user: {
