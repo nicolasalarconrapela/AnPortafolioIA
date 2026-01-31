@@ -42,6 +42,15 @@ const AppContent: React.FC = () => {
         <AuthView 
             onNavigate={(nextView) => setView(nextView)}
             userType="candidate"
+            initialMode="login"
+        />
+      )}
+
+      {view === 'auth-candidate-register' && (
+        <AuthView 
+            onNavigate={(nextView) => setView(nextView)}
+            userType="candidate"
+            initialMode="register"
         />
       )}
 

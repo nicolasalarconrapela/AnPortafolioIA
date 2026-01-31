@@ -9,12 +9,13 @@ import { Card } from './ui/Card';
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
   userType?: 'candidate' | 'recruiter';
+  initialMode?: 'login' | 'register';
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'candidate' }) => {
+export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'candidate', initialMode = 'login' }) => {
   const isRecruiter = userType === 'recruiter';
   
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
   const [isLoading, setIsLoading] = useState(false);
   
   // Form State
