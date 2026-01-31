@@ -32,7 +32,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
     };
 
     const handleGoogleLogin = async () => {
-        alert("Google Login requires client-side SDK. Currently disabled in backend-only mode.");
+        setLoading(true);
+        setError(null);
+        try {
+            const user = await authService.loginGoogle();
+            onSuccess(user);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || 'Google Sign In Failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGuestLogin = async () => {

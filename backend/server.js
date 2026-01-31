@@ -6,19 +6,30 @@ import firestoreRoutes from './routes/firestoreRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import testRoutes from './routes/testRoutes.js';
 import { config } from './config.js';
+import { logger, requestLogger } from './logger.js';
+import { validateEnvironment } from './validateEnv.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(requestLogger); // Observability
 
 // --- Environment & Config ---
-console.log(`[INFO] Backend starting...`);
+logger.info("Backend starting...", { port: config.PORT, env: process.env.NODE_ENV });
+
+// --- Environment Validation ---
+try {
+    validateEnvironment();
+} catch (error) {
+    logger.error("Startup Aborted due to Environment Error", { error: error.message });
+    process.exit(1);
+}
 
 // --- Firebase Initialization ---
 try {
     initializeFirebaseAdmin();
 } catch (error) {
-    console.warn('[WARN] Firebase Admin initialization failed. Firestore endpoints will not be available.', error.message);
+    logger.warn('Firebase Admin initialization failed. Firestore endpoints will not be available.', { error: error.message });
 }
 
 // --- Routes ---
@@ -42,6 +53,6 @@ app.use('/api/test', testRoutes);
 
 // --- Server Start ---
 app.listen(config.PORT, config.HOST, () => {
-    console.log(`[INFO] Backend listening externally at ${config.EXTERNAL_URL}`);
-    console.log(`[INFO] (Internally bound to ${config.HOST}:${config.PORT})`);
+    logger.info(`Backend listening externally at ${config.EXTERNAL_URL}`);
+    logger.info(`Internally bound to ${config.HOST}:${config.PORT}`);
 });

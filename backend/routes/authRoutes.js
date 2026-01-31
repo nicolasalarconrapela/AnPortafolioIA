@@ -1,5 +1,6 @@
 import express from 'express';
 import { getAuth } from '../firebaseAdmin.js';
+// Using global fetch (Node 18+)
 import { config } from '../config.js';
 
 const router = express.Router();
@@ -123,6 +124,8 @@ router.post('/guest', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 // Legacy create-user (optional, kept for admin usage if needed)
 router.post('/create-user-admin', async (req, res) => {
