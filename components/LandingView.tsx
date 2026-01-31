@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AvatarScanner } from './AvatarScanner';
 import { ViewState } from '../types';
@@ -21,23 +22,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
-          {/* Mobile: Text variant to save space. Desktop: Outlined variant */}
-          <Button 
-            variant="text" 
-            size="sm"
-            onClick={() => onNavigate('auth-recruiter')}
-            className="md:hidden text-xs"
-          >
-            Companies
-          </Button>
-          <Button 
-            variant="outlined" 
-            onClick={() => onNavigate('auth-recruiter')}
-            className="hidden md:inline-flex"
-          >
-            For Companies
-          </Button>
-          
           <Button 
             variant="filled" 
             size="sm" // Smaller on mobile automatically via responsive logic if we wanted, but explicit here for clarity

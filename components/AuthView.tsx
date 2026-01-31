@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ViewState } from '../types';
 import { Button } from './ui/Button';
@@ -29,8 +30,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
 
   const validate = () => {
       const newErrors: any = {};
-      if (!email) newErrors.email = "Email is required";
-      if (!password) newErrors.password = "Password is required";
+      if (!email) newErrors.email = "Required";
+      if (!password) newErrors.password = "Required";
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
   };
@@ -77,170 +78,184 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
     }
   };
 
+  const handleAnonymousLogin = async () => {
+    setIsLoading(true);
+    // Simular creación de sesión temporal
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsLoading(false);
+    
+    if (userType === 'recruiter') {
+        onNavigate('recruiter-flow'); 
+    } else {
+        onNavigate('candidate-onboarding');
+    }
+  };
+
   return (
-    <div className="min-h-screen w-full flex bg-surface-variant dark:bg-surface-darkVariant">
+    <div className="min-h-screen w-full flex bg-[var(--md-sys-color-background)]">
       
-      {/* Left Panel - Branding (Desktop only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary-container relative overflow-hidden flex-col justify-between p-12 transition-colors duration-500">
-        <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-8">
-                <Icon name="diversity_3" className="text-primary text-4xl" />
-                <span className="font-display font-medium text-2xl tracking-tight text-primary-onContainer">PortafolioIA</span>
+      {/* Left Panel - Minimalist Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-surface-variant/30 relative flex-col justify-center px-20 border-r border-outline-variant/10">
+        <div className="max-w-lg">
+            <div className="flex items-center gap-3 mb-8 opacity-80">
+                <Icon name="diversity_3" className="text-primary text-3xl" />
+                <span className="font-display font-medium text-xl tracking-tight text-[var(--md-sys-color-on-background)]">PortafolioIA</span>
             </div>
-            <h2 className="text-4xl font-display font-normal text-primary-onContainer max-w-md leading-tight animate-fade-in">
+            
+            <h2 className="text-5xl font-display font-light text-[var(--md-sys-color-on-background)] leading-[1.1] mb-6">
                 {isRecruiter 
-                    ? "Find the perfect match with AI-driven insights." 
-                    : "Showcase your potential, not just your resume."}
+                    ? "Intelligent matching." 
+                    : "Your work, simply showcased."}
             </h2>
-        </div>
-
-        {/* Abstract shapes */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-white/20 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] bg-primary/10 rounded-full blur-2xl"></div>
-
-        <div className="relative z-10 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="flex gap-4 mb-4">
-                <div className="flex -space-x-4">
-                    {[1,2,3,4].map(i => (
-                        <div key={i} className="w-10 h-10 rounded-full border-2 border-primary-container bg-surface flex items-center justify-center overflow-hidden">
-                             <img src={`https://i.pravatar.cc/150?u=${i+10 + (isRecruiter ? 50 : 0)}`} alt="User" className="w-full h-full object-cover" />
-                        </div>
-                    ))}
-                </div>
-                <div className="flex flex-col justify-center">
-                    <span className="text-sm font-bold text-primary-onContainer">2k+ {isRecruiter ? 'Candidates' : 'Professionals'}</span>
-                    <span className="text-xs text-primary-onContainer/70">Joined this week</span>
-                </div>
-            </div>
+            <p className="text-xl text-outline font-light leading-relaxed">
+                {isRecruiter 
+                    ? "Recruitment stripped of the noise. Just talent and fit." 
+                    : "The portfolio platform that focuses on what matters: you."}
+            </p>
         </div>
       </div>
 
-      {/* Right Panel - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
-        <Card variant="elevated" className="w-full max-w-[420px] bg-[var(--md-sys-color-background)] animate-fade-scale">
-            
-            {/* Mobile Header */}
-            <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-                <Icon name="diversity_3" className="text-primary text-3xl" />
-                <span className="font-display font-medium text-xl tracking-tight">PortafolioIA</span>
-            </div>
-
-            <div className="mb-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container text-secondary-onContainer text-xs font-bold mb-3">
-                    <Icon name={isRecruiter ? 'business_center' : 'person'} size="sm" />
-                    {isRecruiter ? 'Recruiter Portal' : 'Candidate Portal'}
-                </div>
-                <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
-                    {isLogin ? 'Welcome back' : 'Get started'}
-                </h1>
-                <p className="text-outline text-base">
-                    {isLogin 
-                        ? `Sign in to your ${isRecruiter ? 'company' : 'professional'} account` 
-                        : `Create your ${isRecruiter ? 'company' : 'professional'} profile`
-                    }
-                </p>
-            </div>
-
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <Button variant="outlined" fullWidth className="gap-2">
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                    Google
-                </Button>
-                <Button variant="outlined" fullWidth className="gap-2">
-                    <img src="https://www.svgrepo.com/show/448234/linkedin.svg" className="w-5 h-5" alt="LinkedIn" />
-                    LinkedIn
-                </Button>
-            </div>
-
-            <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-outline-variant"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-[var(--md-sys-color-background)] px-2 text-outline">Or continue with email</span>
-                </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <Input 
-                    id="email"
-                    label="Email or Username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    error={errors.email}
-                    startIcon="mail"
-                />
-
-                <Input 
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    label="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    error={errors.password}
-                    startIcon="lock"
-                    endIcon={showPassword ? "visibility_off" : "visibility"}
-                    onEndIconClick={() => setShowPassword(!showPassword)}
-                />
-
-                {isLogin && (
-                    <div className="flex justify-end">
-                        <Button variant="text" size="sm" type="button" className="px-0">
-                            Forgot password?
-                        </Button>
-                    </div>
-                )}
-
-                <Button 
-                    type="submit" 
-                    variant="filled"
-                    fullWidth
-                    loading={isLoading}
-                    className="mt-2"
-                >
-                    {isLogin ? 'Sign In' : 'Create Account'}
-                </Button>
-            </form>
-
-            {/* Toggle Login/Signup */}
-            <div className="mt-8 text-center">
-                <p className="text-sm text-outline">
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}
-                    <button 
-                        onClick={handleToggle}
-                        className="ml-2 text-primary font-medium hover:underline focus:outline-none"
-                    >
-                        {isLogin ? 'Sign up' : 'Log in'}
-                    </button>
-                </p>
-            </div>
-
-            {/* Demo Bypass - Para desarrollo y pruebas rápidas */}
-            <div className="mt-8 pt-6 border-t border-outline-variant/50">
-                <Button 
-                    variant="text" 
-                    fullWidth 
-                    onClick={handleDemoLogin}
-                    icon="play_circle"
-                    className="uppercase tracking-wider font-bold"
-                >
-                    Skip Login (Demo Mode)
-                </Button>
-            </div>
-
-            <Button 
-                variant="text" 
-                fullWidth 
+      {/* Right Panel - Clean Form */}
+      <div className="w-full lg:w-1/2 flex flex-col relative">
+        
+        {/* Top Navigation - Absolute on desktop to keep form centered, relative on mobile */}
+        <div className="p-6 sm:p-8 lg:absolute lg:top-0 lg:left-0 lg:w-full z-10 flex justify-between items-center">
+             <button 
                 onClick={() => onNavigate('landing')}
-                icon="arrow_back"
-                size="sm"
-                className="mt-2 text-outline"
+                className="text-sm text-outline hover:text-primary flex items-center gap-2 transition-colors px-2 py-1 rounded-md hover:bg-surface-variant/50"
             >
-                Back to Home
-            </Button>
+                <Icon name="arrow_back" size={18} />
+                <span className="font-medium">Home</span>
+            </button>
+        </div>
 
-        </Card>
+        {/* Content Container - Centered */}
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+            <div className="w-full max-w-[400px]">
+                
+                {/* Mobile Header */}
+                <div className="lg:hidden flex items-center gap-2 mb-10 justify-center">
+                    <Icon name="diversity_3" className="text-primary text-2xl" />
+                    <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">PortafolioIA</span>
+                </div>
+
+                <div className="mb-10">
+                    <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
+                        {isLogin ? 'Sign in' : 'Create account'}
+                    </h1>
+                    <p className="text-outline text-sm">
+                        {isLogin 
+                            ? `Access the ${isRecruiter ? 'recruiter' : 'candidate'} portal.`
+                            : "Join the platform today."
+                        }
+                    </p>
+                </div>
+
+                {/* Social Login - Linear Minimal */}
+                <div className="flex flex-col gap-3 mb-8">
+                    <Button variant="outlined" fullWidth className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12" aria-label="Sign in with Google">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 absolute left-4" alt="" aria-hidden="true" />
+                        <span className="font-normal text-[var(--md-sys-color-on-background)]">Continue with Google</span>
+                    </Button>
+                    <Button 
+                        variant="outlined" 
+                        fullWidth 
+                        className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12" 
+                        aria-label="Continue as anonymous user"
+                        onClick={handleAnonymousLogin}
+                    >
+                        <div className="absolute left-4 flex items-center justify-center text-[var(--md-sys-color-on-background)]">
+                            <Icon name="no_accounts" size={20} />
+                        </div>
+                        <span className="font-normal text-[var(--md-sys-color-on-background)]">Continue Anonymously</span>
+                    </Button>
+                </div>
+
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-outline-variant/30"></div>
+                    </div>
+                    <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-medium">
+                        <span className="bg-[var(--md-sys-color-background)] px-2 text-outline/50">Or</span>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {/* Inputs: Clean, no icons */}
+                    <Input 
+                        id="email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="username"
+                        label="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        error={errors.email}
+                        // No startIcon for minimalism
+                    />
+
+                    <Input 
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete={isLogin ? "current-password" : "new-password"}
+                        label="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        error={errors.password}
+                        endIcon={showPassword ? "visibility_off" : "visibility"}
+                        onEndIconClick={() => setShowPassword(!showPassword)}
+                        // No startIcon
+                    />
+
+                    {isLogin && (
+                        <div className="flex justify-end">
+                            <Button 
+                                variant="text" 
+                                size="sm" 
+                                type="button" 
+                                className="px-0 text-outline hover:text-primary font-normal text-xs"
+                                tabIndex={0}
+                            >
+                                Forgot password?
+                            </Button>
+                        </div>
+                    )}
+
+                    <Button 
+                        type="submit" 
+                        variant="filled" 
+                        fullWidth
+                        loading={isLoading}
+                        className="mt-2 h-12"
+                    >
+                        {isLogin ? 'Continue' : 'Sign Up'}
+                    </Button>
+                </form>
+
+                <div className="mt-8 text-center">
+                    <p className="text-sm text-outline">
+                        {isLogin ? "New here?" : "Have an account?"}
+                        <button 
+                            onClick={handleToggle}
+                            className="ml-2 text-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                        >
+                            {isLogin ? 'Create account' : 'Sign in'}
+                        </button>
+                    </p>
+                </div>
+
+                {/* Subtle Footer for Dev Tools */}
+                <div className="mt-12 flex justify-center opacity-40 hover:opacity-100 transition-opacity">
+                    <button 
+                        onClick={handleDemoLogin}
+                        className="text-[10px] text-outline/50 hover:text-primary font-mono"
+                    >
+                        DEV_SKIP
+                    </button>
+                </div>
+
+            </div>
+        </div>
       </div>
     </div>
   );
