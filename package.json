@@ -13,6 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "firebase": "^12.8.0",
     "jszip": "^3.10.1",
     "mammoth": "^1.6.0",
     "papaparse": "^5.4.1",

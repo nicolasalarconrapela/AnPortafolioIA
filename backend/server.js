@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { initializeFirebaseAdmin } from './firebaseAdmin.js';
 import firestoreRoutes from './routes/firestoreRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import testRoutes from './routes/testRoutes.js';
 import { config } from './config.js';
 
@@ -30,6 +31,9 @@ app.get('/health', (req, res) => {
 
 // Firestore Routes
 app.use('/api/firestore', firestoreRoutes);
+
+// Auth Routes
+app.use('/api/auth', authRoutes);
 
 // Test Routes (for quick Firebase testing)
 app.use('/api/test', testRoutes);
