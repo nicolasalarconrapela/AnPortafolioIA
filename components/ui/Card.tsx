@@ -2,7 +2,7 @@ import React from 'react';
 
 type CardVariant = 'elevated' | 'filled' | 'outlined';
 
-interface CardProps {
+interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
   children: React.ReactNode;
   variant?: CardVariant;
   padding?: 'none' | 'sm' | 'md' | 'lg';
@@ -30,13 +30,15 @@ export const Card: React.FC<CardProps> = ({
   padding = 'md',
   className = '', 
   onClick,
-  hoverable = false
+  hoverable = false,
+  ...props
 }) => {
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (onClick && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       onClick();
     }
+    props.onKeyDown?.(e);
   };
 
   const isInteractive = !!onClick;
@@ -44,9 +46,9 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div 
       onClick={onClick}
-      onKeyDown={isInteractive ? handleKeyDown : undefined}
-      role={isInteractive ? 'button' : undefined}
-      tabIndex={isInteractive ? 0 : undefined}
+      onKeyDown={isInteractive ? handleKeyDown : props.onKeyDown}
+      role={isInteractive ? 'button' : props.role}
+      tabIndex={isInteractive ? 0 : props.tabIndex}
       className={`
         rounded-[24px] 
         ${variantStyles[variant]} 
@@ -55,6 +57,7 @@ export const Card: React.FC<CardProps> = ({
         ${isInteractive ? 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none' : ''}
         ${className}
       `}
+      {...props}
     >
       {children}
     </div>

@@ -94,6 +94,11 @@ AnPortafolioIA/
   - Environment variables
   - Troubleshooting
   - Best practices
+- **[RENDER_DEPLOY.md](./docs/RENDER_DEPLOY.md)** - Deployment guide for Render.com
+
+## ☁️ Deployment
+
+This project is configured for deployment on **Render**. See [RENDER_DEPLOY.md](./docs/RENDER_DEPLOY.md) for detailed instructions.
 
 ## 🧪 Testing Firebase Connection
 
