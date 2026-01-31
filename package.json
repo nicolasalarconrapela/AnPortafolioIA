@@ -1,0 +1,35 @@
+{
+  "name": "anportafolioia",
+  "private": true,
+  "version": "0.5.0-beta",
+  "type": "module",
+  "scripts": {
+    "dev": "tsc && vite",
+    "build": "tsc && vite build",
+    "build:test": "tsc && vite build --mode test",
+    "build:prod": "tsc && vite build --mode production",
+    "build:ai": "tsc && vite build --mode google-ai-studio",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "mammoth": "^1.6.0",
+    "papaparse": "^5.4.1",
+    "pdfjs-dist": "^5.4.530",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tesseract.js": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "typescript": "^5.2.2",
+    "vite": "^7.3.1"
+  }
+}

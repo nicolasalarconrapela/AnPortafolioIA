@@ -1,0 +1,30 @@
+{
+  "name": "an-portafolio-ia-backend",
+  "version": "0.5.0-beta",
+  "description": "Backend server for An Portafolio IA with Firebase integration.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:firebase": "echo \"Testing Firebase connection...\" && curl -X POST http://localhost:3001/api/test/hello-world -H \"Content-Type: application/json\" -d '{\"message\":\"Test from npm script\"}'"
+  },
+  "author": "AnAppWiLos",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "firebase",
+    "firestore",
+    "express",
+    "backend",
+    "portfolio",
+    "recruitment"
+  ]
+}
