@@ -1,151 +1,179 @@
 <!DOCTYPE html>
 <html lang="en" class="light">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Professional AI Recruitment Platform">
-    <title>AnPortafolioIA - Recruitment Platform</title>
-    <!-- Roboto for Material Design consistency -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                DEFAULT: "#0B57D0", // Google Blue
-                hover: "#0842A0",
-                container: "#D3E3FD",
-                onContainer: "#041E49",
-                dark: "#A8C7FA",
-                darkContainer: "#0842A0",
-                onDarkContainer: "#D3E3FD"
-              },
-              secondary: {
-                DEFAULT: "#00639B",
-                container: "#C2E7FF",
-                onContainer: "#001D35",
-              },
-              surface: {
-                DEFAULT: "#FFFFFF",
-                variant: "#F0F4F9", // Page background usually
-                container: "#F3F6FC", // Card background
-                dark: "#1E1F20",
-                darkVariant: "#2D2E31",
-                darkContainer: "#1E1F20"
-              },
-              outline: {
-                DEFAULT: "#747775",
-                variant: "#C4C7C5"
-              },
-              error: {
-                DEFAULT: "#B3261E",
-                container: "#F9DEDC",
-                onContainer: "#410E0B"
-              }
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Professional AI Recruitment Platform">
+  <title>AnPortafolioIA - Recruitment Platform</title>
+  <!-- Roboto for Material Design consistency -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: "#0B57D0", // Google Blue
+              hover: "#0842A0",
+              container: "#D3E3FD",
+              onContainer: "#041E49",
+              dark: "#A8C7FA",
+              darkContainer: "#0842A0",
+              onDarkContainer: "#D3E3FD"
             },
-            fontFamily: {
-              sans: ["Roboto", "sans-serif"],
-              display: ["Google Sans", "Roboto", "sans-serif"],
+            secondary: {
+              DEFAULT: "#00639B",
+              container: "#C2E7FF",
+              onContainer: "#001D35",
             },
-            boxShadow: {
-              'elevation-1': '0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
-              'elevation-2': '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
-              'elevation-3': '0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3)',
+            surface: {
+              DEFAULT: "#FFFFFF",
+              variant: "#F0F4F9", // Page background usually
+              container: "#F3F6FC", // Card background
+              dark: "#1E1F20",
+              darkVariant: "#2D2E31",
+              darkContainer: "#1E1F20"
+            },
+            outline: {
+              DEFAULT: "#747775",
+              variant: "#C4C7C5"
+            },
+            error: {
+              DEFAULT: "#B3261E",
+              container: "#F9DEDC",
+              onContainer: "#410E0B"
             }
           },
+          fontFamily: {
+            sans: ["Roboto", "sans-serif"],
+            display: ["Google Sans", "Roboto", "sans-serif"],
+          },
+          boxShadow: {
+            'elevation-1': '0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+            'elevation-2': '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+            'elevation-3': '0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3)',
+          }
         },
-      };
-    </script>
-    <style>
-        :root {
-            --md-sys-color-background: #FDFDFD;
-            --md-sys-color-on-background: #1F1F1F;
-        }
-        .dark {
-            --md-sys-color-background: #131314;
-            --md-sys-color-on-background: #E3E3E3;
-        }
-        
-        body { 
-            margin: 0; 
-            background-color: var(--md-sys-color-background);
-            color: var(--md-sys-color-on-background);
-            font-family: 'Roboto', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --md-sys-color-background: #FDFDFD;
+      --md-sys-color-on-background: #1F1F1F;
+    }
 
-        /* Focus rings for accessibility */
-        *:focus-visible {
-            outline: 2px solid #0B57D0;
-            outline-offset: 2px;
-        }
+    .dark {
+      --md-sys-color-background: #131314;
+      --md-sys-color-on-background: #E3E3E3;
+    }
 
-        /* Utility classes for MD3 states */
-        .state-layer {
-            position: relative;
-            overflow: hidden;
-            transform: translateZ(0); /* Hardware acceleration fix */
-        }
-        .state-layer::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: currentColor;
-            opacity: 0;
-            transition: opacity 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
-            pointer-events: none;
-        }
-        .state-layer:hover::before { opacity: 0.08; }
-        .state-layer:active::before { opacity: 0.12; }
+    body {
+      margin: 0;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-background);
+      font-family: 'Roboto', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        /* Micro-interactions Animations */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
-        }
-        .animate-shake {
-            animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
+    /* Focus rings for accessibility */
+    *:focus-visible {
+      outline: 2px solid #0B57D0;
+      outline-offset: 2px;
+    }
 
-        @keyframes fadeScale {
-            from { 
-                opacity: 0; 
-                transform: scale(0.96); 
-            }
-            to { 
-                opacity: 1; 
-                transform: scale(1); 
-            }
-        }
-        .animate-fade-scale {
-            animation: fadeScale 0.25s cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
-        }
+    /* Utility classes for MD3 states */
+    .state-layer {
+      position: relative;
+      overflow: hidden;
+      transform: translateZ(0);
+      /* Hardware acceleration fix */
+    }
 
-        /* Custom Scrollbar for desktop */
-        @media (min-width: 768px) {
-            ::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            ::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            ::-webkit-scrollbar-thumb {
-                background: #C4C7C5;
-                border-radius: 4px;
-            }
-            ::-webkit-scrollbar-thumb:hover {
-                background: #747775;
-            }
-        }
-    </style>
-<script type="importmap">
+    .state-layer::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: currentColor;
+      opacity: 0;
+      transition: opacity 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
+      pointer-events: none;
+    }
+
+    .state-layer:hover::before {
+      opacity: 0.08;
+    }
+
+    .state-layer:active::before {
+      opacity: 0.12;
+    }
+
+    /* Micro-interactions Animations */
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-4px);
+      }
+
+      75% {
+        transform: translateX(4px);
+      }
+    }
+
+    .animate-shake {
+      animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @keyframes fadeScale {
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .animate-fade-scale {
+      animation: fadeScale 0.25s cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
+    }
+
+    /* Custom Scrollbar for desktop */
+    @media (min-width: 768px) {
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #C4C7C5;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #747775;
+      }
+    }
+  </style>
+  <script type="importmap">
 {
   "imports": {
     "path": "https://esm.sh/path@^0.12.7",
@@ -168,8 +196,10 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
