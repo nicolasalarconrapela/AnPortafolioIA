@@ -1,255 +1,361 @@
-import React, { useState } from 'react';
-import { ViewState } from '../types';
-import { authService } from '../services/authService';
+import React, { useMemo, useState } from "react";
+import { ViewState } from "../types";
+
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
+import { Icon } from "./ui/Icon";
+
+import { authService } from "../services/authService";
 
 interface AuthViewProps {
-    onNavigate: (state: ViewState) => void;
-    userType?: 'candidate' | 'recruiter';
+  onNavigate: (state: ViewState) => void;
+  userType?: "candidate" | "recruiter";
+  initialMode?: "login" | "register";
 }
 
-export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'candidate' }) => {
-    const [isLogin, setIsLogin] = useState(false);
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+type FieldErrors = { email?: string; password?: string };
 
-    const handleToggle = () => {
-        setIsLogin(!isLogin);
-        setError(null);
+export const AuthView: React.FC<AuthViewProps> = ({
+  onNavigate,
+  userType = "candidate",
+  initialMode = "login",
+}) => {
+  const isRecruiter = userType === "recruiter";
+
+  // UI State
+  const [isLogin, setIsLogin] = useState(initialMode === "login");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Form State
+  const [email, setEmail] = useState(isRecruiter ? "recruiter@techcorp.com" : "");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Validation/UI Errors
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
+  const copy = useMemo(() => {
+    return {
+      title: isLogin ? "Sign in" : "Create account",
+      subtitle: isLogin
+        ? `Access the ${isRecruiter ? "recruiter" : "candidate"} portal.`
+        : "Join the platform today.",
+      heroTitle: isRecruiter ? "Intelligent matching." : "Your work, simply showcased.",
+      heroText: isRecruiter
+        ? "Recruitment stripped of the noise. Just talent and fit."
+        : "The portfolio platform that focuses on what matters: you.",
     };
+  }, [isLogin, isRecruiter]);
 
-    const onSuccess = (user: any) => {
-        // 1. Persist ID for existing components that use localStorage
-        localStorage.setItem("anportafolio_user_id", user.uid || user.localId);
+  const handleToggle = () => {
+    setIsLogin((prev) => !prev);
+    setErrors({});
+    setGeneralError(null);
+    // Reset fields (igual que tu HEAD)
+    if (!isRecruiter) setEmail("");
+    setPassword("");
+  };
 
-        // 2. Navigate
-        if (userType === 'recruiter') {
-            onNavigate('recruiter-flow');
-        } else {
-            onNavigate('candidate-onboarding');
-        }
-    };
+  // --- Validation Logic (HEAD) ---
+  const validateField = (field: "email" | "password", value: string) => {
+    if (field === "email") {
+      if (!value.trim()) return "El correo es obligatorio";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Introduce un email válido";
+    }
+    if (field === "password") {
+      if (!value) return "La contraseña es obligatoria";
+      if (!isLogin && value.length < 6) return "Mínimo 6 caracteres";
+    }
+    return undefined;
+  };
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const user = await authService.loginGoogle();
-            onSuccess(user);
-        } catch (err: any) {
-            console.error(err);
-            setError(err.message || 'Google Sign In Failed');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { id, value } = e.target as HTMLInputElement;
+    if (id !== "email" && id !== "password") return;
+    const err = validateField(id, value);
+    setErrors((prev) => ({ ...prev, [id]: err }));
+  };
 
-    const handleGuestLogin = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const user = await authService.loginGuest();
-            onSuccess(user);
-        } catch (err: any) {
-            setError(err.message || 'Guest Login Failed');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleChange = (field: "email" | "password", value: string) => {
+    if (field === "email") setEmail(value);
+    if (field === "password") setPassword(value);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email || !password) {
-            setError("Please fill in all fields");
-            return;
-        }
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+    if (generalError) setGeneralError(null);
+  };
 
-        setLoading(true);
-        setError(null);
+  // --- feature/firebase-add: success handling ---
+  const onAuthSuccess = (user: any) => {
+    // Persistencia compatible con lo que ya uses (feature/firebase-add)
+    localStorage.setItem("anportafolio_user_id", user?.uid || user?.localId || "");
 
-        try {
-            let user;
-            if (isLogin) {
-                user = await authService.login(email, password);
-            } else {
-                user = await authService.register(email, password);
-            }
-            onSuccess(user);
-        } catch (err: any) {
-            console.error(err);
-            // Backend returns { error: "message" }
-            setError(err.message || "Authentication failed");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Navegación consistente
+    if (userType === "recruiter") {
+      onNavigate("recruiter-flow");
+    } else {
+      onNavigate("candidate-onboarding");
+    }
+  };
 
-    const isRecruiter = userType === 'recruiter';
-    const primaryColor = isRecruiter ? 'indigo' : 'cyan';
-    const secondaryColor = isRecruiter ? 'cyan' : 'purple';
-    const glowClass = isRecruiter ? 'shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'shadow-[0_0_20px_rgba(34,211,238,0.5)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)]';
+  // --- Firebase Auth actions ---
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setGeneralError(null);
+    try {
+      const user = await authService.loginGoogle();
+      onAuthSuccess(user);
+    } catch (err: any) {
+      console.error(err);
+      setGeneralError(err?.message || "Google Sign In Failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return (
-        <div className="relative z-20 flex w-full h-screen bg-[#020408]">
-            {/* Left Side - Marketing / Visuals */}
-            <div className="hidden lg:flex flex-col justify-center w-5/12 p-12 xl:p-20 relative overflow-hidden">
-                <div className={`absolute inset-0 bg-gradient-to-b ${isRecruiter ? 'from-indigo-900/20' : 'from-cyan-900/20'} to-[#020408] z-0`}></div>
+  const handleAnonymousLogin = async () => {
+    setIsLoading(true);
+    setGeneralError(null);
+    try {
+      // feature/firebase-add lo llama "Guest"
+      const user = await authService.loginGuest();
+      onAuthSuccess(user);
+    } catch (err: any) {
+      console.error(err);
+      setGeneralError(err?.message || "Guest Login Failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                {/* Abstract Lines */}
-                <div className="absolute top-0 right-0 w-full h-full z-0 opacity-40 pointer-events-none">
-                    <div className={`absolute top-[10%] right-[-10%] w-[300px] h-[600px] border ${isRecruiter ? 'border-indigo-500/30' : 'border-cyan-500/30'} rounded-[100px] rotate-[30deg]`}></div>
-                    <div className={`absolute top-[20%] right-[0%] w-[300px] h-[600px] border ${isRecruiter ? 'border-cyan-500/30' : 'border-indigo-500/30'} rounded-[100px] rotate-[30deg]`}></div>
-                    <div className={`absolute top-[40%] right-[20%] w-[2px] h-[200px] ${isRecruiter ? 'bg-indigo-400' : 'bg-cyan-400'} blur-sm rotate-[30deg]`}></div>
-                </div>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-12">
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${isRecruiter ? 'from-indigo-500 to-cyan-400' : 'from-cyan-400 to-indigo-600'} flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]`}>
-                            <span className="material-symbols-outlined text-white text-xl">deployed_code</span>
-                        </div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">AnPortafolioIA</h1>
-                    </div>
+    // Validate all fields on submit
+    const emailError = validateField("email", email);
+    const passwordError = validateField("password", password);
 
-                    <h2 className="text-5xl xl:text-6xl font-bold text-white leading-tight mb-6 neon-text-glow">
-                        {isRecruiter ? 'Discover Top' : 'Future of'} <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white">
-                            {isRecruiter ? 'Talent Instantly' : 'Hiring is Here'}
-                        </span>
-                    </h2>
+    setErrors({
+      email: emailError,
+      password: passwordError,
+    });
 
-                    <p className="text-slate-400 text-lg leading-relaxed max-w-md mb-8 font-light">
-                        {isRecruiter
-                            ? "AI-powered candidate screening, immersive portfolio matching, and automated interview simulations."
-                            : "Practice interviews with lifelike AI avatars, build a showcase portfolio, and get discovered by top tech companies."}
-                    </p>
+    if (emailError || passwordError) return;
 
-                    <div className="glass-panel inline-flex items-center gap-4 p-3 rounded-2xl pr-8 border border-slate-700/50">
-                        <div className="flex -space-x-3">
-                            {[1, 2, 3].map(i => (
-                                <img key={i} src={`https://picsum.photos/40/40?random=${i + 10}`} className="w-10 h-10 rounded-full border-2 border-[#020408]" alt="User" />
-                            ))}
-                        </div>
-                        <div>
-                            <p className="text-white font-bold">{isRecruiter ? '500+ Companies' : '10k+ Candidates'}</p>
-                            <p className="text-slate-400 text-xs">{isRecruiter ? 'Hiring now' : 'Hired this month'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    setIsLoading(true);
+    setGeneralError(null);
 
-            {/* Right Side - Form */}
-            <div className="w-full lg:w-7/12 flex flex-col items-center justify-center p-6 relative">
-                <button
-                    onClick={() => onNavigate('landing')}
-                    className="absolute top-8 right-8 text-slate-400 hover:text-white flex items-center gap-2 transition-colors z-50"
-                >
-                    <span className="material-symbols-outlined">close</span>
-                </button>
+    try {
+      let user;
+      if (isLogin) {
+        user = await authService.login(email, password);
+      } else {
+        user = await authService.register(email, password);
+      }
+      onAuthSuccess(user);
+    } catch (err: any) {
+      console.error(err);
+      // Tu backend/servicio suele devolver message, o { error: "..." }
+      setGeneralError(err?.message || err?.error || "Authentication failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                <div className="w-full max-w-[420px]">
-                    <div className="glass-panel p-8 md:p-10 rounded-3xl w-full border border-slate-700/50 shadow-2xl relative overflow-hidden">
-                        {/* Inner Glow */}
-                        <div className={`absolute top-0 right-0 w-64 h-64 ${isRecruiter ? 'bg-indigo-500/10' : 'bg-cyan-500/10'} blur-[80px] rounded-full pointer-events-none`}></div>
+  // Mantengo tu DEV_SKIP del HEAD (si quieres que vaya a dashboard directo)
+  const handleDevSkip = async () => {
+    setIsLoading(true);
+    setGeneralError(null);
+    try {
+      await new Promise((r) => setTimeout(r, 250));
+      if (userType === "recruiter") onNavigate("recruiter-flow");
+      else onNavigate("candidate-dashboard");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-                        <div className="relative z-10 flex items-center gap-2 mb-2">
-                            {isRecruiter && <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/30">Recruiter Access</span>}
-                            {userType === 'candidate' && <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-wider border border-cyan-500/30">Candidate Access</span>}
-                        </div>
+  return (
+    <div className="min-h-screen w-full flex bg-[var(--md-sys-color-background)]">
+      {/* Left Panel - Minimalist Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-surface-variant/30 relative flex-col justify-center px-20 border-r border-outline-variant/10">
+        <div className="max-w-lg">
+          <div className="flex items-center gap-3 mb-8 opacity-80">
+            <Icon name="diversity_3" className="text-primary text-3xl" />
+            <span className="font-display font-medium text-xl tracking-tight text-[var(--md-sys-color-on-background)]">
+              PortafolioIA
+            </span>
+          </div>
 
-                        <h2 className="text-3xl font-bold text-white mb-2 relative z-10">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-                        <p className="text-slate-400 mb-6 relative z-10 text-sm">
-                            {isLogin
-                                ? "Log in to continue."
-                                : (isRecruiter ? "Join the AI recruitment revolution." : "Join the AI-powered recruitment revolution.")}
-                        </p>
+          <h2 className="text-5xl font-display font-light text-[var(--md-sys-color-on-background)] leading-[1.1] mb-6">
+            {copy.heroTitle}
+          </h2>
 
-                        {error && (
-                            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-2 animate-fade-in relative z-10">
-                                <span className="material-symbols-outlined text-sm">error</span>
-                                {error}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1">{isRecruiter ? 'Work Email' : 'Email'}</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-${primaryColor}-500 focus:ring-1 focus:ring-${primaryColor}-500 transition-all text-sm`}
-                                    placeholder="name@work-email.com"
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-1.5 ml-1">Password</label>
-                                <div className="relative">
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className={`w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-700 text-white placeholder-slate-600 focus:outline-none focus:border-${primaryColor}-500 focus:ring-1 focus:ring-${primaryColor}-500 transition-all text-sm`}
-                                        placeholder={isLogin ? "Enter your password" : "Create a strong password"}
-                                        disabled={loading}
-                                    />
-                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg cursor-pointer hover:text-white">visibility</span>
-                                </div>
-                                {!isLogin && <p className="text-[10px] text-slate-500 mt-1 ml-1">Min. 6 characters</p>}
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className={`w-full h-12 mt-2 rounded-xl border border-${primaryColor}-500/50 text-white font-bold ${glowClass} transition-all transform active:scale-95 bg-[#0a101f] relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                                <div className={`absolute inset-0 bg-gradient-to-r from-${primaryColor}-500/20 to-${secondaryColor}-500/20 opacity-100 group-hover:opacity-80 transition-opacity`}></div>
-                                <span className="relative z-10">{loading ? 'Processing...' : (isLogin ? 'Log In' : (isRecruiter ? 'Start Hiring' : 'Sign Up'))}</span>
-                            </button>
-                        </form>
-
-                        {/* Divider */}
-                        <div className="relative z-10 flex items-center gap-4 my-6">
-                            <div className="h-px bg-slate-800 flex-1"></div>
-                            <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Or continue with</span>
-                            <div className="h-px bg-slate-800 flex-1"></div>
-                        </div>
-
-                        {/* Social Login */}
-                        <div className="relative z-10 grid grid-cols-2 gap-3">
-                            <button
-                                onClick={handleGoogleLogin}
-                                disabled={loading}
-                                className="flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition-all"
-                            >
-                                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-                                <span className="text-white text-xs font-bold">Google</span>
-                            </button>
-                            <button
-                                onClick={handleGuestLogin}
-                                disabled={loading}
-                                className="flex items-center justify-center gap-2 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 transition-all"
-                            >
-                                <span className="material-symbols-outlined text-slate-400 text-lg">person_off</span>
-                                <span className="text-white text-xs font-bold">Guest</span>
-                            </button>
-                        </div>
-
-                        <p className="text-center mt-6 text-slate-500 text-xs">
-                            by signing up, you agree to our <a href="#" className="text-slate-400 hover:text-white underline">Terms</a> and <a href="#" className="text-slate-400 hover:text-white underline">Privacy Policy</a>.
-                        </p>
-                    </div>
-
-                    <p className="text-center mt-8 text-slate-500 text-sm">
-                        {isLogin ? "Don't have an account? " : "Already have an account? "}
-                        <button onClick={handleToggle} className={`text-${primaryColor}-400 hover:text-${primaryColor}-300 font-bold ml-1`}>
-                            {isLogin ? 'Sign Up' : 'Log In'}
-                        </button>
-                    </p>
-                </div>
-            </div>
+          <p className="text-xl text-outline font-light leading-relaxed">{copy.heroText}</p>
         </div>
-    );
+      </div>
+
+      {/* Right Panel - Clean Form */}
+      <div className="w-full lg:w-1/2 flex flex-col relative">
+        {/* Unified Top Header */}
+        <div className="absolute top-0 left-0 w-full p-6 sm:p-8 flex items-center justify-between z-20">
+          <button
+            onClick={() => onNavigate("landing")}
+            className="text-sm text-outline hover:text-primary flex items-center gap-2 transition-colors px-2 py-1 rounded-md hover:bg-surface-variant/50"
+            type="button"
+          >
+            <Icon name="arrow_back" size={18} />
+            <span className="font-medium">Home</span>
+          </button>
+
+          <div className="lg:hidden flex items-center gap-2 opacity-90">
+            <Icon name="diversity_3" className="text-primary text-xl" />
+            <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">
+              PortafolioIA
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 mt-16 lg:mt-0">
+          <div className="w-full max-w-[400px]">
+            <div className="mb-10">
+              <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
+                {copy.title}
+              </h1>
+              <p className="text-outline text-sm">{copy.subtitle}</p>
+            </div>
+
+            {/* General error (Firebase/back) */}
+            {generalError && (
+              <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                {generalError}
+              </div>
+            )}
+
+            {/* Social Login */}
+            <div className="flex flex-col gap-3 mb-8">
+              <Button
+                variant="outlined"
+                fullWidth
+                className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12"
+                aria-label="Sign in with Google"
+                onClick={handleGoogleLogin}
+                loading={isLoading}
+                type="button"
+              >
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  className="w-5 h-5 absolute left-4"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span className="font-normal text-[var(--md-sys-color-on-background)]">
+                  Continue with Google
+                </span>
+              </Button>
+
+              <Button
+                variant="outlined"
+                fullWidth
+                className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12"
+                aria-label="Continue as anonymous user"
+                onClick={handleAnonymousLogin}
+                loading={isLoading}
+                type="button"
+              >
+                <div className="absolute left-4 flex items-center justify-center text-[var(--md-sys-color-on-background)]">
+                  <Icon name="no_accounts" size={20} />
+                </div>
+                <span className="font-normal text-[var(--md-sys-color-on-background)]">
+                  Continue Anonymously
+                </span>
+              </Button>
+            </div>
+
+            <div className="relative mb-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-outline-variant/30"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-medium">
+                <span className="bg-[var(--md-sys-color-background)] px-2 text-outline/50">Or</span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+              <Input
+                id="email"
+                type="text"
+                inputMode="email"
+                autoComplete="email"
+                label="Email"
+                value={email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                onBlur={handleBlur}
+                error={errors.email}
+                disabled={isLoading}
+              />
+
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                label="Password"
+                value={password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                onBlur={handleBlur}
+                error={errors.password}
+                endIcon={showPassword ? "visibility_off" : "visibility"}
+                onEndIconClick={() => setShowPassword((v) => !v)}
+                disabled={isLoading}
+              />
+
+              {isLogin && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="text"
+                    size="sm"
+                    type="button"
+                    className="px-0 text-outline hover:text-primary font-normal text-xs"
+                    tabIndex={0}
+                    disabled={isLoading}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
+              )}
+
+              <Button type="submit" variant="filled" fullWidth loading={isLoading} className="mt-2 h-12">
+                {isLogin ? "Continue" : "Sign Up"}
+              </Button>
+            </form>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-outline">
+                {isLogin ? "New here?" : "Have an account?"}
+                <button
+                  onClick={handleToggle}
+                  className="ml-2 text-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  type="button"
+                  disabled={isLoading}
+                >
+                  {isLogin ? "Create account" : "Sign in"}
+                </button>
+              </p>
+            </div>
+
+            {/* Subtle Footer for Dev Tools */}
+            <div className="mt-12 flex justify-center opacity-40 hover:opacity-100 transition-opacity">
+              <button onClick={handleDevSkip} className="text-[10px] text-outline/50 hover:text-primary font-mono" type="button">
+                DEV_SKIP
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AnPortafolioIA - Future of Hiring</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <meta name="description" content="Professional AI Recruitment Platform">
+    <title>AnPortafolioIA - Recruitment Platform</title>
+    <!-- Roboto for Material Design consistency -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
     <script>
       tailwind.config = {
@@ -13,105 +16,153 @@
         theme: {
           extend: {
             colors: {
-              primary: "#6366f1",
-              "background-light": "#f8fafc",
-              "background-dark": "#050b14",
-              cyan: {
-                  400: '#22d3ee',
-                  500: '#06b6d4',
-                  600: '#0891b2',
+              primary: {
+                DEFAULT: "#0B57D0", // Google Blue
+                hover: "#0842A0",
+                container: "#D3E3FD",
+                onContainer: "#041E49",
+                dark: "#A8C7FA",
+                darkContainer: "#0842A0",
+                onDarkContainer: "#D3E3FD"
+              },
+              secondary: {
+                DEFAULT: "#00639B",
+                container: "#C2E7FF",
+                onContainer: "#001D35",
+              },
+              surface: {
+                DEFAULT: "#FFFFFF",
+                variant: "#F0F4F9", // Page background usually
+                container: "#F3F6FC", // Card background
+                dark: "#1E1F20",
+                darkVariant: "#2D2E31",
+                darkContainer: "#1E1F20"
+              },
+              outline: {
+                DEFAULT: "#747775",
+                variant: "#C4C7C5"
+              },
+              error: {
+                DEFAULT: "#B3261E",
+                container: "#F9DEDC",
+                onContainer: "#410E0B"
               }
             },
             fontFamily: {
-              display: ["Inter", "sans-serif"],
+              sans: ["Roboto", "sans-serif"],
+              display: ["Google Sans", "Roboto", "sans-serif"],
             },
-            backgroundImage: {
-                'grid-pattern': "linear-gradient(rgba(34, 211, 238, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px)",
-                'radial-glow': "radial-gradient(circle at center, rgba(34, 211, 238, 0.15) 0%, transparent 70%)",
-                'scanner-grid': "linear-gradient(transparent 50%, rgba(34, 211, 238, 0.1) 50%), linear-gradient(90deg, rgba(34, 211, 238, 0) 50%, rgba(34, 211, 238, 0.05) 50%)",
-            },
-            animation: {
-                'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                'float': 'float 6s ease-in-out infinite',
-                'float-delayed': 'float 6s ease-in-out 3s infinite',
-                'scan': 'scan 4s ease-in-out infinite',
-                'fade-in': 'fadeIn 1s ease-out forwards',
-                'spin-slow': 'spin 60s linear infinite',
-                'spin-reverse-slow': 'spin 40s linear infinite reverse',
-            },
-            keyframes: {
-                scan: {
-                    '0%': { top: '0%', opacity: '0' },
-                    '10%': { opacity: '1' },
-                    '90%': { opacity: '1' },
-                    '100%': { top: '100%', opacity: '0' },
-                },
-                float: {
-                    '0%': { transform: 'translateY(0px)' },
-                    '50%': { transform: 'translateY(-10px)' },
-                    '100%': { transform: 'translateY(0px)' },
-                },
-                fadeIn: {
-                    '0%': { opacity: '0', transform: 'translateY(10px)' },
-                    '100%': { opacity: '1', transform: 'translateY(0)' },
-                }
+            boxShadow: {
+              'elevation-1': '0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+              'elevation-2': '0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)',
+              'elevation-3': '0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.3)',
             }
           },
         },
       };
     </script>
     <style>
-        body { margin: 0; background-color: #050b14; }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        :root {
+            --md-sys-color-background: #FDFDFD;
+            --md-sys-color-on-background: #1F1F1F;
         }
-        .glass-node {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.6) 100%);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(34, 211, 238, 0.2);
-            box-shadow: 0 0 20px rgba(34, 211, 238, 0.05), inset 0 0 20px rgba(34, 211, 238, 0.05);
+        .dark {
+            --md-sys-color-background: #131314;
+            --md-sys-color-on-background: #E3E3E3;
         }
-        .perspective-floor {
-            transform: perspective(1000px) rotateX(70deg) translateY(-100px) scale(3);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-            -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+        
+        body { 
+            margin: 0; 
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            font-family: 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
-        .avatar-mask {
-             mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+
+        /* Focus rings for accessibility */
+        *:focus-visible {
+            outline: 2px solid #0B57D0;
+            outline-offset: 2px;
         }
-        .laser-line {
-            box-shadow: 0 0 10px rgba(34, 211, 238, 0.8), 0 0 20px rgba(34, 211, 238, 0.4);
+
+        /* Utility classes for MD3 states */
+        .state-layer {
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0); /* Hardware acceleration fix */
         }
-        .scanner-trail {
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(34, 211, 238, 0.1) 0px,
-                rgba(34, 211, 238, 0.05) 1px,
-                transparent 1px,
-                transparent 4px
-            );
-            mask-image: linear-gradient(to top, black, transparent);
-            -webkit-mask-image: linear-gradient(to top, black, transparent);
+        .state-layer::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: currentColor;
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.2, 0.0, 0, 1.0);
+            pointer-events: none;
         }
-        .neon-text-glow {
-            text-shadow: 0 0 20px rgba(255,255,255,0.3);
+        .state-layer:hover::before { opacity: 0.08; }
+        .state-layer:active::before { opacity: 0.12; }
+
+        /* Micro-interactions Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+            animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes fadeScale {
+            from { 
+                opacity: 0; 
+                transform: scale(0.96); 
+            }
+            to { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+        }
+        .animate-fade-scale {
+            animation: fadeScale 0.25s cubic-bezier(0.2, 0.0, 0, 1.0) forwards;
+        }
+
+        /* Custom Scrollbar for desktop */
+        @media (min-width: 768px) {
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #C4C7C5;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #747775;
+            }
         }
     </style>
 <script type="importmap">
 {
   "imports": {
+    "path": "https://esm.sh/path@^0.12.7",
+    "url": "https://esm.sh/url@^0.11.4",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.530",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "jszip": "https://esm.sh/jszip@^3.10.1",
     "papaparse": "https://esm.sh/papaparse@^5.5.3",
-    "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.530",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "firebase-admin": "https://esm.sh/firebase-admin@^13.6.0",
     "mammoth": "https://esm.sh/mammoth@^1.11.0",
+    "dotenv/": "https://esm.sh/dotenv@^17.2.3/",
+    "cors": "https://esm.sh/cors@^2.8.6",
+    "express": "https://esm.sh/express@^5.2.1",
     "tesseract.js": "https://esm.sh/tesseract.js@^7.0.0"
   }
 }

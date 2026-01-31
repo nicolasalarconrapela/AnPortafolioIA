@@ -29,7 +29,6 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
   const [micActive, setMicActive] = useState(true);
   const [cameraActive, setCameraActive] = useState(true);
   const [timer, setTimer] = useState(0);
-  const [isMicTesting, setIsMicTesting] = useState(false);
   const [micStatus, setMicStatus] = useState<'idle' | 'testing' | 'ok'>('idle');
   const [showChatOverlay, setShowChatOverlay] = useState(false);
   
@@ -68,7 +67,6 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
       const processStep = () => {
           if (step.sender === 'ai') {
               setSpeakerState('ai_speaking');
-              // Add to transcript immediately for AI
               setTranscript(prev => [...prev, { sender: 'ai', text: step.text }]);
               
               timeout = setTimeout(() => {
@@ -77,23 +75,19 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
               }, step.duration);
           } 
           else if (step.sender === 'user') {
-              // Wait a bit before user "starts speaking" (simulated latency/thinking)
               setSpeakerState('user_listening');
               
               timeout = setTimeout(() => {
                   setSpeakerState('user_speaking');
-                  // Simulate user speaking time
                   setTimeout(() => {
                       setTranscript(prev => [...prev, { sender: 'user', text: step.text }]);
                       setSpeakerState('ai_thinking');
-                      
-                      // AI Thinking time
                       setTimeout(() => {
                           setCurrentScriptIndex(prev => prev + 1);
                       }, 1500);
 
                   }, step.duration);
-              }, 1000); // 1s delay before user speaks
+              }, 1000);
           }
       };
 
@@ -109,7 +103,7 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
         setSessionState('active');
         setCurrentScriptIndex(0);
         setTranscript([]);
-    }, 3000);
+    }, 2000);
   };
 
   const handleEnd = () => {
@@ -118,11 +112,9 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
 
   const handleTestMic = () => {
       setMicStatus('testing');
-      setIsMicTesting(true);
       setTimeout(() => {
           setMicStatus('ok');
-          setIsMicTesting(false);
-      }, 2000);
+      }, 1500);
   };
 
   const formatTime = (seconds: number) => {
@@ -132,39 +124,35 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
   };
 
   return (
-    <div className="w-full h-full flex flex-col animate-fade-in relative overflow-hidden bg-[#020408]">
+    <div className="w-full h-full flex flex-col animate-fade-in relative overflow-hidden bg-surface-variant dark:bg-surface-darkVariant">
       
       {/* SETUP PHASE */}
       {sessionState === 'setup' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto custom-scrollbar">
-            <div className="max-w-5xl w-full">
-                <div className="text-center mb-8 lg:mb-12">
-                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">Interview Simulator</h1>
-                    <p className="text-slate-400 max-w-lg mx-auto text-sm md:text-base">Calibrate your audio and video settings before entering the simulation with our AI recruiter.</p>
-                </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto">
+            <div className="max-w-4xl w-full">
+                <h1 className="text-3xl font-display font-normal text-[var(--md-sys-color-on-background)] mb-2 text-center">Interview Simulator</h1>
+                <p className="text-outline text-center mb-10">Configure your session before connecting.</p>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Settings Card */}
-                    <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-slate-700/50 flex flex-col">
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
-                                <span className="material-symbols-outlined text-lg">tune</span>
-                            </div>
-                            Session Configuration
+                    <div className="bg-[var(--md-sys-color-background)] p-8 rounded-[24px] shadow-sm border border-outline-variant/30 flex flex-col">
+                        <h3 className="text-lg font-medium text-[var(--md-sys-color-on-background)] mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary">tune</span>
+                            Settings
                         </h3>
                         
                         <div className="space-y-6 flex-1">
                             <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Interview Type</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['Behavioral', 'Technical', 'System Design', 'Culture Fit'].map(type => (
+                                <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">Interview Type</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Behavioral', 'Technical', 'System Design', 'Culture'].map(type => (
                                         <button 
                                             key={type}
                                             onClick={() => setSelectedType(type.toLowerCase())}
-                                            className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                                                 selectedType === type.toLowerCase()
-                                                ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.15)]'
-                                                : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-500'
+                                                ? 'bg-secondary-container border-secondary-container text-secondary-onContainer'
+                                                : 'border-outline-variant text-outline hover:border-outline'
                                             }`}
                                         >
                                             {type}
@@ -173,70 +161,47 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Difficulty Level</label>
-                                <input type="range" className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400" defaultValue="50" />
-                                <div className="flex justify-between text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-widest">
-                                    <span>Junior</span>
-                                    <span>Senior</span>
-                                    <span>Staff</span>
-                                </div>
-                            </div>
-
-                            <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex gap-3 items-start">
-                                <span className="material-symbols-outlined text-indigo-400 text-xl mt-0.5">info</span>
+                            <div className="p-4 rounded-xl bg-surface-variant border border-outline-variant/30 flex gap-3 items-start">
+                                <span className="material-symbols-outlined text-primary text-xl mt-0.5">info</span>
                                 <div>
-                                    <h4 className="text-sm font-bold text-indigo-300">Tips</h4>
-                                    <p className="text-xs text-indigo-200/70 mt-1 leading-relaxed">Speak clearly and use the STAR method (Situation, Task, Action, Result) for behavioral questions.</p>
+                                    <h4 className="text-sm font-bold text-[var(--md-sys-color-on-background)]">Pro Tip</h4>
+                                    <p className="text-xs text-outline mt-1 leading-relaxed">Use the STAR method (Situation, Task, Action, Result) for better scoring on behavioral questions.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Device Check */}
-                    <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-slate-700/50 flex flex-col">
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
-                                <span className="material-symbols-outlined text-lg">perm_device_information</span>
-                            </div>
-                            Device Check
+                    <div className="bg-[var(--md-sys-color-background)] p-8 rounded-[24px] shadow-sm border border-outline-variant/30 flex flex-col">
+                        <h3 className="text-lg font-medium text-[var(--md-sys-color-on-background)] mb-6 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary">videocam</span>
+                            Preview
                         </h3>
 
-                        <div className="flex-1 bg-black rounded-2xl relative overflow-hidden mb-6 border border-slate-700 group min-h-[250px]">
-                             {/* Fake Camera Feed */}
-                             <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover opacity-80" alt="Camera Preview" />
+                        <div className="flex-1 bg-black rounded-[16px] relative overflow-hidden mb-6 aspect-video">
+                             <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover opacity-90" alt="Camera Preview" />
                              
-                             {/* Audio Meter Viz */}
-                             <div className="absolute bottom-4 left-4 flex gap-1 items-end h-6">
-                                 {[1,2,3,4,5,6].map(i => (
-                                     <div key={i} className="w-1.5 bg-green-500 rounded-full animate-pulse" style={{ height: `${Math.random() * 80 + 20}%`, animationDuration: `${Math.random() * 0.3 + 0.1}s` }}></div>
-                                 ))}
-                             </div>
-                             
-                             <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-green-400 flex items-center gap-2 border border-green-500/30">
-                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                 SYSTEM READY
+                             <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white flex items-center gap-2">
+                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                 Camera On
                              </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex gap-4">
                             <button 
                                 onClick={handleTestMic}
                                 disabled={micStatus === 'testing'}
-                                className={`flex-1 py-3.5 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                                    micStatus === 'ok' 
-                                    ? 'bg-green-500/20 border-green-500 text-green-400' 
-                                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                                className={`flex-1 h-12 rounded-full border border-outline font-medium text-sm transition-colors flex items-center justify-center gap-2 ${
+                                    micStatus === 'ok' ? 'bg-green-100 text-green-700 border-green-200' : 'hover:bg-surface-variant'
                                 }`}
                             >
-                                <span className={`material-symbols-outlined ${micStatus === 'testing' ? 'animate-spin' : ''}`}>
-                                    {micStatus === 'ok' ? 'check' : (micStatus === 'testing' ? 'refresh' : 'settings_voice')}
+                                <span className="material-symbols-outlined text-lg">
+                                    {micStatus === 'ok' ? 'check' : (micStatus === 'testing' ? 'progress_activity' : 'mic')}
                                 </span>
-                                {micStatus === 'ok' ? 'Mic OK' : (micStatus === 'testing' ? 'Testing...' : 'Test Mic')}
+                                {micStatus === 'ok' ? 'Mic Working' : 'Test Mic'}
                             </button>
-                            <button onClick={handleStart} className="flex-[2] py-3.5 bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all flex items-center justify-center gap-2 active:scale-95">
-                                Start Session
-                                <span className="material-symbols-outlined">arrow_forward</span>
+                            <button onClick={handleStart} className="flex-[2] h-12 bg-primary text-white hover:bg-primary-hover shadow-elevation-1 rounded-full font-medium text-sm flex items-center justify-center gap-2 transition-all state-layer">
+                                Start Interview
                             </button>
                         </div>
                     </div>
@@ -247,154 +212,91 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
 
       {/* CONNECTING PHASE */}
       {sessionState === 'connecting' && (
-          <div className="flex-1 flex flex-col items-center justify-center relative">
-              <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-              
-              <div className="relative w-32 h-32 lg:w-40 lg:h-40 mb-10">
-                  <div className="absolute inset-0 border-4 border-cyan-500/20 rounded-full animate-ping"></div>
-                  <div className="absolute inset-4 border-4 border-indigo-500/30 rounded-full animate-spin-slow border-t-transparent"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                       <span className="material-symbols-outlined text-4xl lg:text-5xl text-white animate-pulse">smart_toy</span>
-                  </div>
-              </div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-white mb-3">Establishing Secure Link</h2>
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-cyan-400 font-mono text-xs lg:text-sm">Loading Neural Personality Model...</p>
-                <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-cyan-400 animate-[pulse_1s_infinite] w-full origin-left"></div>
-                </div>
-              </div>
+          <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="w-16 h-16 border-4 border-surface-variant border-t-primary rounded-full animate-spin mb-6"></div>
+              <h2 className="text-xl font-display font-medium text-[var(--md-sys-color-on-background)]">Connecting to AI Agent...</h2>
           </div>
       )}
 
       {/* ACTIVE SESSION */}
       {sessionState === 'active' && (
-          <div className="flex-1 flex flex-col relative bg-[#020408]">
-              {/* Header */}
-              <div className="h-16 border-b border-slate-800 bg-[#050b14]/90 flex items-center justify-between px-4 lg:px-6 z-20">
-                  <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20">
-                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">Live</span>
-                      </div>
-                      <span className="text-sm font-mono text-slate-300 w-16">{formatTime(timer)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                       <span className="text-xs text-slate-400 hidden sm:inline-block">Simulated Interview Environment v2.4</span>
-                       <div className="h-4 w-px bg-slate-700 hidden sm:block"></div>
-                       <div className="flex items-center gap-2">
-                           <span className="text-xs text-slate-400 hidden sm:inline-block">Topic:</span>
-                           <span className="text-xs text-white font-bold capitalize px-2 py-0.5 rounded bg-slate-800 border border-slate-700">{selectedType}</span>
-                       </div>
-                  </div>
-              </div>
-
+          <div className="flex-1 flex flex-col relative bg-[#202124] text-white"> {/* Meet Dark Theme */}
+              
               {/* Main Stage */}
-              <div className="flex-1 relative p-2 lg:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
+              <div className="flex-1 relative p-4 flex gap-4 overflow-hidden justify-center items-center">
                   
-                  {/* AI Avatar (Main Feed) */}
-                  <div className="flex-1 relative bg-gradient-to-b from-slate-900 to-[#0a101f] rounded-2xl lg:rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl group w-full h-full">
+                  {/* AI Avatar */}
+                  <div className="relative bg-[#3c4043] rounded-[12px] overflow-hidden shadow-lg h-full max-w-4xl aspect-video flex items-center justify-center">
                       <img 
                         src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2574&auto=format&fit=crop" 
-                        className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${speakerState === 'ai_speaking' ? 'scale-105 brightness-110' : 'scale-100 opacity-80'}`} 
+                        className={`w-full h-full object-cover transition-opacity duration-500 ${speakerState === 'ai_speaking' ? 'opacity-100' : 'opacity-80'}`} 
                         alt="AI Interviewer" 
                       />
+                      <div className="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded-full text-sm font-medium">
+                          Sarah (Interviewer)
+                      </div>
                       
-                      {/* AI Overlay UI */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 lg:p-8 pt-24">
-                           <div className="flex items-end justify-between">
-                               <div>
-                                   <div className="flex items-center gap-3 mb-2">
-                                       <h3 className="text-lg lg:text-2xl font-bold text-white">Sarah (AI)</h3>
-                                       {speakerState === 'ai_speaking' && (
-                                            <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/50 text-cyan-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">Speaking</span>
-                                       )}
-                                       {speakerState === 'ai_thinking' && (
-                                            <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">Thinking</span>
-                                       )}
-                                   </div>
-                                   {/* AI Waveform */}
-                                   <div className="flex items-center gap-1 h-6 lg:h-8">
-                                       {[...Array(16)].map((_, i) => (
-                                           <div 
-                                            key={i} 
-                                            className={`w-0.5 lg:w-1 bg-cyan-400 rounded-full transition-all duration-75 ease-in-out`}
-                                            style={{ 
-                                                height: speakerState === 'ai_speaking' ? `${Math.random() * 100}%` : '4px',
-                                                opacity: speakerState === 'ai_speaking' ? 1 : 0.2
-                                            }}
-                                           ></div>
-                                       ))}
-                                   </div>
+                      {/* User PIP */}
+                      <div className={`absolute top-4 right-4 w-48 aspect-video bg-[#202124] rounded-[8px] shadow-lg overflow-hidden border-2 transition-colors ${speakerState === 'user_speaking' ? 'border-green-500' : 'border-transparent'}`}>
+                           <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover" alt="User" />
+                           {!micActive && (
+                               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                   <span className="material-symbols-outlined text-white">mic_off</span>
                                </div>
-                           </div>
+                           )}
                       </div>
                   </div>
 
-                  {/* User Feed (PIP) - Mobile Optimized Position */}
-                  <div className={`absolute top-4 right-4 lg:top-8 lg:right-8 w-24 lg:w-64 aspect-[3/4] bg-slate-900 rounded-xl lg:rounded-2xl border transition-all duration-300 shadow-2xl overflow-hidden z-20 ${speakerState === 'user_speaking' ? 'border-green-500 shadow-[0_0_20px_rgba(34,199,89,0.3)] scale-105' : 'border-slate-600'}`}>
-                       <img src="https://img.freepik.com/free-photo/portrait-man-laughing_23-2148859448.jpg" className="w-full h-full object-cover mirror" alt="User" />
-                       
-                       <div className="absolute bottom-0 left-0 right-0 p-1.5 lg:p-3 bg-gradient-to-t from-black/80 to-transparent">
-                            <div className="flex justify-between items-end">
-                                <div className="flex gap-1 items-end h-3 lg:h-4">
-                                    {[1,2,3,4,5].map(i => (
-                                        <div key={i} className={`w-0.5 lg:w-1 bg-green-500 rounded-full`} style={{ 
-                                            height: (speakerState === 'user_speaking' && micActive) ? `${Math.random() * 100}%` : '20%' 
-                                        }}></div>
-                                    ))}
-                                </div>
-                                {!micActive && <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-red-500/80 flex items-center justify-center"><span className="material-symbols-outlined text-[10px] lg:text-[12px] text-white">mic_off</span></div>}
-                            </div>
-                       </div>
-                  </div>
-
-                  {/* Transcript Overlay */}
-                  <div ref={scrollRef} className={`absolute bottom-6 left-4 right-4 lg:left-8 lg:right-auto lg:w-[450px] max-h-[180px] lg:max-h-[300px] overflow-y-auto no-scrollbar z-10 flex flex-col gap-3 pointer-events-none pb-20 mask-linear-fade-top transition-opacity ${showChatOverlay ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}>
-                      {transcript.map((msg, i) => (
-                          <div key={i} className={`p-3 lg:p-4 rounded-2xl backdrop-blur-md border shadow-lg animate-fade-in transition-all ${msg.sender === 'ai' ? 'bg-slate-900/80 border-slate-700/50 rounded-tl-sm self-start' : 'bg-indigo-600/80 border-indigo-500/30 rounded-tr-sm self-end text-right'}`}>
-                              <p className="text-xs lg:text-base text-slate-100 font-medium leading-relaxed">"{msg.text}"</p>
+                  {/* Transcript Sidebar */}
+                  {showChatOverlay && (
+                      <div className="w-80 h-full bg-white rounded-[16px] text-black flex flex-col shadow-lg overflow-hidden animate-fade-in-right">
+                          <div className="p-4 border-b flex justify-between items-center bg-white">
+                              <h3 className="font-display font-medium text-lg">Transcript</h3>
+                              <button onClick={() => setShowChatOverlay(false)} className="text-gray-500 hover:bg-gray-100 p-1 rounded-full">
+                                  <span className="material-symbols-outlined">close</span>
+                              </button>
                           </div>
-                      ))}
-                      {speakerState === 'ai_thinking' && (
-                          <div className="self-start p-3 rounded-2xl bg-slate-900/50 backdrop-blur-sm border border-slate-700/30 flex gap-1">
-                              <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                              <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></span>
-                              <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></span>
+                          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                              {transcript.map((msg, i) => (
+                                  <div key={i} className={`flex flex-col ${msg.sender === 'ai' ? 'items-start' : 'items-end'}`}>
+                                      <div className={`text-xs mb-1 text-gray-500`}>{msg.sender === 'ai' ? 'Interviewer' : 'You'}</div>
+                                      <div className={`p-3 rounded-2xl max-w-[90%] text-sm ${msg.sender === 'ai' ? 'bg-white border text-gray-800 rounded-tl-none' : 'bg-blue-100 text-blue-900 rounded-tr-none'}`}>
+                                          {msg.text}
+                                      </div>
+                                  </div>
+                              ))}
                           </div>
-                      )}
-                  </div>
+                      </div>
+                  )}
 
               </div>
 
-              {/* Controls Bar - Mobile Optimized */}
-              <div className="h-20 lg:h-24 bg-[#050b14] border-t border-slate-800 flex items-center justify-center gap-2 lg:gap-6 px-4 relative z-30 pb-2 lg:pb-4">
+              {/* Controls Bar */}
+              <div className="h-20 bg-[#202124] flex items-center justify-center gap-4 relative z-30">
+                  <span className="absolute left-6 text-white/80 font-mono text-sm">{formatTime(timer)}</span>
+                  
                   <ControlButton 
                     icon={micActive ? "mic" : "mic_off"} 
                     active={micActive} 
                     onClick={() => setMicActive(!micActive)} 
-                    color={micActive ? "bg-slate-800" : "bg-red-500/20 text-red-500"} 
-                    tooltip="Toggle Mic"
+                    danger={!micActive}
                   />
                   <ControlButton 
                     icon={cameraActive ? "videocam" : "videocam_off"} 
                     active={cameraActive} 
                     onClick={() => setCameraActive(!cameraActive)}
-                    color={cameraActive ? "bg-slate-800" : "bg-red-500/20 text-red-500"} 
-                    tooltip="Toggle Camera"
+                    danger={!cameraActive}
                   />
                   
-                  <button onClick={handleEnd} className="h-12 lg:h-14 px-4 lg:px-8 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold flex items-center gap-2 lg:gap-3 transition-all shadow-lg shadow-red-900/20 mx-1 active:scale-95 group">
-                      <span className="material-symbols-outlined text-xl lg:text-2xl group-hover:scale-110 transition-transform">call_end</span>
-                      <span className="hidden sm:inline">End Session</span>
+                  <button onClick={handleEnd} className="h-12 px-6 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 mx-2">
+                      <span className="material-symbols-outlined">call_end</span>
                   </button>
 
                   <ControlButton 
-                    icon={showChatOverlay ? "chat_bubble" : "chat_bubble_outline"} 
+                    icon="chat" 
                     active={showChatOverlay} 
                     onClick={() => setShowChatOverlay(!showChatOverlay)} 
-                    color={showChatOverlay ? "bg-slate-700 text-cyan-400" : "bg-slate-800"} 
-                    tooltip="Toggle Transcript" 
+                    variant="secondary"
                   />
               </div>
           </div>
@@ -402,71 +304,58 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
 
       {/* FEEDBACK PHASE */}
       {sessionState === 'feedback' && (
-          <div className="flex-1 overflow-y-auto p-4 lg:p-10 flex flex-col items-center custom-scrollbar">
-              <div className="max-w-5xl w-full animate-fade-in">
-                  <div className="flex flex-col sm:flex-row items-center justify-between mb-8 pb-6 border-b border-slate-800 gap-4 sm:gap-0 text-center sm:text-left">
-                      <div>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">Performance Analysis</h1>
-                        <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-slate-400">
-                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-base">timer</span> {formatTime(timer)} Duration</span>
-                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-base">category</span> {selectedType}</span>
-                        </div>
-                      </div>
-                      <button onClick={onBack} className="px-6 py-3 border border-slate-700 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-all font-bold text-sm flex items-center gap-2">
-                          <span className="material-symbols-outlined">dashboard</span>
-                          Return to Dashboard
+          <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center">
+              <div className="max-w-4xl w-full">
+                  <div className="flex items-center justify-between mb-8">
+                      <h1 className="text-3xl font-display font-normal text-[var(--md-sys-color-on-background)]">Analysis Report</h1>
+                      <button onClick={onBack} className="h-10 px-6 rounded-full border border-outline text-primary hover:bg-surface-variant font-medium text-sm transition-colors">
+                          Exit
                       </button>
                   </div>
 
-                  {/* Top Stats */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                      <div className="md:col-span-1 glass-panel p-6 rounded-3xl border border-slate-700/50 flex flex-col items-center justify-center text-center">
-                          <div className="w-24 h-24 rounded-full border-4 border-slate-800 flex items-center justify-center mb-3 relative">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                      <div className="md:col-span-1 bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 flex flex-col items-center justify-center text-center shadow-sm">
+                          <div className="w-24 h-24 rounded-full border-4 border-surface-variant flex items-center justify-center mb-2 relative">
                               <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                                  <circle cx="50" cy="50" r="46" fill="transparent" stroke="#1e293b" strokeWidth="8" />
-                                  <circle cx="50" cy="50" r="46" fill="transparent" stroke="#22d3ee" strokeWidth="8" strokeDasharray="290" strokeDashoffset="40" strokeLinecap="round" />
+                                  <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" className="text-surface-variant" strokeWidth="8" />
+                                  <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" className="text-green-600" strokeWidth="8" strokeDasharray="240" strokeDashoffset="40" strokeLinecap="round" />
                               </svg>
-                              <span className="text-3xl font-bold text-white">87</span>
+                              <span className="text-3xl font-bold text-[var(--md-sys-color-on-background)]">87</span>
                           </div>
-                          <h4 className="text-sm font-bold text-slate-400">Overall Score</h4>
+                          <span className="text-sm font-medium text-outline">Overall Score</span>
                       </div>
                       <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <ScoreCard label="Communication" score={92} color="text-cyan-400" icon="chat" />
-                          <ScoreCard label="Technical Depth" score={78} color="text-indigo-400" icon="code" />
-                          <ScoreCard label="Culture Fit" score={95} color="text-purple-400" icon="diversity_3" />
+                          <ScoreCard label="Communication" score={92} icon="chat" />
+                          <ScoreCard label="Technical Depth" score={78} icon="code" />
+                          <ScoreCard label="Culture Fit" score={95} icon="diversity_3" />
                       </div>
                   </div>
 
-                  {/* Detailed Analysis */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-green-500/20 bg-gradient-to-b from-green-900/10 to-transparent">
-                          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400">
-                                <span className="material-symbols-outlined">thumb_up</span>
-                              </div>
+                      <div className="bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 shadow-sm">
+                          <h3 className="text-lg font-medium text-[var(--md-sys-color-on-background)] mb-4 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-green-600">thumb_up</span>
                               Strengths
                           </h3>
-                          <ul className="space-y-4">
-                              {['Clear articulation of conflict resolution strategies.', 'Effectively used the STAR method for behavioral answers.', 'Maintained excellent eye contact and pacing.', 'Showed deep understanding of frontend performance.'].map((item, i) => (
-                                  <li key={i} className="flex gap-4 text-sm text-slate-300">
-                                      <span className="material-symbols-outlined text-green-500 text-base mt-0.5 shrink-0">check_circle</span>
+                          <ul className="space-y-3">
+                              {['Clear articulation of conflict resolution strategies.', 'Effectively used the STAR method for behavioral answers.', 'Maintained excellent eye contact and pacing.'].map((item, i) => (
+                                  <li key={i} className="flex gap-3 text-sm text-[var(--md-sys-color-on-background)]">
+                                      <span className="material-symbols-outlined text-green-600 text-lg mt-0.5">check</span>
                                       {item}
                                   </li>
                               ))}
                           </ul>
                       </div>
 
-                      <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-orange-500/20 bg-gradient-to-b from-orange-900/10 to-transparent">
-                          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
-                                <span className="material-symbols-outlined">lightbulb</span>
-                              </div>
-                              Areas for Improvement
+                      <div className="bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 shadow-sm">
+                          <h3 className="text-lg font-medium text-[var(--md-sys-color-on-background)] mb-4 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-orange-600">lightbulb</span>
+                              Improvements
                           </h3>
-                          <ul className="space-y-4">
-                              {['Could provide more specific metrics on the outcome of the optimization.', 'Pause usage was slightly high during the technical question.', 'Elaborate more on the cross-functional collaboration aspect.'].map((item, i) => (
-                                  <li key={i} className="flex gap-4 text-sm text-slate-300">
-                                      <span className="material-symbols-outlined text-orange-500 text-base mt-0.5 shrink-0">arrow_upward</span>
+                          <ul className="space-y-3">
+                              {['Could provide more specific metrics on the outcome of the optimization.', 'Pause usage was slightly high during the technical question.'].map((item, i) => (
+                                  <li key={i} className="flex gap-3 text-sm text-[var(--md-sys-color-on-background)]">
+                                      <span className="material-symbols-outlined text-orange-600 text-lg mt-0.5">arrow_upward</span>
                                       {item}
                                   </li>
                               ))}
@@ -480,25 +369,25 @@ export const InterviewSimulator: React.FC<InterviewSimulatorProps> = ({ onBack }
   );
 };
 
-const ControlButton: React.FC<{icon: string, active: boolean, onClick: () => void, color: string, tooltip?: string}> = ({icon, active, onClick, color, tooltip}) => (
+const ControlButton: React.FC<{icon: string, active: boolean, onClick: () => void, danger?: boolean, variant?: 'secondary'}> = ({icon, active, onClick, danger, variant}) => (
     <button 
         onClick={onClick}
-        title={tooltip}
-        className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transition-all ${color} ${!color.includes('red') ? 'hover:bg-slate-700 text-slate-200 hover:text-white' : ''} border border-white/5 hover:scale-105 active:scale-95`}
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+            danger 
+            ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30' 
+            : (active 
+                ? (variant === 'secondary' ? 'bg-[#8ab4f8] text-[#202124]' : 'bg-[#3c4043] text-white hover:bg-[#4a4e51]') 
+                : 'bg-[#3c4043] text-white hover:bg-[#4a4e51]')
+        }`}
     >
-        <span className="material-symbols-outlined text-xl lg:text-2xl">{icon}</span>
+        <span className={`material-symbols-outlined ${!active && !danger && variant !== 'secondary' ? 'text-gray-400' : ''}`}>{icon}</span>
     </button>
 )
 
-const ScoreCard: React.FC<{label: string, score: number, color: string, icon: string}> = ({label, score, color, icon}) => (
-    <div className="glass-panel p-6 rounded-3xl border border-slate-700/50 flex flex-col items-center justify-center relative overflow-hidden group">
-        <div className={`absolute top-4 right-4 text-2xl opacity-20 group-hover:opacity-40 transition-opacity ${color}`}>
-            <span className="material-symbols-outlined">{icon}</span>
-        </div>
-        <div className={`text-4xl font-bold mb-2 ${color}`}>{score}%</div>
-        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</div>
-        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-slate-800">
-            <div className={`h-full ${color.replace('text-', 'bg-')} transition-all duration-1000`} style={{ width: `${score}%` }}></div>
-        </div>
+const ScoreCard: React.FC<{label: string, score: number, icon: string}> = ({label, score, icon}) => (
+    <div className="bg-[var(--md-sys-color-background)] p-6 rounded-[24px] border border-outline-variant/30 flex flex-col items-center justify-center shadow-sm">
+        <span className="material-symbols-outlined text-primary text-2xl mb-2">{icon}</span>
+        <div className="text-2xl font-bold text-[var(--md-sys-color-on-background)]">{score}%</div>
+        <div className="text-xs text-outline font-medium uppercase">{label}</div>
     </div>
 )

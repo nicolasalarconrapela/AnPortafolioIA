@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { LinkedinSyncView } from './LinkedinSyncView';
 import { AITrainingView } from './AITrainingView';
 import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
@@ -19,16 +19,16 @@ const STEPS_CONFIG = [
     {
         id: 'import',
         icon: 'folder_shared',
-        title: 'Import Profile Data',
-        desc: 'Upload Resumes, Portfolios, or Case Studies.',
-        color: 'indigo'
+        title: 'Import Data',
+        desc: 'Upload CV, Portfolio, etc.',
+        color: 'primary'
     },
     {
         id: 'ai',
         icon: 'smart_toy',
-        title: 'Train Your AI Assistant',
-        desc: 'Personalize your AI with your preferences and goals.',
-        color: 'purple'
+        title: 'Configure AI',
+        desc: 'Personalize your assistant.',
+        color: 'secondary'
     }
 ];
 
@@ -60,6 +60,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSteps = STEPS_CONFIG.filter(step => selectedItems.includes(step.id));
   const currentStep = activeSteps[currentStepIndex];
+
+  // Ref for the steps container to manage scrolling
+  const stepsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to active step on mobile
+  useEffect(() => {
+      if (stepsContainerRef.current) {
+          const activeElement = stepsContainerRef.current.children[currentStepIndex] as HTMLElement;
+          if (activeElement) {
+              activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+      }
+  }, [currentStepIndex]);
 
   const handleNext = () => {
       if (currentStepIndex < activeSteps.length - 1) {
@@ -141,10 +154,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
               try {
                   const text = await parseFileContent(file);
-                  // Relaxed check: Accept any non-empty text
                   if (text && text.trim().length > 0) { 
                        processed.push({ 
-                          name: sanitizeFileNameUI(file.name), // Security: UI Sanitization
+                          name: sanitizeFileNameUI(file.name),
                           data: text, 
                           size: file.size, 
                           type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN' 
@@ -197,140 +209,139 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   };
 
   return (
-    <div className="relative z-20 flex w-full h-screen bg-[#020408] overflow-hidden">
-        {/* BG Glows */}
-        <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 blur-[100px]"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 blur-[100px]"></div>
+    <div className="relative w-full min-h-screen bg-surface-variant dark:bg-surface-darkVariant flex flex-col md:flex-row">
+        
+        {/* Sidebar Desktop / Topbar Mobile */}
+        <div className="w-full md:w-80 bg-[var(--md-sys-color-background)] border-b md:border-b-0 md:border-r border-outline-variant p-4 md:p-6 flex flex-col shrink-0 md:h-screen z-10 shadow-sm md:shadow-none">
+            <div className="flex items-center justify-between md:justify-start gap-2 mb-2 md:mb-8">
+                <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-xl md:text-2xl">diversity_3</span>
+                    <span className="font-display font-medium text-base md:text-lg">Setup Guide</span>
+                </div>
+                {/* Mobile exit button shows here for easy access */}
+                <button onClick={onExit} className="md:hidden p-2 text-outline hover:text-primary active:bg-surface-variant rounded-full transition-colors">
+                    <span className="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            
+            {/* Steps Container - Improved Mobile Scrolling */}
+            <div className="relative md:flex-1">
+                {/* Scroll Mask for Mobile */}
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--md-sys-color-background)] to-transparent pointer-events-none md:hidden z-10" />
+                
+                <div 
+                    ref={stepsContainerRef}
+                    className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide snap-x snap-mandatory pr-8 md:pr-0"
+                >
+                    {activeSteps.map((step, index) => {
+                        const isActive = index === currentStepIndex;
+                        const isCompleted = index < currentStepIndex;
+                        
+                        return (
+                            <div key={step.id} className={`snap-center flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-full md:rounded-2xl transition-colors whitespace-nowrap md:whitespace-normal shrink-0 border border-transparent ${isActive ? 'bg-secondary-container text-secondary-onContainer border-secondary-container/50' : 'text-outline hover:bg-surface-variant'}`}>
+                                <div className={`w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-secondary-onContainer text-secondary-container' : (isCompleted ? 'bg-green-100 text-green-700' : 'bg-surface-variant text-outline')}`}>
+                                    {isCompleted ? <span className="material-symbols-outlined text-sm font-bold">check</span> : <span className="material-symbols-outlined text-sm">{step.icon}</span>}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className={`text-xs md:text-sm font-bold ${isActive ? 'text-secondary-onContainer' : 'text-[var(--md-sys-color-on-background)]'}`}>{step.title}</span>
+                                    <span className="hidden md:inline text-xs opacity-80">{step.desc}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="mt-auto pt-6 hidden md:block">
+                <button onClick={onExit} className="flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors hover:translate-x-1 duration-200">
+                    <span className="material-symbols-outlined text-lg">arrow_back</span>
+                    Cancel Setup
+                </button>
+            </div>
         </div>
 
-        <div className="glass-panel w-full max-w-6xl h-full lg:h-[750px] lg:my-auto lg:mx-auto lg:rounded-3xl border-0 lg:border border-slate-700/50 flex flex-col lg:flex-row overflow-hidden shadow-2xl relative">
-            
-            {/* Sidebar Desktop */}
-            <div className="w-64 border-r border-slate-700/50 p-8 hidden lg:block bg-slate-900/30 shrink-0">
-                <div className="space-y-6 mt-10">
-                    {activeSteps.map((step, index) => (
-                        <div key={step.id} className={`flex gap-4 p-3 rounded-xl ${index === currentStepIndex ? 'bg-slate-800 border border-cyan-500/30' : 'opacity-40'}`}>
-                            <span className="material-symbols-outlined text-cyan-400">{step.icon}</span>
-                            <span className="text-sm font-bold text-white">{step.title}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Mobile Header */}
-            <div className="lg:hidden p-4 bg-[#050b14] border-b border-slate-800 shrink-0 z-30">
-                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    <span>Step {currentStepIndex + 1} / {activeSteps.length}</span>
-                    <span className="text-cyan-400">{currentStep.title}</span>
-                </div>
-            </div>
-
-            {/* Main Area with Scroll */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center justify-start lg:justify-center p-6 lg:p-12">
-                <div className="w-full max-w-2xl py-8 lg:py-0">
-                    {currentStep?.id === 'import' && (
-                        !dataLoaded ? (
-                            <div className="text-center animate-fade-in flex flex-col items-center">
-                                {isUploading ? (
-                                    <div className="py-12 flex flex-col items-center w-full max-w-md">
-                                        <div className="w-20 h-20 relative mb-6">
-                                            <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
-                                            <div className="absolute inset-0 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-xs text-cyan-400">{progressPercent}%</div>
-                                        </div>
-                                        <p className="text-white font-bold text-lg mb-2">Analyzing Structure</p>
-                                        <p className="text-slate-400 text-sm animate-pulse">{processingStatus}</p>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto h-[calc(100dvh-80px)] md:h-screen">
+            <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+                
+                {currentStep?.id === 'import' && (
+                    !dataLoaded ? (
+                        <div className="flex-1 flex flex-col items-center justify-center animate-fade-in bg-[var(--md-sys-color-background)] rounded-[24px] md:rounded-[28px] p-6 md:p-8 shadow-sm border border-outline-variant/30">
+                            {isUploading ? (
+                                <div className="text-center w-full max-w-sm">
+                                    <div className="w-16 h-16 rounded-full bg-secondary-container border-4 border-[var(--md-sys-color-background)] mx-auto mb-6 flex items-center justify-center relative">
+                                        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                                        <span className="text-xs font-bold text-primary">{progressPercent}%</span>
                                     </div>
-                                ) : (
-                                    <>
-                                        <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-6 mx-auto">
-                                            <span className="material-symbols-outlined text-3xl">cloud_upload</span>
-                                        </div>
-                                        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-2">Upload Profile Data</h2>
-                                        <p className="text-slate-400 mb-8 text-sm lg:text-base max-w-md mx-auto">
-                                            We support Resumes, CVs, LinkedIn Archives, and Image Portfolios (Layout Analysis enabled).
-                                        </p>
+                                    <h3 className="text-xl font-display font-medium mb-2">Analyzing Content</h3>
+                                    <p className="text-outline text-sm animate-pulse">{processingStatus}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary-container text-primary-onContainer flex items-center justify-center mb-4 md:mb-6">
+                                        <span className="material-symbols-outlined text-2xl md:text-3xl">cloud_upload</span>
+                                    </div>
+                                    <h2 className="text-2xl md:text-3xl font-display font-normal text-[var(--md-sys-color-on-background)] mb-2 md:mb-3 text-center">Import Profile Data</h2>
+                                    <p className="text-outline text-center text-sm md:text-base max-w-md mb-6 md:mb-8">
+                                        Upload your Resume (PDF), Portfolio (PDF/Images), or LinkedIn Archive (ZIP).
+                                    </p>
+                                    
+                                    {/* Upload Box */}
+                                    <div 
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className={`w-full max-w-xl p-6 md:p-10 rounded-[20px] md:rounded-[24px] border border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative ${
+                                            isDragging 
+                                            ? 'border-primary bg-primary-container/30' 
+                                            : 'border-outline-variant hover:border-primary hover:bg-surface-variant'
+                                        }`}
+                                    >
+                                        <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.csv,.zip,.txt,.png,.jpg,.jpeg" onChange={handleFileInputChange} />
                                         
-                                        {/* UX Enhanced Upload Box */}
-                                        <div 
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={handleDrop}
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className={`w-full p-8 lg:p-12 rounded-3xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative overflow-hidden ${
-                                                isDragging 
-                                                ? 'border-cyan-500 bg-cyan-500/10 scale-[1.02]' 
-                                                : 'border-slate-700 hover:border-cyan-500/50 bg-slate-900/40 hover:bg-slate-800/60'
-                                            }`}
-                                        >
-                                            <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.csv,.zip,.txt,.png,.jpg,.jpeg" onChange={handleFileInputChange} />
-                                            
-                                            <div className={`w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110 bg-cyan-500/20' : 'group-hover:scale-110'}`}>
-                                                <span className={`material-symbols-outlined text-3xl ${isDragging ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-400'}`}>upload_file</span>
-                                            </div>
-                                            
-                                            <div className="text-center relative z-10">
-                                                <h3 className={`text-lg font-bold mb-1 ${isDragging ? 'text-cyan-400' : 'text-white'}`}>
-                                                    {isDragging ? 'Drop files here' : 'Click or Drag files here'}
-                                                </h3>
-                                                <p className="text-xs text-slate-500 font-medium">Max 15MB per file</p>
-                                            </div>
+                                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface-variant flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                            <span className="material-symbols-outlined text-xl md:text-2xl text-primary">upload_file</span>
+                                        </div>
+                                        
+                                        <div className="text-center">
+                                            <h3 className="text-sm md:text-base font-medium text-[var(--md-sys-color-on-background)] mb-1">
+                                                {isDragging ? 'Drop files here' : 'Click or Drag files here'}
+                                            </h3>
+                                            <p className="text-[10px] md:text-xs text-outline">Max 15MB per file • PDF, DOCX, IMG, ZIP</p>
+                                        </div>
+                                    </div>
 
-                                            {/* Supported Formats Grid */}
-                                            <div className="grid grid-cols-5 gap-3 mt-4 w-full max-w-xs opacity-60 group-hover:opacity-100 transition-opacity">
-                                                <FormatBadge ext="PDF" color="red" />
-                                                <FormatBadge ext="DOCX" color="blue" />
-                                                <FormatBadge ext="CSV" color="green" />
-                                                <FormatBadge ext="ZIP" color="yellow" />
-                                                <FormatBadge ext="IMG" color="purple" />
+                                    {uploadError && (
+                                        <div className="mt-6 p-4 bg-error-container text-error-onContainer rounded-xl text-sm flex items-start gap-3 w-full max-w-xl">
+                                            <span className="material-symbols-outlined text-lg mt-0.5">error</span>
+                                            <div>
+                                                <p className="font-bold">Upload Failed</p>
+                                                <p>{uploadError}</p>
                                             </div>
                                         </div>
+                                    )}
 
-                                        {uploadError && (
-                                            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm flex items-start gap-3 w-full max-w-lg animate-fade-in">
-                                                <span className="material-symbols-outlined text-lg mt-0.5">security</span>
-                                                <div className="flex-1">
-                                                    <p className="font-bold mb-1">Security / Upload Failed</p>
-                                                    <p className="text-xs opacity-80 break-words">{uploadError}</p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <button onClick={handleNext} className="mt-8 text-slate-500 hover:text-white text-xs font-bold transition-colors uppercase tracking-widest">
-                                            Skip Import Step
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        ) : (
+                                    <button onClick={handleNext} className="mt-6 md:mt-8 text-primary font-medium text-sm hover:underline p-2">
+                                        Skip this step
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-sm border border-outline-variant/30 h-full overflow-hidden flex flex-col">
                             <LinkedinSyncView onBack={() => { setDataLoaded(false); setUploadedFiles([]); }} onComplete={handleNext} uploadedFiles={uploadedFiles} />
-                        )
-                    )}
+                        </div>
+                    )
+                )}
 
-                    {currentStep?.id === 'ai' && (
+                {currentStep?.id === 'ai' && (
+                    <div className="bg-[var(--md-sys-color-background)] rounded-[28px] p-4 md:p-8 shadow-sm border border-outline-variant/30 h-full overflow-auto">
                         <AITrainingView onBack={handleBack} onComplete={onComplete} />
-                    )}
-                </div>
-                {/* Spacer for mobile to prevent button hiding */}
-                <div className="h-20 lg:hidden"></div>
+                    </div>
+                )}
             </div>
         </div>
     </div>
   );
 };
-
-const FormatBadge: React.FC<{ext: string, color: string}> = ({ext, color}) => {
-    const colorClasses: {[key: string]: string} = {
-        red: 'bg-red-500/10 text-red-400 border-red-500/20',
-        blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        green: 'bg-green-500/10 text-green-400 border-green-500/20',
-        yellow: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-        purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    };
-    return (
-        <div className={`flex flex-col items-center justify-center p-2 rounded-lg border ${colorClasses[color] || colorClasses.blue}`}>
-            <span className="text-[10px] font-bold">{ext}</span>
-        </div>
-    );
-}

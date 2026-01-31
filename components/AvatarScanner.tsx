@@ -2,21 +2,15 @@ import React from 'react';
 
 export const AvatarScanner: React.FC = () => {
   return (
-    <div className="relative z-10 w-full max-w-[320px] md:max-w-[380px] aspect-[4/5] flex items-end justify-center animate-float mt-[-60px]">
-      <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden rounded-3xl opacity-80">
-        <div className="absolute left-[-20%] right-[-20%] h-[2px] bg-cyan-400 laser-line animate-scan z-30"></div>
-        <div className="absolute left-0 right-0 top-0 h-full scanner-trail animate-scan z-20 origin-top opacity-40"></div>
-      </div>
-      
+    <div className="w-full max-w-[320px] aspect-[3/4] bg-surface-variant dark:bg-surface-darkVariant rounded-[24px] overflow-hidden shadow-elevation-1 relative group transition-shadow hover:shadow-elevation-2">
       <img 
-        alt="Professional AI Avatar" 
-        className="w-full h-full object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.6)] avatar-mask filter brightness-105 contrast-110" 
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuv0QyRaPOfIybWdvHNlvkw-J2bW8asA6dXfBKO8LCgbCBK0VM-nXGWLvwv8RvaFfy2vmkt-7qKC_Ofrwxpl2luDUVDVORQSJq3kjU_bsmNyOFLGJd7TEP2-nXU7pD52I-izW6Ii268Fv40bi6LSAYyGf8uCXqpS013DYW4tgVBlGle4uCSvDt_Z8TZFFXQjmYqaB6rKqyPVo9h0XHXvZQKhYMXdSs9RvMXJ5lyLFRPt-i7Xft07tAiE82nR41WSJGHzZ8lcDB9Qs"
+        src="https://img.freepik.com/free-photo/3d-rendering-boy-wearing-cap-with-letter-r_1142-40526.jpg?t=st=1710345000~exp=1710348600~hmac=xyz" 
+        alt="AI Assistant Avatar" 
+        className="w-full h-full object-cover"
+        loading="lazy"
       />
-      
-      <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none z-0">
-        <div className="w-[130%] h-[130%] border border-cyan-500/30 rounded-full absolute top-[10%] border-dashed animate-spin-slow"></div>
-        <div className="w-[110%] h-[110%] border border-indigo-500/20 rounded-full absolute top-[15%] animate-spin-reverse-slow"></div>
+      <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+        <p className="text-white font-medium text-sm tracking-wide">AI Assistant Ready</p>
       </div>
     </div>
   );
