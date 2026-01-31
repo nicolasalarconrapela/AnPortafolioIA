@@ -23,7 +23,6 @@ export const env = {
     VITE_BACKEND_GAIS_API_URL ||
     DEFAULT_LOCAL_URL,
 
-
   IS_DEV: metaEnv.DEV || false,
   IS_PROD: metaEnv.PROD || false,
   MODE: metaEnv.MODE || "unknown",
