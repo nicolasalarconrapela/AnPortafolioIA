@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ViewState } from '../types';
-import { signInWithGoogle, signInGuest, signInWithEmailAndPassword, createUserWithEmailAndPassword, auth } from '../services/firebaseClient';
+import { authService } from '../services/authService';
 
 interface AuthViewProps {
     onNavigate: (state: ViewState) => void;
@@ -21,7 +21,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
 
     const onSuccess = (user: any) => {
         // 1. Persist ID for existing components that use localStorage
-        localStorage.setItem("anportafolio_user_id", user.uid);
+        localStorage.setItem("anportafolio_user_id", user.uid || user.localId);
 
         // 2. Navigate
         if (userType === 'recruiter') {
@@ -32,24 +32,14 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
     };
 
     const handleGoogleLogin = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const user = await signInWithGoogle();
-            onSuccess(user);
-        } catch (err: any) {
-            console.error(err);
-            setError(err.message || 'Google Sign In Failed');
-        } finally {
-            setLoading(false);
-        }
+        alert("Google Login requires client-side SDK. Currently disabled in backend-only mode.");
     };
 
     const handleGuestLogin = async () => {
         setLoading(true);
         setError(null);
         try {
-            const user = await signInGuest();
+            const user = await authService.loginGuest();
             onSuccess(user);
         } catch (err: any) {
             setError(err.message || 'Guest Login Failed');
@@ -69,22 +59,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigate, userType = 'cand
         setError(null);
 
         try {
-            let result;
+            let user;
             if (isLogin) {
-                result = await signInWithEmailAndPassword(auth, email, password);
+                user = await authService.login(email, password);
             } else {
-                result = await createUserWithEmailAndPassword(auth, email, password);
+                user = await authService.register(email, password);
             }
-            onSuccess(result.user);
+            onSuccess(user);
         } catch (err: any) {
             console.error(err);
-            let msg = "Authentication failed";
-            if (err.code === 'auth/email-already-in-use') msg = "Email already in use.";
-            if (err.code === 'auth/invalid-email') msg = "Invalid email address.";
-            if (err.code === 'auth/weak-password') msg = "Password should be at least 6 characters.";
-            if (err.code === 'auth/wrong-password') msg = "Invalid password.";
-            if (err.code === 'auth/user-not-found') msg = "User not found.";
-            setError(msg);
+            // Backend returns { error: "message" }
+            setError(err.message || "Authentication failed");
         } finally {
             setLoading(false);
         }

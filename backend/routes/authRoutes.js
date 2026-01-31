@@ -1,7 +1,26 @@
 import express from 'express';
 import { getAuth } from '../firebaseAdmin.js';
+import { config } from '../config.js';
 
 const router = express.Router();
+// Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
+
+// Helper to call Firebase REST API
+const callFirebaseREST = async (endpoint, body) => {
+    if (!FIREBASE_API_KEY) throw new Error("FIREBASE_API_KEY is not configured in backend.");
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:${endpoint}?key=${FIREBASE_API_KEY}`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, returnSecureToken: true })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error?.message || "Firebase REST API Error");
+    }
+    return data;
+};
 
 // --- Firebase Auth API Endpoints ---
 
@@ -19,7 +38,7 @@ router.post('/verify-token', async (req, res) => {
     try {
         const auth = getAuth();
         const decodedToken = await auth.verifyIdToken(token);
-        
+
         res.json({
             success: true,
             uid: decodedToken.uid,
@@ -33,33 +52,82 @@ router.post('/verify-token', async (req, res) => {
 });
 
 /**
- * POST /api/auth/create-user
- * Crea un nuevo usuario en Firebase Auth
+ * POST /api/auth/login
+ * Log in with Email/Password via Firebase REST API
  */
-router.post('/create-user', async (req, res) => {
-    const { email, password, displayName } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-    }
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     try {
-        const auth = getAuth();
-        const userRecord = await auth.createUser({
-            email,
-            password,
-            displayName: displayName || null,
-        });
-
+        const data = await callFirebaseREST('signInWithPassword', { email, password });
         res.json({
             success: true,
-            uid: userRecord.uid,
-            email: userRecord.email,
+            user: {
+                uid: data.localId,
+                email: data.email,
+                idToken: data.idToken,
+                refreshToken: data.refreshToken
+            }
         });
     } catch (error) {
-        console.error('[ERROR] User creation failed:', error);
-        res.status(400).json({ error: 'Failed to create user', details: error.message });
+        console.error("Login failed:", error);
+        res.status(401).json({ error: error.message });
     }
+});
+
+/**
+ * POST /api/auth/register
+ * Register with Email/Password via Firebase REST API
+ */
+router.post('/register', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+    try {
+        const data = await callFirebaseREST('signUp', { email, password });
+        res.json({
+            success: true,
+            user: {
+                uid: data.localId,
+                email: data.email,
+                idToken: data.idToken,
+                refreshToken: data.refreshToken
+            }
+        });
+    } catch (error) {
+        console.error("Registration failed:", error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/auth/guest
+ * Create Anonymous User via Firebase REST API
+ */
+router.post('/guest', async (req, res) => {
+    try {
+        // Calling signUp without email/password creates anonymous account
+        const data = await callFirebaseREST('signUp', {});
+        res.json({
+            success: true,
+            user: {
+                uid: data.localId,
+                isAnonymous: true,
+                idToken: data.idToken,
+                refreshToken: data.refreshToken
+            }
+        });
+    } catch (error) {
+        console.error("Guest login failed:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Legacy create-user (optional, kept for admin usage if needed)
+router.post('/create-user-admin', async (req, res) => {
+    // ... implementation ...
+    res.status(501).json({ error: "Deprecated. Use /register" });
 });
 
 /**

@@ -27,15 +27,6 @@ export const env = {
   IS_PROD: metaEnv.PROD || false,
   MODE: metaEnv.MODE || "unknown",
   APP_ENV: metaEnv.MODE || "unknown",
-
-  FIREBASE: {
-    API_KEY: metaEnv.VITE_FIREBASE_API_KEY || "",
-    AUTH_DOMAIN: metaEnv.VITE_FIREBASE_AUTH_DOMAIN || "",
-    PROJECT_ID: metaEnv.VITE_FIREBASE_PROJECT_ID || "",
-    STORAGE_BUCKET: metaEnv.VITE_FIREBASE_STORAGE_BUCKET || "",
-    MESSAGING_SENDER_ID: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-    APP_ID: metaEnv.VITE_FIREBASE_APP_ID || "",
-  },
 } as const;
 
 loggingService.info("[CONFIG] Environment loaded:", {
