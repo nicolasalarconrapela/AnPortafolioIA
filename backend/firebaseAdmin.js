@@ -84,3 +84,13 @@ export function getFirestore() {
     }
     return firestore;
 }
+
+/**
+ * Get Auth instance.
+ */
+export function getAuth() {
+    if (!firebaseApp) {
+        throw new Error('Firebase Admin not initialized. Call initializeFirebaseAdmin() first.');
+    }
+    return admin.auth();
+}
