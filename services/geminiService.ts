@@ -113,7 +113,8 @@ export class GeminiService {
    */
   async analyzeCVJSON(base64Image: string, mimeType: string): Promise<CVProfile> {
     try {
-      const prompt = "Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío, no inventes.";
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío, no inventes.`;
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -148,7 +149,8 @@ export class GeminiService {
    */
   async analyzeCVText(text: string): Promise<CVProfile> {
     try {
-      const prompt = `Actúa como 'Señorita Rotenmeir'. Analiza el siguiente texto estructurado (JSON/Texto) que contiene datos curriculares. 
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir'. Analiza el siguiente texto estructurado (JSON/Texto) que contiene datos curriculares. 
       
       Tu misión es mapear estos datos al esquema estricto de salida. Si es un JSON genérico, adáptalo.
       
@@ -183,7 +185,8 @@ export class GeminiService {
    */
   async askJanice(currentText: string, userInstruction: string, context: string): Promise<string> {
     try {
-      const prompt = `Actúa como Janice, una asistente de carrera amigable, servicial y experta en redacción de CVs.
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como Janice, una asistente de carrera amigable, servicial y experta en redacción de CVs.
       
       Contexto: Estamos editando la sección de "${context}".
       Texto actual: "${currentText}"
@@ -209,8 +212,10 @@ export class GeminiService {
    */
   async improveSectionBasedOnCritique(sectionName: string, currentData: any, critique: string): Promise<any> {
     try {
+        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const dataStr = JSON.stringify(currentData, null, 2);
         const prompt = `
+        Fecha actual: ${today}.
         Eres el 'Googlito' encargado de la sección "${sectionName}".
         
         SITUACIÓN:
@@ -253,9 +258,10 @@ export class GeminiService {
    * Initializes a chat session acting as Donna in her most professional, neutral capacity.
    */
   async initDonnaChat(profile: CVProfile): Promise<void> {
+    const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const profileContext = JSON.stringify(profile, null, 2);
     
-    const systemInstruction = `Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.
+    const systemInstruction = `Fecha actual: ${today}. Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.
     
     Tus reglas para esta sesión:
     1. Tono: PROFESIONAL, NEUTRAL, OBJETIVO y CLARO. Ya no estás en modo "Suits" arrogante. Ahora eres una presentadora eficiente de hechos.
