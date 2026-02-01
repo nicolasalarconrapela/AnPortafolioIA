@@ -12,6 +12,7 @@ class AuthService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();
@@ -29,6 +30,7 @@ class AuthService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();
@@ -45,6 +47,7 @@ class AuthService {
     const response = await fetch(`${BASE_URL}/guest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();
