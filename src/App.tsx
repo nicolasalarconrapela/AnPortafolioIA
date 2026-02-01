@@ -12,6 +12,7 @@ import { ConsentProvider, useConsent } from './components/consent/ConsentContext
 import { ConsentUI } from './components/consent/ConsentUI';
 import { LogViewer } from './components/debug/LogViewer';
 import { env } from './utils/env';
+import { getWorkspaceByUserFromFirestore } from './services/firestoreWorkspaces';
 
 // Extend ViewState locally if needed or assume it's updated in types.ts
 // For now, we cast strings if types aren't updated yet to avoid breaking compile
@@ -43,6 +44,29 @@ const AppContent: React.FC = () => {
       }
     }
   }, [view, isAuthenticated]);
+
+  // Session Restoration Effect: Check for Onboarding Completion
+  useEffect(() => {
+    if (hasSession && view === 'candidate-dashboard') {
+      const checkOnboarding = async () => {
+        const uid = localStorage.getItem("anportafolio_user_id");
+        if (uid) {
+           try {
+             // If this returns null (404) or falsy completed flag, redirect
+             const ws = await getWorkspaceByUserFromFirestore(uid);
+             if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
+                // Check if we found a profile but it wasn't complete
+                // If ws is null, it means no workspace -> maybe new user? -> Onboarding
+                setView('candidate-onboarding');
+             }
+           } catch (e) {
+             // Ignore error, stay on dashboard (it handles its own errors)
+           }
+        }
+      };
+      checkOnboarding();
+    }
+  }, []); // Run once on mount if session exists
 
   // Handle navigation from AuthView (Login/Register success)
   const handleAuthNavigation = (nextView: ViewState) => {

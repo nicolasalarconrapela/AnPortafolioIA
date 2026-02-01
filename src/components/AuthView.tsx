@@ -7,6 +7,7 @@ import { Icon } from "./ui/Icon";
 
 import { authService } from "../services/authService";
 import { loggingService } from "../utils/loggingService";
+import { getWorkspaceByUserFromFirestore } from "../services/firestoreWorkspaces";
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
@@ -81,9 +82,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
   };
 
   // --- feature/firebase-add: success handling ---
-  const onAuthSuccess = (user: any) => {
-    localStorage.setItem("anportafolio_user_id", user?.uid || user?.localId || "");
-    onNavigate("candidate-onboarding");
+  const onAuthSuccess = async (user: any) => {
+    const uid = user?.uid || user?.localId || "";
+    localStorage.setItem("anportafolio_user_id", uid);
+
+    try {
+      // Check if user has already completed onboarding
+      const workspace = await getWorkspaceByUserFromFirestore(uid);
+      if (workspace?.profile?.onboardingCompleted) {
+        onNavigate("candidate-dashboard");
+      } else {
+        onNavigate("candidate-onboarding");
+      }
+    } catch (error) {
+      loggingService.warn("Could not check onboarding status, defaulting to onboarding", error);
+      onNavigate("candidate-onboarding");
+    }
   };
 
   // --- Firebase Auth actions ---

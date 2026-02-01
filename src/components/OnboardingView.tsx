@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AITrainingView } from './AITrainingView';
 import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
 import { loggingService } from '../utils/loggingService';
+import { upsertWorkspaceForUser } from '../services/firestoreWorkspaces';
 
 interface UploadedFile {
   name: string;
@@ -62,6 +63,20 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
   // Ref for the steps container to manage scrolling
   const stepsContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleOnboardingComplete = async () => {
+    const userKey = localStorage.getItem("anportafolio_user_id");
+    if (userKey) {
+      try {
+        await upsertWorkspaceForUser(userKey, {
+          profile: { onboardingCompleted: true }
+        });
+      } catch (error) {
+        loggingService.error("Failed to save onboarding status", error);
+      }
+    }
+    onComplete();
+  };
 
   // Auto-scroll to active step on mobile
   useEffect(() => {
@@ -367,7 +382,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
           {currentStep?.id === 'ai' && (
             <div className="bg-[var(--md-sys-color-background)] rounded-[28px] p-4 md:p-8 shadow-sm border border-outline-variant/30 h-full overflow-auto">
-              <AITrainingView onBack={handleBack} onComplete={onComplete} />
+              <AITrainingView onBack={handleBack} onComplete={handleOnboardingComplete} />
             </div>
           )}
         </div>
