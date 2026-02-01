@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Background } from './components/Background';
 import { LandingView } from './components/LandingView';
 import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
 import { DesignSystemView } from './components/DesignSystemView';
-import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView'; // Nueva vista importada
+import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView';
 import { ViewState } from './types';
 import { ConsentProvider, useConsent } from './components/consent/ConsentContext';
 import { ConsentUI } from './components/consent/ConsentUI';
@@ -18,9 +18,46 @@ import { env } from './utils/env';
 type ExtendedViewState = ViewState | 'privacy-policy';
 
 const AppContent: React.FC = () => {
-  const [view, setView] = useState<ExtendedViewState>('landing');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Initialize state based on localStorage for session persistence
+  const hasSession = !!localStorage.getItem("anportafolio_user_id");
+
+  // If authenticated, start at dashboard. Otherwise start at landing.
+  const [view, setView] = useState<ExtendedViewState>(hasSession ? 'candidate-dashboard' : 'landing');
+  const [isAuthenticated, setIsAuthenticated] = useState(hasSession);
+
   const { openModal } = useConsent();
+
+  // Route Protection Effect
+  useEffect(() => {
+    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system'];
+
+    // If trying to access a protected view without authentication
+    if (protectedViews.includes(view)) {
+      // Double check localStorage in case state is stale but session exists
+      const storedSession = localStorage.getItem("anportafolio_user_id");
+      if (!isAuthenticated && !storedSession) {
+        setView('auth-candidate');
+      } else if (!isAuthenticated && storedSession) {
+        // Sync state if storage exists
+        setIsAuthenticated(true);
+      }
+    }
+  }, [view, isAuthenticated]);
+
+  // Handle navigation from AuthView (Login/Register success)
+  const handleAuthNavigation = (nextView: ViewState) => {
+    if (nextView === 'candidate-onboarding' || nextView === 'candidate-dashboard') {
+      setIsAuthenticated(true);
+    }
+    setView(nextView);
+  };
+
+  // Handle Logout
+  const handleLogout = () => {
+    localStorage.removeItem("anportafolio_user_id");
+    setIsAuthenticated(false);
+    setView('landing');
+  };
 
   return (
     <>
@@ -41,14 +78,14 @@ const AppContent: React.FC = () => {
 
       {view === 'auth-candidate' && (
         <AuthView
-          onNavigate={(nextView) => setView(nextView)}
+          onNavigate={handleAuthNavigation}
           initialMode="login"
         />
       )}
 
       {view === 'auth-candidate-register' && (
         <AuthView
-          onNavigate={(nextView) => setView(nextView)}
+          onNavigate={handleAuthNavigation}
           initialMode="register"
         />
       )}
@@ -62,10 +99,7 @@ const AppContent: React.FC = () => {
 
       {view === 'candidate-dashboard' && (
         <CandidateDashboard
-          onLogout={() => {
-            setIsAuthenticated(false);
-            setView('landing');
-          }}
+          onLogout={handleLogout}
         />
       )}
 
