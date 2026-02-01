@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight, GraduationCap, Layout, Search, FileText, Eraser } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight, GraduationCap, Layout, Search, FileText, Eraser, Send, Bot } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
 import { createGretchenService, GretchenService } from './services/gretchenService';
@@ -358,8 +358,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [donnaChat]);
+      if (appState === AppState.DONNA) {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+  }, [donnaChat, appState]);
 
   const openJanice = (text: string, context: string, callback: (t: string) => void) => {
       setJaniceData({ text, context, callback });
@@ -549,7 +551,14 @@ function App() {
               const cleanedProfile = cleanProfile(profile);
               setProfile(cleanedProfile); // Update state with clean data
               await geminiServiceRef.current.initDonnaChat(cleanedProfile);
-              setDonnaChat([]);
+              setDonnaChat([
+                  {
+                      id: 'intro',
+                      role: 'model',
+                      text: `¡Hola! Soy Donna, tu asistente de reclutamiento. He analizado el perfil de **${cleanedProfile.experience[0]?.role || "Candidato"}** a fondo. ¿Qué te gustaría saber? Puedo resumir su experiencia, detallar sus habilidades técnicas o explicar sus proyectos clave.`,
+                      timestamp: new Date()
+                  }
+              ]);
               setAppState(AppState.DONNA);
           }
       }
@@ -819,7 +828,7 @@ function App() {
                                       <button onClick={() => {
                                            const newExp = profile.experience.filter((_, i) => i !== idx);
                                            setProfile({...profile, experience: newExp});
-                                      }} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 p-1"><XIcon /></button>
+                                      }} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 p-1"><X className="w-4 h-4" /></button>
                                   </div>
                               ))}
                               {profile.experience.length === 0 && <EmptyState text="No se detectó experiencia. ¡Añade una!" />}
@@ -847,7 +856,7 @@ function App() {
                                               <button onClick={() => {
                                                    const newSkills = profile.skills.filter((_, i) => i !== idx);
                                                    setProfile({...profile, skills: newSkills});
-                                              }} className="ml-2 text-slate-400 hover:text-red-500"><XIcon /></button>
+                                              }} className="ml-2 text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
                                           </div>
                                       ))}
                                       <button onClick={() => setProfile({...profile, skills: [...profile.skills, "Nueva habilidad"]})} className="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm hover:bg-blue-200 transition">+ Añadir</button>
@@ -927,7 +936,7 @@ function App() {
                                     <button onClick={() => {
                                            const newP = profile.projects.filter((_, i) => i !== idx);
                                            setProfile({...profile, projects: newP});
-                                      }} className="absolute top-2 right-2 md:top-4 md:right-4 text-indigo-200 hover:text-red-500"><XIcon /></button>
+                                      }} className="absolute top-2 right-2 md:top-4 md:right-4 text-indigo-200 hover:text-red-500"><X className="w-5 h-5" /></button>
                                </div>
                            ))}
                            {profile.projects.length === 0 && <EmptyState text="Sin proyectos destacados." />}
@@ -955,7 +964,7 @@ function App() {
                                       <button onClick={() => {
                                            const newV = profile.volunteering.filter((_, i) => i !== idx);
                                            setProfile({...profile, volunteering: newV});
-                                      }} className="absolute top-2 right-2 md:static text-slate-300 hover:text-red-500"><XIcon /></button>
+                                      }} className="absolute top-2 right-2 md:static text-slate-300 hover:text-red-500"><X className="w-4 h-4" /></button>
                                   </div>
                               ))}
                               {profile.volunteering.length === 0 && <EmptyState text="No hay voluntariado registrado." />}
@@ -977,7 +986,7 @@ function App() {
                                        <button onClick={() => {
                                             const newA = profile.awards.filter((_, i) => i !== idx);
                                             setProfile({...profile, awards: newA});
-                                       }} className="text-slate-300 hover:text-red-500 shrink-0"><XIcon /></button>
+                                       }} className="text-slate-300 hover:text-red-500 shrink-0"><X className="w-4 h-4" /></button>
                                   </div>
                               ))}
                               <Button variant="outline" className="mt-4 w-full md:w-auto" onClick={() => setProfile({...profile, awards: [...profile.awards, "Nuevo Reconocimiento"]})}>+ Añadir Premio</Button>
@@ -1012,7 +1021,7 @@ function App() {
                                           <button onClick={() => {
                                                const newL = profile.languages.filter((_, i) => i !== idx);
                                                setProfile({...profile, languages: newL});
-                                          }} className="text-slate-300 hover:text-red-500 ml-2"><XIcon /></button>
+                                          }} className="text-slate-300 hover:text-red-500 ml-2"><X className="w-4 h-4" /></button>
                                       </div>
                                   </div>
                               ))}
@@ -1030,7 +1039,7 @@ function App() {
                                           <button onClick={() => {
                                                const newH = profile.hobbies.filter((_, i) => i !== idx);
                                                setProfile({...profile, hobbies: newH});
-                                          }} className="hover:text-pink-900"><XIcon /></button>
+                                          }} className="hover:text-pink-900"><X className="w-3 h-3" /></button>
                                       </span>
                                   ))}
                               </div>
@@ -1154,7 +1163,7 @@ function App() {
                       </Button>
                       <Button onClick={handleNext} className="bg-slate-800 hover:bg-slate-900 text-white px-6 md:px-8 text-sm md:text-base">
                           {currentStep === 10 ? (
-                              <>Finalizar y Conocer a Donna <ArrowRightIcon /></>
+                              <>Finalizar y Conocer a Donna <ArrowRight className="w-4 h-4 ml-2" /></>
                           ) : (
                               <>Siguiente <ChevronRight className="w-4 h-4 ml-2" /></>
                           )}
@@ -1171,18 +1180,56 @@ function App() {
       const ActiveTabContent = () => {
           switch(donnaActiveTab) {
               case 'experience':
+                  const groupedExp: { company: string; items: CVProfile['experience'] }[] = [];
+                  profile.experience.forEach((exp) => {
+                      const lastGroup = groupedExp[groupedExp.length - 1];
+                      if (lastGroup && lastGroup.company.trim().toLowerCase() === exp.company.trim().toLowerCase()) {
+                          lastGroup.items.push(exp);
+                      } else {
+                          groupedExp.push({ company: exp.company, items: [exp] });
+                      }
+                  });
+
                   return (
-                      <div className="space-y-6 animate-fade-in">
-                          {profile.experience.map((exp, i) => (
-                              <div key={i} className="flex gap-4">
-                                  <div className="flex flex-col items-center">
-                                      <CompanyLogo name={exp.company} className="w-10 h-10 md:w-12 md:h-12" />
-                                      <div className="w-0.5 bg-slate-200 flex-1 my-2"></div>
+                      <div className="space-y-8 animate-fade-in p-6">
+                          {groupedExp.map((group, groupIdx) => (
+                              <div key={groupIdx} className="flex gap-4 group">
+                                  {/* Columna Izquierda: Logo */}
+                                  <div className="flex flex-col items-center shrink-0">
+                                      <CompanyLogo name={group.company} className="w-12 h-12 z-10 bg-white" />
+                                      {/* Línea conectora entre empresas (opcional, da continuidad visual) */}
+                                      {groupIdx !== groupedExp.length - 1 && (
+                                          <div className="w-0.5 bg-slate-200 flex-1 my-2 group-hover:bg-slate-300 transition-colors"></div>
+                                      )}
                                   </div>
-                                  <div className="pb-6 flex-1">
-                                      <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
-                                      <div className="text-sm text-blue-600 font-medium mb-1">{exp.company} <span className="text-slate-400 mx-1">•</span> {exp.period}</div>
-                                      <p className="text-slate-600 text-sm leading-relaxed">{exp.description}</p>
+
+                                  {/* Columna Derecha: Detalles de la Empresa y Roles */}
+                                  <div className="flex-1 pb-8">
+                                      <h3 className="text-lg font-bold text-slate-900">{group.company}</h3>
+                                      
+                                      <div className="mt-4 space-y-8">
+                                          {group.items.map((role, roleIdx) => (
+                                              <div key={roleIdx} className="relative">
+                                                  {/* Conector visual para roles dentro de la misma empresa (si hay más de uno) */}
+                                                  {group.items.length > 1 && roleIdx !== group.items.length - 1 && (
+                                                      <div className="absolute left-[7px] top-6 bottom-[-32px] w-0.5 bg-slate-200"></div>
+                                                  )}
+                                                  
+                                                  <div className="flex gap-4">
+                                                       {/* Indicador de Rol (bolita) */}
+                                                      <div className="mt-1.5 w-3.5 h-3.5 rounded-full border-2 border-slate-300 bg-white shrink-0 z-10"></div>
+                                                      
+                                                      <div className="flex-1">
+                                                          <h4 className="font-bold text-base text-slate-800">{role.role}</h4>
+                                                          <div className="text-sm text-slate-500 font-medium mb-3">{role.period}</div>
+                                                          <div className="text-sm text-slate-600 leading-relaxed">
+                                                              <MarkdownView content={role.description} />
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
                                   </div>
                               </div>
                           ))}
@@ -1191,16 +1238,16 @@ function App() {
                   );
               case 'education':
                   return (
-                      <div className="space-y-4 animate-fade-in">
+                      <div className="space-y-4 animate-fade-in p-6">
                           {profile.education && profile.education.length > 0 ? profile.education.map((edu, i) => (
-                              <div key={i} className="bg-slate-50 p-4 rounded-lg flex items-center gap-4">
+                              <div key={i} className="bg-white border border-slate-200 p-6 rounded-lg flex items-center gap-4 shadow-sm">
                                   <div className="shrink-0">
-                                      <CompanyLogo name={edu.institution} className="w-12 h-12" />
+                                      <CompanyLogo name={edu.institution} className="w-16 h-16" />
                                   </div>
                                   <div>
-                                      <h4 className="font-bold text-slate-800">{edu.title}</h4>
-                                      <p className="text-sm text-slate-500">{edu.institution}</p>
-                                      <p className="text-xs text-slate-400 mt-1">{edu.period}</p>
+                                      <h4 className="font-bold text-slate-800 text-lg">{edu.title}</h4>
+                                      <p className="text-base text-slate-600">{edu.institution}</p>
+                                      <p className="text-sm text-slate-400 mt-1">{edu.period}</p>
                                   </div>
                               </div>
                           )) : (
@@ -1210,19 +1257,19 @@ function App() {
                   );
               case 'projects':
                   return (
-                      <div className="space-y-4 animate-fade-in">
+                      <div className="grid grid-cols-1 gap-4 animate-fade-in p-6">
                            {profile.projects.map((proj, i) => (
-                               <div key={i} className="bg-white border border-slate-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                                   <div className="flex flex-col md:flex-row justify-between items-start gap-2 md:gap-0">
-                                       <h4 className="font-bold text-slate-800">{proj.name}</h4>
+                               <div key={i} className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+                                   <div className="flex flex-col md:flex-row justify-between items-start gap-2 md:gap-0 mb-3">
+                                       <h4 className="font-bold text-slate-800 text-lg group-hover:text-blue-600 transition-colors">{proj.name}</h4>
                                        <div className="flex gap-1">
-                                            {proj.link && <a href={proj.link} target="_blank" className="text-blue-500 hover:text-blue-700 text-xs bg-blue-50 px-2 py-1 rounded">Ver Demo</a>}
+                                            {proj.link && <a href={proj.link} target="_blank" className="text-blue-500 hover:text-blue-700 text-xs bg-blue-50 px-3 py-1 rounded-full font-medium">Ver Demo</a>}
                                        </div>
                                    </div>
-                                   <p className="text-sm text-slate-600 mt-2 mb-3">{proj.description}</p>
+                                   <p className="text-sm text-slate-600 mb-4 leading-relaxed">{proj.description}</p>
                                    <div className="flex flex-wrap gap-2">
                                        {proj.technologies.split(',').map((tech, t) => (
-                                           <span key={t} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">{tech.trim()}</span>
+                                           <span key={t} className="text-xs font-mono font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">{tech.trim()}</span>
                                        ))}
                                    </div>
                                </div>
@@ -1232,159 +1279,169 @@ function App() {
                   );
               case 'skills':
                   return (
-                       <div className="flex flex-wrap gap-2 animate-fade-in">
-                           {profile.skills.map((s, i) => (
-                               <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-100">
-                                   {s}
-                               </span>
-                           ))}
-                           {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
-                                <span key={`t-${i}`} className="px-3 py-1.5 bg-slate-50 text-slate-700 text-sm font-medium rounded-full border border-slate-200">
-                                   {t}
-                               </span>
-                           ))}
+                       <div className="p-6 animate-fade-in">
+                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Competencias Clave</h4>
+                           <div className="flex flex-wrap gap-2 mb-8">
+                               {profile.skills.map((s, i) => (
+                                   <span key={i} className="px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg border border-blue-100">
+                                       {s}
+                                   </span>
+                               ))}
+                           </div>
+
+                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Stack Tecnológico</h4>
+                           <div className="flex flex-wrap gap-2">
+                               {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
+                                    <span key={`t-${i}`} className="px-4 py-2 bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-200">
+                                       {t}
+                                   </span>
+                               ))}
+                           </div>
                        </div>
                   );
           }
       };
 
       return (
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center p-0 md:p-4 font-sans">
-              <div className="bg-white rounded-none md:rounded-[32px] shadow-2xl md:overflow-hidden max-w-6xl w-full flex flex-col md:flex-row min-h-screen md:min-h-[650px] animate-fade-in-up">
+          <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50 font-sans">
                   
-                  {/* Left Column: Visual */}
-                  <div className="w-full md:w-[45%] bg-[#F0F4FF] flex flex-col items-center justify-center p-8 md:p-12 relative overflow-hidden h-64 md:h-auto shrink-0">
-                      {/* Decorative elements */}
-                      <div className="absolute top-10 left-10 w-20 h-20 bg-blue-200 rounded-full blur-2xl opacity-50"></div>
-                      <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-200 rounded-full blur-3xl opacity-50"></div>
-                      
-                      {/* Illustration Placeholder using Lucide Icons composed */}
-                      <div className="relative z-10 transform scale-75 md:scale-100">
-                          <div className="w-64 h-64 relative">
-                              <div className="absolute inset-0 bg-white rounded-3xl shadow-lg transform -rotate-6 flex items-center justify-center">
-                                  <Layout className="w-32 h-32 text-slate-200" />
+                  {/* LEFT COLUMN: CHAT (Donna) */}
+                  <div className="w-full md:w-[400px] bg-white border-r border-slate-200 flex flex-col shrink-0 z-20 shadow-xl md:shadow-none">
+                      {/* Chat Header */}
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                          <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                                  <Bot className="w-6 h-6" />
                               </div>
-                              <div className="absolute inset-0 bg-white rounded-3xl shadow-xl transform rotate-3 flex flex-col items-center justify-center border border-slate-50">
-                                  <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-blue-200 shadow-lg">
-                                      <Code className="w-10 h-10 text-white" />
+                              <div>
+                                  <h3 className="font-bold text-slate-800 text-sm">Entrevista con Donna</h3>
+                                  <div className="flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                      <span className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">AI Recruiter Online</span>
                                   </div>
-                                  <div className="w-32 h-4 bg-slate-100 rounded-full mb-2"></div>
-                                  <div className="w-24 h-4 bg-slate-100 rounded-full"></div>
-                              </div>
-                              
-                              {/* Floating Badges */}
-                              <div className="absolute -right-4 top-10 bg-white p-3 rounded-xl shadow-lg flex items-center gap-2 animate-bounce delay-700">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-xs font-bold text-slate-700">Open to work</span>
-                              </div>
-                              
-                              <div className="absolute -left-8 bottom-12 bg-slate-900 p-3 rounded-xl shadow-lg flex items-center gap-2 text-white transform -rotate-3">
-                                  <Terminal className="w-4 h-4" />
-                                  <span className="text-xs font-mono">Full Stack</span>
                               </div>
                           </div>
                       </div>
                       
-                      {/* Chat Messages Display Overlay on Image (if chat is active) */}
-                      {donnaChat.length > 0 && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-4 max-h-[150px] md:max-h-[200px] overflow-y-auto border-t border-slate-200 transition-all z-20">
-                              {donnaChat.map((msg) => (
-                                  <div key={msg.id} className={`mb-2 text-xs md:text-sm ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                      <span className={`inline-block px-3 py-2 rounded-lg ${msg.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'}`}>
-                                          <MarkdownView content={msg.text} />
-                                      </span>
-                                  </div>
-                              ))}
-                              {donnaLoading && <div className="text-xs text-slate-400 animate-pulse ml-2">Donna está escribiendo...</div>}
-                              <div ref={chatEndRef}></div>
-                          </div>
-                      )}
-                  </div>
-
-                  {/* Right Column: Content */}
-                  <div className="w-full md:w-[55%] p-6 md:p-12 flex flex-col bg-white">
-                      <div className="flex-1">
-                          <p className="text-xs md:text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Bienvenido al perfil de</p>
-                          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
-                              <span className="text-slate-900">Expert </span>
-                              <span className="text-blue-600">Developer</span>
-                          </h1>
-                          <h2 className="text-lg md:text-xl font-medium text-slate-600 mb-6 truncate">
-                              {profile.experience[0]?.role || "Profesional TI"}
-                          </h2>
-
-                          <p className="text-slate-600 leading-relaxed mb-8 max-w-lg text-sm md:text-base">
-                              {profile.summary || "Ingeniero de software especializado en arquitecturas escalables, IA y experiencias de usuario intuitivas."}
-                          </p>
-
-                          <a href="#" className="text-sm text-blue-600 font-semibold hover:underline mb-8 inline-block">
-                              ¿Qué aspecto de mi portafolio te gustaría explorar hoy?
-                          </a>
-
-                          {/* Navigation Tabs */}
-                          <div className="flex gap-2 mb-6 border-b border-slate-100 pb-2 overflow-x-auto no-scrollbar">
-                              {['experience', 'education', 'projects', 'skills'].map((tab) => (
-                                  <button
-                                      key={tab}
-                                      onClick={() => setDonnaActiveTab(tab as any)}
-                                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                                          donnaActiveTab === tab 
-                                          ? 'bg-slate-900 text-white shadow-md' 
-                                          : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
-                                      }`}
+                      {/* Chat Messages Area */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30 scrollbar-thin">
+                          {donnaChat.map((msg) => (
+                              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                  <div 
+                                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm leading-relaxed ${
+                                        msg.role === 'user' 
+                                            ? 'bg-blue-600 text-white rounded-tr-sm' 
+                                            : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'
+                                    }`}
                                   >
-                                      {tab === 'experience' && 'Experiencia'}
-                                      {tab === 'education' && 'Formación'}
-                                      {tab === 'projects' && 'Proyectos'}
-                                      {tab === 'skills' && 'Habilidades'}
-                                  </button>
-                              ))}
-                          </div>
-
-                          {/* Dynamic Content Area */}
-                          <div className="h-auto md:h-[300px] md:overflow-y-auto pr-0 md:pr-2 scrollbar-thin">
-                              <ActiveTabContent />
-                          </div>
+                                      <MarkdownView content={msg.text} />
+                                      <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-slate-400'}`}>
+                                          {msg.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                      </div>
+                                  </div>
+                              </div>
+                          ))}
+                          {donnaLoading && (
+                               <div className="flex justify-start">
+                                   <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                                       <div className="flex space-x-1">
+                                           <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce"></div>
+                                           <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce delay-75"></div>
+                                           <div className="w-2 h-2 bg-slate-300 rounded-full animate-bounce delay-150"></div>
+                                       </div>
+                                   </div>
+                               </div>
+                          )}
+                          <div ref={chatEndRef} />
                       </div>
 
-                      {/* Search / Chat Input */}
-                      <div className="mt-6 pt-4 border-t border-slate-100">
-                          <form onSubmit={handleDonnaSend} className="relative group">
-                              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                      {/* Chat Input Area */}
+                      <div className="p-4 border-t border-slate-200 bg-white shrink-0">
+                          <form onSubmit={handleDonnaSend} className="relative">
                               <input 
-                                  className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border-none rounded-full py-4 pl-12 pr-12 text-slate-700 shadow-sm focus:ring-2 focus:ring-blue-100 transition-all outline-none text-sm md:text-base"
-                                  placeholder="Pregunta sobre mis proyectos..."
+                                  className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-lg py-3 pl-4 pr-12 text-slate-700 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-all outline-none"
+                                  placeholder="Escribe un mensaje..."
                                   value={donnaInput}
                                   onChange={(e) => setDonnaInput(e.target.value)}
                               />
                               <button 
                                 type="submit"
                                 disabled={!donnaInput.trim() || donnaLoading}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full text-slate-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 bg-blue-600 rounded-md text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:bg-slate-300"
                               >
-                                  <ArrowRight className="w-5 h-5" />
+                                  <Send className="w-4 h-4" />
                               </button>
                           </form>
+                          <div className="mt-2 flex justify-center gap-4">
+                              <button onClick={() => setDonnaInput("Resumen breve")} className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors">Resumen</button>
+                              <button onClick={() => setDonnaInput("Puntos fuertes")} className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors">Puntos fuertes</button>
+                              <button onClick={() => setDonnaInput("Experiencia en gestión")} className="text-[10px] text-slate-400 hover:text-blue-600 transition-colors">Gestión</button>
+                          </div>
                       </div>
                   </div>
-              </div>
+
+                  {/* RIGHT COLUMN: CONTENT (Profile) */}
+                  <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa]">
+                      {/* Profile Header (Sticky) */}
+                      <div className="bg-white border-b border-slate-200 p-6 md:px-10 md:py-8 shrink-0 shadow-sm z-10">
+                          <div className="flex justify-between items-start mb-6">
+                              <div>
+                                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                                      {profile.experience[0]?.role || "Candidato"}
+                                      <span className="text-blue-600">.</span>
+                                  </h1>
+                                  <p className="text-slate-500 mt-2 max-w-2xl leading-relaxed">
+                                      {profile.summary || "Perfil profesional detallado disponible para revisión."}
+                                  </p>
+                              </div>
+                              <div className="hidden md:flex gap-2">
+                                  <Button variant="outline" className="text-xs" icon={<Download className="w-3 h-3"/>}>PDF</Button>
+                              </div>
+                          </div>
+
+                          {/* Modern Pill Tabs */}
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                              {[
+                                  { id: 'experience', label: 'Experiencia' },
+                                  { id: 'education', label: 'Formación' },
+                                  { id: 'projects', label: 'Proyectos' },
+                                  { id: 'skills', label: 'Habilidades' }
+                              ].map((tab) => (
+                                  <button
+                                      key={tab.id}
+                                      onClick={() => setDonnaActiveTab(tab.id as any)}
+                                      className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap border ${
+                                          donnaActiveTab === tab.id 
+                                          ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                      }`}
+                                  >
+                                      {tab.label}
+                                  </button>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* Content Scroll Area */}
+                      <div className="flex-1 overflow-y-auto p-0 md:p-4 scrollbar-thin">
+                          <div className="max-w-4xl mx-auto">
+                              <ActiveTabContent />
+                              
+                              {/* Footer of Content */}
+                              <div className="mt-12 mb-8 text-center">
+                                  <div className="w-16 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+                                  <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Fin del Documento</p>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
           </div>
       );
   };
 
-  const XIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-  );
-
-  const ArrowRightIcon = () => (
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-  );
-
   return (
     <>
-        {appState === AppState.IDLE && renderRotenmeir()}
-        {appState === AppState.ANALYZING && renderRotenmeir()}
-        {appState === AppState.ERROR && renderRotenmeir()} 
+        {(appState === AppState.IDLE || appState === AppState.ANALYZING || appState === AppState.ERROR) && renderRotenmeir()}
         {appState === AppState.WIZARD && renderGooglitoStep()}
         {appState === AppState.DONNA && renderDonna()}
     </>
