@@ -41,6 +41,7 @@ export interface LanguageItem {
 export interface CVProfile {
   summary: string; // Brief intro
   experience: ExperienceItem[];
+  education: EducationItem[]; // Added for the final view
   skills: string[]; // Soft & Hard generic
   techStack: {
     languages: string[];

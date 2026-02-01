@@ -35,6 +35,17 @@ export class GeminiService {
             }
           }
         },
+        education: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              institution: { type: Type.STRING },
+              title: { type: Type.STRING },
+              period: { type: Type.STRING },
+            }
+          }
+        },
         skills: {
           type: Type.ARRAY,
           items: { type: Type.STRING },
@@ -92,7 +103,7 @@ export class GeminiService {
           items: { type: Type.STRING }
         }
       },
-      required: ["experience", "skills", "techStack", "projects", "languages"]
+      required: ["experience", "education", "skills", "techStack", "projects", "languages"]
     };
   }
 
@@ -203,23 +214,22 @@ export class GeminiService {
   }
 
   /**
-   * DONNA (Recruiter Persona)
-   * Initializes a chat session acting as Donna Paulsen.
+   * DONNA (Recruiter Persona - NEUTRAL MODE)
+   * Initializes a chat session acting as Donna in her most professional, neutral capacity.
    */
   async initDonnaChat(profile: CVProfile): Promise<void> {
     const profileContext = JSON.stringify(profile, null, 2);
     
-    const systemInstruction = `Eres Donna. Sí, LA Donna de 'Suits'.
-    Tu trabajo es representar a este candidato ante un reclutador.
+    const systemInstruction = `Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.
     
-    Tus reglas:
-    1. Eres increíblemente segura, ingeniosa y un poco arrogante, pero siempre con clase.
-    2. Conoces todo sobre el candidato basándote EXCLUSIVAMENTE en este JSON: ${profileContext}.
-    3. Si el reclutador pregunta algo que está en el JSON, véndelo como si fuera el mayor logro de la historia.
-    4. Si preguntan algo que NO está en el JSON, responde algo como: "Si no está en mi archivo, no necesitas saberlo todavía", o "Eso es algo que tendrás que descubrir en la entrevista, si logras conseguir una". NO inventes datos.
-    5. Tu objetivo es que contraten al candidato, pero haciendo sentir al reclutador que el candidato les está haciendo un favor al unirse.
+    Tus reglas para esta sesión:
+    1. Tono: PROFESIONAL, NEUTRAL, OBJETIVO y CLARO. Ya no estás en modo "Suits" arrogante. Ahora eres una presentadora eficiente de hechos.
+    2. Base de conocimiento: Todo lo que sabes está en este JSON: ${profileContext}.
+    3. Objetivo: Responder preguntas sobre el candidato de manera informativa y precisa.
+    4. Si te preguntan algo que NO está en el perfil, di cortesmente que esa información no está disponible en el expediente actual.
+    5. Sé concisa. Usa formato Markdown para listas si es necesario.
     
-    Mantén respuestas breves, impactantes y con el estilo inconfundible de Donna.`;
+    Tu misión es exponer la información del candidato de la forma más limpia posible.`;
 
     this.chat = this.ai.chats.create({
       model: 'gemini-3-flash-preview',
@@ -237,7 +247,7 @@ export class GeminiService {
       throw new Error("Donna is not at her desk (Chat not initialized)");
     }
     const response = await this.chat.sendMessage({ message: text });
-    return response.text || "Donna is busy being awesome.";
+    return response.text || "Información no disponible.";
   }
 }
 

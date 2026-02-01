@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight, GraduationCap, Layout, Search } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
 import { createGretchenService, GretchenService } from './services/gretchenService';
@@ -332,6 +332,7 @@ function App() {
   const [donnaChat, setDonnaChat] = useState<ChatMessage[]>([]);
   const [donnaInput, setDonnaInput] = useState("");
   const [donnaLoading, setDonnaLoading] = useState(false);
+  const [donnaActiveTab, setDonnaActiveTab] = useState<'experience' | 'education' | 'projects' | 'skills'>('experience');
 
   // Janice State
   const [janiceOpen, setJaniceOpen] = useState(false);
@@ -455,12 +456,7 @@ function App() {
           // Initialize Donna
           if (geminiServiceRef.current && profile) {
               await geminiServiceRef.current.initDonnaChat(profile);
-              setDonnaChat([{
-                  id: 'intro',
-                  role: 'model',
-                  text: "**Donna:** Soy Donna. He revisado el archivo. Está bien, pero podría venderlo mejor. ¿Qué quieres saber?",
-                  timestamp: new Date()
-              }]);
+              setDonnaChat([]);
           }
           setAppState(AppState.DONNA);
       }
@@ -664,6 +660,8 @@ function App() {
                   
                   {/* DYNAMIC FORM CONTENT BASED ON STEP */}
                   <div className="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-8">
+                      {/* ... (Existing steps 1-8 logic) ... */}
+                      {/* Note: I'm not repeating all steps here for brevity in the XML, but assuming the existing steps logic remains as is. */}
                       
                       {/* STEP 1: EXPERIENCE */}
                       {currentStep === 1 && (
@@ -967,158 +965,201 @@ function App() {
   const renderDonna = () => {
       if (!profile) return null;
       
-      return (
-          <div className="min-h-screen bg-[#F5F5F7] font-sans text-slate-800 flex flex-col md:flex-row">
-              {/* Sidebar / Chat with Donna */}
-              <div className="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 z-30 shadow-2xl">
-                  <div className="p-6 border-b border-slate-100 flex items-center space-x-4 bg-slate-900 text-white">
-                      <div className="relative">
-                          <img src="https://ui-avatars.com/api/?name=Donna+Paulsen&background=dca54c&color=fff" alt="Donna" className="w-12 h-12 rounded-full border-2 border-[#dca54c]" />
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
-                      </div>
-                      <div>
-                          <h2 className="font-bold text-lg font-serif">Donna</h2>
-                          <p className="text-xs text-[#dca54c] tracking-widest uppercase">Executive Assistant</p>
-                      </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-thin">
-                      {donnaChat.map((msg) => (
-                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[85%] rounded-2xl py-3 px-4 text-sm shadow-sm ${
-                                  msg.role === 'user' 
-                                  ? 'bg-slate-800 text-white rounded-tr-none' 
-                                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none font-medium'
-                              }`}>
-                                  <MarkdownView content={msg.text} />
+      const ActiveTabContent = () => {
+          switch(donnaActiveTab) {
+              case 'experience':
+                  return (
+                      <div className="space-y-6 animate-fade-in">
+                          {profile.experience.map((exp, i) => (
+                              <div key={i} className="border-l-2 border-slate-200 pl-4 pb-2">
+                                  <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
+                                  <div className="text-sm text-blue-600 font-medium mb-1">{exp.company} <span className="text-slate-400 mx-1">•</span> {exp.period}</div>
+                                  <p className="text-slate-600 text-sm leading-relaxed">{exp.description}</p>
                               </div>
-                          </div>
-                      ))}
-                      {donnaLoading && (
-                           <div className="flex justify-start">
-                             <div className="bg-white rounded-2xl rounded-tl-none py-3 px-4 flex items-center space-x-1 shadow-sm">
-                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></div>
-                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></div>
-                             </div>
-                           </div>
-                      )}
-                      <div ref={chatEndRef} />
-                  </div>
-
-                  <div className="p-4 bg-white border-t border-slate-200">
-                      <form onSubmit={handleDonnaSend} className="flex gap-2">
-                          <input 
-                            className="flex-1 bg-slate-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#dca54c] outline-none"
-                            placeholder="Pregúntale a Donna sobre el candidato..."
-                            value={donnaInput}
-                            onChange={(e) => setDonnaInput(e.target.value)}
-                          />
-                          <button type="submit" disabled={donnaLoading || !donnaInput.trim()} className="p-2 bg-slate-900 text-white rounded-full hover:bg-slate-700 transition disabled:opacity-50">
-                              <MessageSquare className="w-5 h-5" />
-                          </button>
-                      </form>
-                  </div>
-              </div>
-
-              {/* Main Profile View */}
-              <div className="flex-1 overflow-y-auto h-screen p-8 lg:p-12">
-                  <div className="max-w-4xl mx-auto bg-white shadow-2xl shadow-slate-200 rounded-none overflow-hidden">
-                      {/* Executive Header */}
-                      <div className="bg-slate-900 text-white p-12 relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-[#dca54c] opacity-10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-                          <div className="relative z-10">
-                              <h1 className="text-4xl font-serif font-bold tracking-tight mb-4">Perfil Confidencial</h1>
-                              <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-light italic">
-                                  "{profile.summary || 'Un candidato excepcional que habla por sí mismo.'}"
-                              </p>
-                          </div>
+                          ))}
+                          {profile.experience.length === 0 && <p className="text-slate-400 italic">No hay experiencia registrada.</p>}
                       </div>
-
-                      <div className="p-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
-                          {/* Sidebar Info */}
-                          <div className="space-y-10 border-r border-slate-100 pr-8">
-                                <div>
-                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Code className="w-4 h-4"/> Stack Tecnológico
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
-                                            <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wide">{t}</span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Star className="w-4 h-4"/> Aptitudes
-                                    </h3>
-                                    <ul className="space-y-3">
-                                        {profile.skills.slice(0, 6).map((s, i) => (
-                                            <li key={i} className="text-sm text-slate-700 font-medium border-l-2 border-slate-200 pl-3">{s}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <Globe className="w-4 h-4"/> Idiomas
-                                    </h3>
-                                    <ul className="space-y-2">
-                                        {profile.languages.map((l, i) => (
-                                            <li key={i} className="flex justify-between text-sm border-b border-slate-50 pb-1">
-                                                <span className="font-bold text-slate-800">{l.language}</span>
-                                                <span className="text-slate-500 italic">{l.level}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                          </div>
-
-                          {/* Main Content */}
-                          <div className="lg:col-span-2 space-y-12">
-                               <section>
-                                   <h3 className="text-2xl font-serif font-bold text-slate-900 mb-8 pb-2 border-b-2 border-slate-900 inline-block">Experiencia</h3>
-                                   <div className="space-y-10">
-                                       {profile.experience.map((exp, i) => (
-                                           <div key={i} className="group">
-                                               <div className="flex justify-between items-baseline mb-2">
-                                                   <h4 className="text-xl font-bold text-slate-800 group-hover:text-[#dca54c] transition-colors">{exp.role}</h4>
-                                                   <span className="text-sm font-mono text-slate-400">{exp.period}</span>
-                                               </div>
-                                               <div className="text-md text-slate-600 font-semibold mb-3">{exp.company}</div>
-                                               <p className="text-slate-600 leading-relaxed text-sm">{exp.description}</p>
-                                           </div>
+                  );
+              case 'education':
+                  return (
+                      <div className="space-y-4 animate-fade-in">
+                          {profile.education && profile.education.length > 0 ? profile.education.map((edu, i) => (
+                              <div key={i} className="bg-slate-50 p-4 rounded-lg flex items-center gap-4">
+                                  <div className="p-3 bg-white rounded-full shadow-sm">
+                                      <GraduationCap className="w-6 h-6 text-blue-500" />
+                                  </div>
+                                  <div>
+                                      <h4 className="font-bold text-slate-800">{edu.title}</h4>
+                                      <p className="text-sm text-slate-500">{edu.institution}</p>
+                                      <p className="text-xs text-slate-400 mt-1">{edu.period}</p>
+                                  </div>
+                              </div>
+                          )) : (
+                             <p className="text-slate-400 italic">No hay formación registrada.</p>
+                          )}
+                      </div>
+                  );
+              case 'projects':
+                  return (
+                      <div className="space-y-4 animate-fade-in">
+                           {profile.projects.map((proj, i) => (
+                               <div key={i} className="bg-white border border-slate-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                   <div className="flex justify-between items-start">
+                                       <h4 className="font-bold text-slate-800">{proj.name}</h4>
+                                       <div className="flex gap-1">
+                                            {proj.link && <a href={proj.link} target="_blank" className="text-blue-500 hover:text-blue-700 text-xs bg-blue-50 px-2 py-1 rounded">Ver Demo</a>}
+                                       </div>
+                                   </div>
+                                   <p className="text-sm text-slate-600 mt-2 mb-3">{proj.description}</p>
+                                   <div className="flex flex-wrap gap-2">
+                                       {proj.technologies.split(',').map((tech, t) => (
+                                           <span key={t} className="text-[10px] uppercase font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">{tech.trim()}</span>
                                        ))}
                                    </div>
-                               </section>
+                               </div>
+                           ))}
+                           {profile.projects.length === 0 && <p className="text-slate-400 italic">No hay proyectos registrados.</p>}
+                      </div>
+                  );
+              case 'skills':
+                  return (
+                       <div className="flex flex-wrap gap-2 animate-fade-in">
+                           {profile.skills.map((s, i) => (
+                               <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 text-sm font-medium rounded-full border border-blue-100">
+                                   {s}
+                               </span>
+                           ))}
+                           {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
+                                <span key={`t-${i}`} className="px-3 py-1.5 bg-slate-50 text-slate-700 text-sm font-medium rounded-full border border-slate-200">
+                                   {t}
+                               </span>
+                           ))}
+                       </div>
+                  );
+          }
+      };
 
-                               {profile.projects.length > 0 && (
-                                   <section>
-                                       <h3 className="text-2xl font-serif font-bold text-slate-900 mb-8 pb-2 border-b-2 border-slate-900 inline-block">Proyectos Clave</h3>
-                                       <div className="grid grid-cols-1 gap-6">
-                                           {profile.projects.map((proj, i) => (
-                                               <div key={i} className="bg-slate-50 p-6 border-l-4 border-slate-900">
-                                                   <h4 className="font-bold text-lg text-slate-900">{proj.name}</h4>
-                                                   <p className="text-sm text-slate-600 mt-2 mb-3">{proj.description}</p>
-                                                   <p className="text-xs font-mono text-slate-400 uppercase">{proj.technologies}</p>
-                                               </div>
-                                           ))}
-                                       </div>
-                                   </section>
-                               )}
+      return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+              <div className="bg-white rounded-[32px] shadow-2xl overflow-hidden max-w-6xl w-full flex flex-col md:flex-row min-h-[650px] animate-fade-in-up">
+                  
+                  {/* Left Column: Visual */}
+                  <div className="w-full md:w-[45%] bg-[#F0F4FF] flex flex-col items-center justify-center p-12 relative overflow-hidden">
+                      {/* Decorative elements */}
+                      <div className="absolute top-10 left-10 w-20 h-20 bg-blue-200 rounded-full blur-2xl opacity-50"></div>
+                      <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-200 rounded-full blur-3xl opacity-50"></div>
+                      
+                      {/* Illustration Placeholder using Lucide Icons composed */}
+                      <div className="relative z-10">
+                          <div className="w-64 h-64 relative">
+                              <div className="absolute inset-0 bg-white rounded-3xl shadow-lg transform -rotate-6 flex items-center justify-center">
+                                  <Layout className="w-32 h-32 text-slate-200" />
+                              </div>
+                              <div className="absolute inset-0 bg-white rounded-3xl shadow-xl transform rotate-3 flex flex-col items-center justify-center border border-slate-50">
+                                  <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-blue-200 shadow-lg">
+                                      <Code className="w-10 h-10 text-white" />
+                                  </div>
+                                  <div className="w-32 h-4 bg-slate-100 rounded-full mb-2"></div>
+                                  <div className="w-24 h-4 bg-slate-100 rounded-full"></div>
+                              </div>
+                              
+                              {/* Floating Badges */}
+                              <div className="absolute -right-4 top-10 bg-white p-3 rounded-xl shadow-lg flex items-center gap-2 animate-bounce delay-700">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span className="text-xs font-bold text-slate-700">Open to work</span>
+                              </div>
+                              
+                              <div className="absolute -left-8 bottom-12 bg-slate-900 p-3 rounded-xl shadow-lg flex items-center gap-2 text-white transform -rotate-3">
+                                  <Terminal className="w-4 h-4" />
+                                  <span className="text-xs font-mono">Full Stack</span>
+                              </div>
+                          </div>
+                      </div>
+                      
+                      {/* Chat Messages Display Overlay on Image (if chat is active) */}
+                      {donnaChat.length > 0 && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-4 max-h-[200px] overflow-y-auto border-t border-slate-200 transition-all">
+                              {donnaChat.map((msg) => (
+                                  <div key={msg.id} className={`mb-2 text-sm ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                      <span className={`inline-block px-3 py-2 rounded-lg ${msg.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'}`}>
+                                          <MarkdownView content={msg.text} />
+                                      </span>
+                                  </div>
+                              ))}
+                              {donnaLoading && <div className="text-xs text-slate-400 animate-pulse ml-2">Donna está escribiendo...</div>}
+                              <div ref={chatEndRef}></div>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Right Column: Content */}
+                  <div className="w-full md:w-[55%] p-8 md:p-12 flex flex-col">
+                      <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Bienvenido al perfil de</p>
+                          {/* Use the name from the profile if available, else generic */}
+                          <h1 className="text-4xl font-extrabold text-slate-900 mb-2 leading-tight">
+                              {/* We don't extract name explicitly in previous step, assuming "Candidato" or deriving from context if added later. 
+                                  For now, typical design implies Name. I'll use a placeholder or prompt result if I had it. 
+                                  I'll stick to role since name isn't in CVProfile explicitly yet. */}
+                              <span className="text-slate-900">Expert </span>
+                              <span className="text-blue-600">Developer</span>
+                          </h1>
+                          <h2 className="text-xl font-medium text-slate-600 mb-6">
+                              {profile.experience[0]?.role || "Profesional TI"}
+                          </h2>
+
+                          <p className="text-slate-600 leading-relaxed mb-8 max-w-lg">
+                              {profile.summary || "Ingeniero de software especializado en arquitecturas escalables, IA y experiencias de usuario intuitivas."}
+                          </p>
+
+                          <a href="#" className="text-sm text-blue-600 font-semibold hover:underline mb-8 inline-block">
+                              ¿Qué aspecto de mi portafolio te gustaría explorar hoy?
+                          </a>
+
+                          {/* Navigation Tabs */}
+                          <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-100 pb-2">
+                              {['experience', 'education', 'projects', 'skills'].map((tab) => (
+                                  <button
+                                      key={tab}
+                                      onClick={() => setDonnaActiveTab(tab as any)}
+                                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                          donnaActiveTab === tab 
+                                          ? 'bg-slate-900 text-white shadow-md' 
+                                          : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
+                                      }`}
+                                  >
+                                      {tab === 'experience' && 'Experiencia'}
+                                      {tab === 'education' && 'Formación'}
+                                      {tab === 'projects' && 'Proyectos'}
+                                      {tab === 'skills' && 'Habilidades'}
+                                  </button>
+                              ))}
+                          </div>
+
+                          {/* Dynamic Content Area */}
+                          <div className="h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+                              <ActiveTabContent />
                           </div>
                       </div>
 
-                      <div className="bg-slate-50 p-6 flex justify-between items-center border-t border-slate-200">
-                          <p className="text-xs text-slate-400 font-mono">CONFIDENTIAL DOCUMENT // DONNA PAULSEN APPROVED</p>
-                          <div className="flex gap-4">
-                              <Button variant="outline" onClick={() => {
-                                  setAppState(AppState.WIZARD);
-                                  setCurrentStep(1);
-                              }}>Revisar Datos</Button>
-                              <Button className="!bg-slate-900" onClick={() => window.print()}>Exportar Expediente</Button>
-                          </div>
+                      {/* Search / Chat Input */}
+                      <div className="mt-6 pt-4 border-t border-slate-100">
+                          <form onSubmit={handleDonnaSend} className="relative group">
+                              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+                              <input 
+                                  className="w-full bg-slate-50 hover:bg-slate-100 focus:bg-white border-none rounded-full py-4 pl-12 pr-12 text-slate-700 shadow-sm focus:ring-2 focus:ring-blue-100 transition-all outline-none"
+                                  placeholder="Pregunta sobre mis proyectos..."
+                                  value={donnaInput}
+                                  onChange={(e) => setDonnaInput(e.target.value)}
+                              />
+                              <button 
+                                type="submit"
+                                disabled={!donnaInput.trim() || donnaLoading}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white rounded-full text-slate-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                              >
+                                  <ArrowRight className="w-5 h-5" />
+                              </button>
+                          </form>
                       </div>
                   </div>
               </div>
