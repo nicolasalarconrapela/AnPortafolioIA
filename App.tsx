@@ -1,9 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, FileText, Send, RefreshCw, MessageSquare, Briefcase, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Send, RefreshCw, MessageSquare, Briefcase, CheckCircle, AlertCircle, Download, FileJson, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Button } from './components/Button';
 import { MarkdownView } from './components/MarkdownView';
 import { createGeminiService, GeminiService } from './services/geminiService';
 import { ChatMessage, AppState } from './types';
+
+const IMPROVEMENT_OPTIONS = [
+  { id: 'summary', label: 'Resumen Profesional', prompt: 'Por favor, reescribe mi Resumen Profesional (Perfil) para que sea más impactante, ejecutivo y destaque mi valor único.' },
+  { id: 'experience', label: 'Experiencia Laboral', prompt: 'Analiza mis descripciones de experiencia laboral. Reescríbelas usando verbos de acción fuertes, eliminando la voz pasiva y enfocándote en logros cuantificables.' },
+  { id: 'skills', label: 'Habilidades', prompt: 'Sugiere una mejor organización para mis Habilidades (Skills). Agrúpalas por categorías técnicas y blandas, y añade alguna que pueda faltar según mi perfil.' },
+  { id: 'spelling', label: 'Ortografía y Gramática', prompt: 'Revisa todo el documento en busca de errores ortográficos, gramaticales o de estilo y lístalos con su corrección.' }
+];
 
 function App() {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
@@ -14,6 +21,7 @@ function App() {
   const [inputMessage, setInputMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showImproveModal, setShowImproveModal] = useState(false);
   
   // Use a ref to persist the service instance across renders without triggering re-renders
   const geminiServiceRef = useRef<GeminiService | null>(null);
@@ -30,7 +38,7 @@ function App() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatHistory, analysis]);
+  }, [chatHistory, analysis, isSending]); // Scroll when sending status changes too
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -76,19 +84,104 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleImportSession = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/json') {
+      setError("Por favor, sube un archivo JSON válido.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        
+        // Simple validation
+        if (!json.cvImage || !json.analysis || !Array.isArray(json.chatHistory)) {
+          throw new Error("Formato de archivo inválido.");
+        }
+
+        setAppState(AppState.ANALYZING); // Temporary loading state
+        setError(null);
+
+        // Restore State
+        setCvImage(json.cvImage);
+        setCvMimeType(json.cvMimeType);
+        setAnalysis(json.analysis);
+        
+        // Restore Chat History timestamps (JSON strings to Date objects)
+        const restoredHistory = json.chatHistory.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setChatHistory(restoredHistory);
+
+        // Re-initialize Gemini Service Context
+        geminiServiceRef.current = createGeminiService();
+        const base64Data = json.cvImage.split(',')[1];
+        
+        await geminiServiceRef.current.resumeSession(
+          json.analysis,
+          restoredHistory,
+          base64Data,
+          json.cvMimeType
+        );
+
+        setAppState(AppState.READY);
+
+      } catch (err: any) {
+        console.error(err);
+        setError("Error al cargar la sesión: " + (err.message || "Archivo corrupto"));
+        setAppState(AppState.ERROR);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = '';
+  };
+
+  const handleExportSession = () => {
+    if (!cvImage || !analysis) return;
+
+    const sessionData = {
+      timestamp: new Date().toISOString(),
+      cvImage,
+      cvMimeType,
+      analysis,
+      chatHistory
+    };
+
+    const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cv-analisis-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Modified to accept optional text override
+  const handleSendMessage = async (e?: React.FormEvent, textOverride?: string) => {
     e?.preventDefault();
-    if (!inputMessage.trim() || isSending || appState !== AppState.READY) return;
+    
+    const textToSend = textOverride || inputMessage;
+
+    if (!textToSend.trim() || isSending || appState !== AppState.READY) return;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      text: inputMessage,
+      text: textToSend,
       timestamp: new Date()
     };
 
     setChatHistory(prev => [...prev, userMsg]);
-    setInputMessage("");
+    setInputMessage(""); // Clear input even if it was an override
     setIsSending(true);
 
     try {
@@ -112,6 +205,11 @@ function App() {
     }
   };
 
+  const handleImprovementSelect = (prompt: string) => {
+    setShowImproveModal(false);
+    handleSendMessage(undefined, prompt);
+  };
+
   const resetApp = () => {
     setAppState(AppState.IDLE);
     setCvImage(null);
@@ -119,6 +217,7 @@ function App() {
     setAnalysis("");
     setChatHistory([]);
     setError(null);
+    setShowImproveModal(false);
     // Re-initialize service for a fresh session
     geminiServiceRef.current = createGeminiService();
   };
@@ -136,11 +235,19 @@ function App() {
             <p className="text-xs text-slate-500 font-medium">Potenciado por Gemini 3 Pro</p>
           </div>
         </div>
-        {appState !== AppState.IDLE && (
-          <Button variant="outline" onClick={resetApp} icon={<RefreshCw className="w-4 h-4" />}>
-            Nuevo Análisis
-          </Button>
-        )}
+        
+        <div className="flex space-x-2">
+          {appState === AppState.READY && (
+            <Button variant="secondary" onClick={handleExportSession} icon={<Download className="w-4 h-4" />}>
+              Guardar Sesión
+            </Button>
+          )}
+          {appState !== AppState.IDLE && (
+            <Button variant="outline" onClick={resetApp} icon={<RefreshCw className="w-4 h-4" />}>
+              Nuevo Análisis
+            </Button>
+          )}
+        </div>
       </header>
 
       {/* Main Content */}
@@ -178,6 +285,21 @@ function App() {
                 </div>
               </div>
 
+              <div className="text-center">
+                 <p className="text-sm text-slate-400 mb-2">¿Ya tienes un análisis guardado?</p>
+                 <label htmlFor="session-upload" className="cursor-pointer inline-flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                    <FileJson className="w-4 h-4 mr-1" />
+                    Cargar sesión previa (.json)
+                    <input 
+                        id="session-upload" 
+                        type="file" 
+                        accept="application/json" 
+                        className="hidden" 
+                        onChange={handleImportSession}
+                      />
+                 </label>
+              </div>
+
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-center space-x-2">
                   <AlertCircle className="w-5 h-5" />
@@ -195,8 +317,8 @@ function App() {
               <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold text-slate-800">Analizando tu CV...</h3>
-              <p className="text-slate-500">Gemini está leyendo tu experiencia y habilidades.</p>
+              <h3 className="text-xl font-semibold text-slate-800">Procesando...</h3>
+              <p className="text-slate-500">Gemini está analizando los datos.</p>
             </div>
           </div>
         )}
@@ -215,8 +337,40 @@ function App() {
 
         {/* Ready State (Split View) */}
         {appState === AppState.READY && (
-          <div className="h-full flex flex-col lg:flex-row overflow-hidden">
+          <div className="h-full flex flex-col lg:flex-row overflow-hidden relative">
             
+            {/* Modal Overlay for Improvements */}
+            {showImproveModal && (
+              <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in-up">
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center text-white">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-5 h-5" />
+                      <h3 className="font-bold text-lg">Mejorar CV</h3>
+                    </div>
+                    <button onClick={() => setShowImproveModal(false)} className="hover:bg-white/20 p-1 rounded-full transition">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-4 bg-slate-50">
+                    <p className="text-sm text-slate-500 mb-4 px-1">Selecciona qué sección te gustaría optimizar con IA:</p>
+                    <div className="space-y-2">
+                      {IMPROVEMENT_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => handleImprovementSelect(option.prompt)}
+                          className="w-full text-left bg-white border border-slate-200 p-4 rounded-xl hover:border-blue-400 hover:shadow-md transition-all group flex justify-between items-center"
+                        >
+                          <span className="font-medium text-slate-800 group-hover:text-blue-700">{option.label}</span>
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Left Panel: Analysis & CV Preview */}
             <div className="flex-1 lg:flex-[0.55] bg-white overflow-y-auto scrollbar-thin border-r border-slate-200 p-6 lg:p-8">
                
@@ -301,8 +455,21 @@ function App() {
                </div>
 
                {/* Input Area */}
-               <div className="p-4 bg-white border-t border-slate-200">
-                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+               <div className="p-4 bg-white border-t border-slate-200 relative">
+                 {/* Improvement Bubble Trigger */}
+                 {!showImproveModal && !isSending && (
+                   <div className="absolute -top-10 left-4">
+                     <button 
+                        onClick={() => setShowImproveModal(true)}
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-full px-4 py-1.5 text-xs font-semibold flex items-center shadow-sm transition-all hover:scale-105"
+                     >
+                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                       Mejorar una sección
+                     </button>
+                   </div>
+                 )}
+
+                 <form onSubmit={(e) => handleSendMessage(e)} className="flex items-center space-x-2">
                    <input
                      type="text"
                      value={inputMessage}
