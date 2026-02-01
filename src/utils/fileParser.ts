@@ -3,9 +3,10 @@ import mammoth from 'mammoth';
 import Papa from 'papaparse';
 import JSZip from 'jszip';
 import Tesseract from 'tesseract.js';
+import { loggingService } from './loggingService';
 
 // Configure PDF.js worker
-// Fix: Use CDN for worker to avoid "Failed to construct 'URL': Invalid URL" errors 
+// Fix: Use CDN for worker to avoid "Failed to construct 'URL': Invalid URL" errors
 // when import.meta.url is not correctly handled by the bundler or runtime environment.
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
@@ -42,12 +43,12 @@ const sanitizeFilename = (filename: string): string => {
  */
 const validateFileSignature = async (file: File): Promise<void> => {
     const ext = file.name.split('.').pop()?.toLowerCase();
-    
+
     // Skip signature check for text-based files (validated later by parsing success)
-    if (ext === 'csv' || ext === 'txt') return; 
+    if (ext === 'csv' || ext === 'txt') return;
 
     if (!ext || !ALLOWED_MAGIC_NUMBERS[ext]) {
-        // If we strictly allow only known extensions, we could throw here. 
+        // If we strictly allow only known extensions, we could throw here.
         // For now, if we don't have a signature for it, we warn or block based on strictness.
         // Assuming strict mode:
         throw new Error("Security Violation: File type signature verification failed.");
@@ -107,7 +108,7 @@ export const parseFileContent = async (file: File): Promise<string> => {
         return sanitizeText(content);
 
     } catch (error: any) {
-        console.error(`Security/Parsing Error for ${safeName}:`, error);
+        loggingService.error(`Security/Parsing Error for ${safeName}`, { error });
         throw new Error(error.message || `Failed to secure/parse ${safeName}`);
     }
 };
@@ -121,14 +122,14 @@ export const extractFilesFromZip = async (zipFile: File): Promise<File[]> => {
         await validateFileSignature(zipFile);
 
         const zip = new JSZip();
-        
+
         const loadedZip = await zip.loadAsync(zipFile);
         const extractedFiles: File[] = [];
         let totalUncompressedSize = 0;
 
         for (const [relativePath, zipEntry] of Object.entries(loadedZip.files)) {
             const entry: any = zipEntry;
-            
+
             // Security: Prevent processing of hidden/system files
             if (entry.dir) continue;
             if (entry.name.startsWith('__MACOSX') || entry.name.startsWith('.') || entry.name.includes('../')) continue;
@@ -142,27 +143,27 @@ export const extractFilesFromZip = async (zipFile: File): Promise<File[]> => {
             }
 
             const ext = entry.name.split('.').pop()?.toLowerCase();
-            
+
             if (['pdf', 'docx', 'csv', 'txt', 'png', 'jpg', 'jpeg'].includes(ext || '')) {
                 const blob = await entry.async('blob');
-                
+
                 // Double check size after decompression
                 if (blob.size > 15 * 1024 * 1024) {
                      throw new Error(`Security Violation: File ${entry.name} inside zip is too large.`);
                 }
 
                 const safeName = sanitizeFilename(entry.name.split('/').pop() || entry.name);
-                
-                const file = new File([blob], safeName, { 
+
+                const file = new File([blob], safeName, {
                     type: blob.type || 'application/octet-stream',
-                    lastModified: new Date().getTime() 
+                    lastModified: new Date().getTime()
                 });
                 extractedFiles.push(file);
             }
         }
         return extractedFiles;
     } catch (error: any) {
-        console.error("ZIP Extraction Error:", error);
+        loggingService.error("ZIP Extraction Error", { error });
         throw new Error("Failed to extract ZIP: " + error.message);
     }
 };
@@ -174,12 +175,12 @@ const parsePDF = async (file: File): Promise<string> => {
     try {
         const arrayBuffer = await file.arrayBuffer();
 
-        const loadingTask = pdfjsLib.getDocument({ 
+        const loadingTask = pdfjsLib.getDocument({
             data: arrayBuffer,
             // Security: Disable external links/scripts execution context if possible in config
-            isEvalSupported: false 
+            isEvalSupported: false
         });
-        
+
         const pdf = await loadingTask.promise;
         let fullText = '';
         const totalPages = Math.min(pdf.numPages, 20); // Security: Limit max pages parsed to prevent blocking main thread
@@ -193,7 +194,7 @@ const parsePDF = async (file: File): Promise<string> => {
 
         return fullText.trim();
     } catch (e: any) {
-        console.error("PDF.js Parsing Error:", e);
+        loggingService.error("PDF.js Parsing Error", { error: e });
         if (e.name === 'PasswordException') {
             throw new Error("PDF is password protected.");
         }
@@ -207,11 +208,11 @@ const parsePDF = async (file: File): Promise<string> => {
 const parseDOCX = async (file: File): Promise<string> => {
     try {
         const arrayBuffer = await file.arrayBuffer();
-        
+
         if (!mammoth || !mammoth.extractRawText) {
             throw new Error("DOCX parser library not loaded.");
         }
-        
+
         const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
         return result.value.trim();
     } catch (e: any) {
@@ -235,7 +236,7 @@ const parseCSV = (file: File): Promise<string> => {
             skipEmptyLines: true,
             complete: (results) => {
                 if (results.data && results.data.length > 0) {
-                    const safeData = results.data.slice(0, 5000); 
+                    const safeData = results.data.slice(0, 5000);
                     resolve(JSON.stringify(safeData, null, 2));
                 } else {
                     resolve("CSV file appeared empty.");
@@ -262,16 +263,16 @@ const parseImage = async (file: File): Promise<string> => {
 
         const result = await Tesseract.recognize(
             file,
-            'eng', 
+            'eng',
             { logger: () => {} }
         );
 
         const blocks = result.data.blocks || [];
-        
+
         const layoutData = blocks.map((block: any, index: number) => {
             const text = sanitizeText(block.text.trim()); // Sanitize inside OCR
             const confidence = block.confidence;
-            
+
             let regionType = 'Text';
             if (confidence > 85 && text.length < 60 && !text.includes('.') && text.toUpperCase() === text) {
                 regionType = 'Header';
@@ -295,7 +296,7 @@ const parseImage = async (file: File): Promise<string> => {
         return JSON.stringify(layoutData, null, 2);
 
     } catch (e: any) {
-        console.error("OCR Error:", e);
+        loggingService.error("OCR Error", { error: e });
         return `[IMAGE UPLOADED: ${sanitizeFilename(file.name)}]\n(Structure extraction failed. Raw image attached.)`;
     }
 }

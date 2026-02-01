@@ -17,6 +17,7 @@ import { initializeFirebaseAdmin } from "./firebaseAdmin.js";
 import firestoreRoutes from "./routes/firestoreRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
+import { requireAuth } from "./middleware/requireAuth.js";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
@@ -198,7 +199,7 @@ function isDevLocalhost(normalized) {
 const allowGoogleAiStudio = (origin) =>
   typeof origin === "string" &&
   /^https:\/\/[a-z0-9-]+\.scf\.usercontent\.goog$/i.test(origin);
-  
+
 const corsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true);
@@ -234,7 +235,7 @@ const corsOptions = {
 
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "If-Modified-Since", "Cache-Control"],
 };
 
 app.use(cors(corsOptions));
@@ -286,13 +287,102 @@ app.get("/health", (req, res) => {
     message: "AnPortafolioIA Backend is running",
   });
 });
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 app.use("/api/firestore", firestoreRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
 
+// ------------------------------------------------------------// 8.1) SSE Endpoint for Log Streaming (optional auth in dev)
 // ------------------------------------------------------------
-// 9) 404 handler (log “suave”)
+
+// Rate limiting for SSE connections
+const sseConnectionsPerUser = new Map();
+const MAX_SSE_CONNECTIONS_PER_USER = 3;
+
+// Optional auth middleware - allows unauthenticated in dev mode
+const optionalAuthForDev = async (req, res, next) => {
+  // In development, allow unauthenticated access to log stream
+  if (process.env.NODE_ENV !== 'production') {
+    req.user = req.user || { uid: 'dev-anonymous' };
+    return next();
+  }
+  // In production, require authentication
+  return requireAuth(req, res, next);
+};
+
+app.get("/api/logs/stream", optionalAuthForDev, (req, res) => {
+  const userId = req.user?.uid || "anonymous";
+
+  // Rate limit check
+  const currentConnections = sseConnectionsPerUser.get(userId) || 0;
+  if (currentConnections >= MAX_SSE_CONNECTIONS_PER_USER) {
+    logger.warn("sse_rate_limit_exceeded", { userId, currentConnections });
+    return res.status(429).json({ error: "Too many SSE connections" });
+  }
+
+  // Increment connection count
+  sseConnectionsPerUser.set(userId, currentConnections + 1);
+
+  // SSE Headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+  res.flushHeaders();
+
+  logger.info("sse_client_connected", {
+    userId,
+    totalSubscribers: logger.getSubscriberCount() + 1
+  });
+
+  // Send initial buffered logs
+  const bufferedLogs = logger.getBufferedLogs();
+  res.write(`event: init\n`);
+  res.write(`data: ${JSON.stringify({
+    type: "init",
+    logs: bufferedLogs,
+    bufferStats: logger.getBufferStats()
+  })}\n\n`);
+
+  // Subscribe to new logs
+  logger.subscribeSSE(res);
+
+  // Heartbeat every 30s to keep connection alive
+  const heartbeatInterval = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(`:heartbeat\n\n`);
+    }
+  }, 30000);
+
+  // Cleanup on disconnect
+  req.on("close", () => {
+    clearInterval(heartbeatInterval);
+    logger.unsubscribeSSE(res);
+
+    // Decrement connection count
+    const count = sseConnectionsPerUser.get(userId) || 1;
+    if (count <= 1) {
+      sseConnectionsPerUser.delete(userId);
+    } else {
+      sseConnectionsPerUser.set(userId, count - 1);
+    }
+
+    logger.info("sse_client_disconnected", {
+      userId,
+      totalSubscribers: logger.getSubscriberCount()
+    });
+  });
+});
+
+// Logger stats endpoint (for debugging)
+app.get("/api/logs/stats", requireAuth, (req, res) => {
+  res.json(logger.getBufferStats());
+});
+
+// ------------------------------------------------------------// 9) 404 handler (log “suave”)
 // ------------------------------------------------------------
 app.use((req, res) => {
   logger.warn("route_not_found", {

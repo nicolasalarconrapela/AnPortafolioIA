@@ -6,10 +6,12 @@ import { Input } from "./ui/Input";
 import { Icon } from "./ui/Icon";
 
 import { authService } from "../services/authService";
+import { loggingService } from "../utils/loggingService";
+import { getWorkspaceByUserFromFirestore } from "../services/firestoreWorkspaces";
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
-  userType?: "candidate" | "recruiter";
+  onLoginSuccess: (user: any) => void;
   initialMode?: "login" | "register";
 }
 
@@ -17,17 +19,15 @@ type FieldErrors = { email?: string; password?: string };
 
 export const AuthView: React.FC<AuthViewProps> = ({
   onNavigate,
-  userType = "candidate",
+  onLoginSuccess,
   initialMode = "login",
 }) => {
-  const isRecruiter = userType === "recruiter";
-
   // UI State
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
-  const [email, setEmail] = useState(isRecruiter ? "recruiter@techcorp.com" : "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -35,25 +35,21 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  const copy = useMemo(() => {
-    return {
+  const copy = useMemo(
+    () => ({
       title: isLogin ? "Sign in" : "Create account",
-      subtitle: isLogin
-        ? `Access the ${isRecruiter ? "recruiter" : "candidate"} portal.`
-        : "Join the platform today.",
-      heroTitle: isRecruiter ? "Intelligent matching." : "Your work, simply showcased.",
-      heroText: isRecruiter
-        ? "Recruitment stripped of the noise. Just talent and fit."
-        : "The portfolio platform that focuses on what matters: you.",
-    };
-  }, [isLogin, isRecruiter]);
+      subtitle: isLogin ? "Access your portfolio workspace." : "Join the platform today.",
+      heroTitle: "Your work, simply showcased.",
+      heroText: "The portfolio platform that focuses on what matters: you.",
+    }),
+    [isLogin]
+  );
 
   const handleToggle = () => {
     setIsLogin((prev) => !prev);
     setErrors({});
     setGeneralError(null);
-    // Reset fields (igual que tu HEAD)
-    if (!isRecruiter) setEmail("");
+    setEmail("");
     setPassword("");
   };
 
@@ -88,14 +84,21 @@ export const AuthView: React.FC<AuthViewProps> = ({
   };
 
   // --- feature/firebase-add: success handling ---
-  const onAuthSuccess = (user: any) => {
-    // Persistencia compatible con lo que ya uses (feature/firebase-add)
-    localStorage.setItem("anportafolio_user_id", user?.uid || user?.localId || "");
+  const onAuthSuccess = async (user: any) => {
+    const uid = user?.uid || user?.localId || "";
+    // localStorage.setItem("anportafolio_user_id", uid); // Removed localStorage
+    onLoginSuccess(user);
 
-    // Navegación consistente
-    if (userType === "recruiter") {
-      onNavigate("recruiter-flow");
-    } else {
+    try {
+      // Check if user has already completed onboarding
+      const workspace = await getWorkspaceByUserFromFirestore(uid);
+      if (workspace?.profile?.onboardingCompleted) {
+        onNavigate("candidate-dashboard");
+      } else {
+        onNavigate("candidate-onboarding");
+      }
+    } catch (error) {
+      loggingService.warn("Could not check onboarding status, defaulting to onboarding", error);
       onNavigate("candidate-onboarding");
     }
   };
@@ -108,7 +111,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const user = await authService.loginGoogle();
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Google Sign In Failed", { error: err });
       setGeneralError(err?.message || "Google Sign In Failed");
     } finally {
       setIsLoading(false);
@@ -123,7 +126,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const user = await authService.loginGuest();
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Guest Login Failed", { error: err });
       setGeneralError(err?.message || "Guest Login Failed");
     } finally {
       setIsLoading(false);
@@ -156,7 +159,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       }
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Authentication failed", { error: err });
       // Tu backend/servicio suele devolver message, o { error: "..." }
       setGeneralError(err?.message || err?.error || "Authentication failed");
     } finally {
@@ -170,8 +173,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setGeneralError(null);
     try {
       await new Promise((r) => setTimeout(r, 250));
-      if (userType === "recruiter") onNavigate("recruiter-flow");
-      else onNavigate("candidate-dashboard");
+      onNavigate("candidate-dashboard");
     } finally {
       setIsLoading(false);
     }

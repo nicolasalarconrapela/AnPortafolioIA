@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 🔒 DENY ALL: All access must go through the Backend API (Admin SDK).
+    // The Admin SDK bypasses these rules automatically.
+    // This ensures no user can directly access the database using the Client SDK key.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

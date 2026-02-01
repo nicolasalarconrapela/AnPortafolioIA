@@ -1,5 +1,6 @@
 
 import { ConsentStoreData, DEFAULT_CONSENT, POLICY_VERSION, ConsentState } from './types';
+import { loggingService } from '../../utils/loggingService';
 
 const STORAGE_KEY = 'anportafolio_consent_v1';
 
@@ -29,7 +30,7 @@ export const loadConsent = (): ConsentStoreData => {
 
     return parsed;
   } catch (e) {
-    console.warn('Error reading consent from storage, resetting defaults.', e);
+    loggingService.warn('Error reading consent from storage, resetting defaults.', { error: e });
     return {
       consent: { ...DEFAULT_CONSENT },
       version: POLICY_VERSION,
@@ -49,6 +50,6 @@ export const saveConsent = (consent: ConsentState, hasInteracted: boolean = true
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
-    console.error('Failed to save consent preference.', e);
+    loggingService.error('Failed to save consent preference.', { error: e });
   }
 };

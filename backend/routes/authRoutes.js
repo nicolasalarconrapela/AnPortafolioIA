@@ -1,9 +1,36 @@
 import express from 'express';
 import { getAuth } from '../firebaseAdmin.js';
+import { logger } from '../logger.js';
+import { syncUserToFirestore } from '../services/userService.js';
 // Using global fetch (Node 18+)
 import { config } from '../config.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/auth/verify
+ * Verifica si la cookie de sesión es válida y devuelve el usuario.
+ * Útil para comprobar estado al cargar la SPA.
+ */
+router.get('/verify', requireAuth, async (req, res) => {
+    // req.userRecord is guaranteed by requireAuth
+    const userRecord = req.userRecord;
+
+    res.json({
+        success: true,
+        user: {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName,
+            photoURL: userRecord.photoURL,
+            // Add session claims metadata if needed
+            iat: req.user.iat,
+            exp: req.user.exp
+        }
+    });
+});
+
 // Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
@@ -73,7 +100,7 @@ router.post('/session-login', async (req, res) => {
         await setSessionCookie(res, idToken);
         res.json({ success: true, message: "Session created" });
     } catch (error) {
-        console.error("Session creation failed", error);
+        logger.error("Session creation failed", { error: error.message });
         res.status(401).json({ error: "Unauthorized" });
     }
 });
@@ -118,14 +145,14 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Login failed:", error);
+        logger.error("Login failed", { error: error.message });
         res.status(401).json({ error: error.message });
     }
 });
 
 /**
  * POST /api/auth/register
- * Register with Email/Password -> Sets Session Cookie
+ * Register with Email/Password -> Syncs to Firestore -> Sets Session Cookie
  */
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -134,6 +161,13 @@ router.post('/register', async (req, res) => {
     try {
         const data = await callFirebaseREST('signUp', { email, password });
 
+        // Sync to Firestore
+        await syncUserToFirestore(data.localId, {
+            email: data.email,
+            isAnonymous: false,
+            provider: 'password'
+        });
+
         await setSessionCookie(res, data.idToken);
 
         res.json({
@@ -141,23 +175,30 @@ router.post('/register', async (req, res) => {
             user: {
                 uid: data.localId,
                 email: data.email,
-                idToken: data.idToken,
-                refreshToken: data.refreshToken
+                // Client usually doesn't need idToken if using cookies, but keeping for compatibility if needed
+                // idToken: data.idToken,
+                // refreshToken: data.refreshToken
             }
         });
     } catch (error) {
-        console.error("Registration failed:", error);
+        logger.error("Registration failed", { error: error.message });
         res.status(400).json({ error: error.message });
     }
 });
 
 /**
  * POST /api/auth/guest
- * Guest Login -> Sets Session Cookie
+ * Guest Login -> Syncs to Firestore -> Sets Session Cookie
  */
 router.post('/guest', async (req, res) => {
     try {
         const data = await callFirebaseREST('signUp', {});
+
+        // Sync to Firestore
+        await syncUserToFirestore(data.localId, {
+            isAnonymous: true,
+            provider: 'anonymous'
+        });
 
         await setSessionCookie(res, data.idToken);
 
@@ -166,12 +207,12 @@ router.post('/guest', async (req, res) => {
             user: {
                 uid: data.localId,
                 isAnonymous: true,
-                idToken: data.idToken,
-                refreshToken: data.refreshToken
+                // idToken: data.idToken,
+                // refreshToken: data.refreshToken
             }
         });
     } catch (error) {
-        console.error("Guest login failed:", error);
+        logger.error("Guest login failed", { error: error.message });
         res.status(500).json({ error: error.message });
     }
 });
@@ -204,7 +245,7 @@ router.post('/custom-token', async (req, res) => {
             token: customToken,
         });
     } catch (error) {
-        console.error('[ERROR] Custom token creation failed:', error);
+        logger.error('Custom token creation failed', { error: error.message });
         res.status(500).json({ error: 'Failed to create custom token', details: error.message });
     }
 });
@@ -236,7 +277,7 @@ router.get('/user/:uid', async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('[ERROR] Failed to get user:', error);
+        logger.error('Failed to get user', { uid, error: error.message });
         res.status(404).json({ error: 'User not found', details: error.message });
     }
 });
@@ -258,7 +299,7 @@ router.put('/user/:uid', async (req, res) => {
             message: 'User updated successfully',
         });
     } catch (error) {
-        console.error('[ERROR] Failed to update user:', error);
+        logger.error('Failed to update user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to update user', details: error.message });
     }
 });
@@ -279,7 +320,7 @@ router.delete('/user/:uid', async (req, res) => {
             message: 'User deleted successfully',
         });
     } catch (error) {
-        console.error('[ERROR] Failed to delete user:', error);
+        logger.error('Failed to delete user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to delete user', details: error.message });
     }
 });

@@ -5,7 +5,22 @@ import { requireAuth } from '../middleware/requireAuth.js';
 const router = express.Router();
 
 // --- Middleware: Protect all Firestore routes ---
+// --- Middleware: Protect all Firestore routes ---
 router.use(requireAuth);
+
+/* Helper to resolve User Document Reference
+ * Structure: workspace-[env] > global > users-[env] > [uid]
+ */
+const getUserDocRef = (firestore, collectionName, targetUid) => {
+    if (collectionName.startsWith('workspace-')) {
+        const envSuffix = collectionName.replace('workspace-', '');
+        return firestore.collection(collectionName)
+            .doc('global')
+            .collection(`users-${envSuffix}`)
+            .doc(targetUid);
+    }
+    return firestore.collection(collectionName).doc(targetUid);
+};
 
 // --- Firestore API Endpoints ---
 
@@ -23,31 +38,58 @@ router.get('/workspaces/:userKey', async (req, res) => {
 
     try {
         const firestore = getFirestore();
-        // Use a secure user-specific collection or document structure
-        // Current logic maps userKey -> DocId. We keep this but secured.
-        const collectionName = collectionOverride || 'users-workspaces';
+        // Use environment-specific collection >> global doc >> users collection >> uid doc
+        // Structure: workspace-[env]/global/users/[uid]
+        const collectionName = collectionOverride || 'users';
 
-        // We use the UID directly as the document verification key, 
-        // avoiding obscure base64 transforms unless strictly needed for legacy compatibility.
-        // If legacy compat is needed, we keep the transform but I'll simplify to use UID if possible.
-        // Let's stick to the previous base64 logic to avoid breaking existing data IF it was important,
-        // BUT for a clean migration, using UID as Doc Name is better. 
-        // Let's assume we WANT to migrate to UID-based keys.
-
-        const docRef = firestore.collection(collectionName).doc(targetUid);
+        const docRef = getUserDocRef(firestore, collectionName, targetUid);
         const docSnap = await docRef.get();
 
         if (!docSnap.exists) {
-            // Return empty object for new users instead of 404 to simplify frontend logic?
-            // Or 404. Let's return 404 and let frontend handle initialization.
-            return res.status(404).json({ error: 'Workspace not found' });
+            // Auto-create workspace for the user with default data
+            const defaultWorkspaceId = `ws-${Date.now()}`;
+            const initialData = {
+                ownerId: targetUid,
+                email: req.user.email || null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                workspaces: [
+                    {
+                        id: defaultWorkspaceId,
+                        name: "Mi Espacio de Trabajo",
+                        isDefault: true,
+                        role: "owner",
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ],
+                profile: {
+                    fullName: req.user.name || req.user.email?.split('@')[0] || "Usuario",
+                    title: "",
+                    location: "",
+                    bio: "",
+                    avatarUrl: req.user.picture || ""
+                },
+                settings: {
+                    theme: 'system',
+                    language: 'es'
+                },
+                onboardingCompleted: false
+            };
+
+            await docRef.set(initialData);
+            return res.json(initialData);
         }
 
         // --- Professional Caching Logic ---
         const lastUpdateDate = docSnap.updateTime.toDate();
         const lastModified = lastUpdateDate.toUTCString();
 
-        if (req.headers['if-modified-since'] === lastModified) {
+        // Respect explicit Cache-Control: no-cache to force fresh data (bypass 304)
+        const clientCacheControl = req.headers['cache-control'] || '';
+        const forceRefresh = clientCacheControl.includes('no-cache');
+
+        if (!forceRefresh && req.headers['if-modified-since'] === lastModified) {
             return res.status(304).end();
         }
 
@@ -70,9 +112,9 @@ router.post('/workspaces/:userKey', async (req, res) => {
 
     try {
         const firestore = getFirestore();
-        const collectionName = collectionOverride || 'users-workspaces';
+        const collectionName = collectionOverride || 'users';
 
-        const docRef = firestore.collection(collectionName).doc(targetUid);
+        const docRef = getUserDocRef(firestore, collectionName, targetUid);
 
         // Ensure we don't overwrite critical metadata
         const payload = {
@@ -100,7 +142,10 @@ router.delete('/workspaces/:userKey', async (req, res) => {
     try {
         const firestore = getFirestore();
         const collectionName = collectionOverride || 'users-workspaces';
-        await firestore.collection(collectionName).doc(targetUid).delete();
+
+        const docRef = getUserDocRef(firestore, collectionName, targetUid);
+
+        await docRef.delete();
         res.json({ success: true });
     } catch (error) {
         console.error('[ERROR] Firestore Delete Error:', error);
@@ -124,7 +169,7 @@ router.get('/workspaces/:userKey/child/:childCollection/:childDocId', async (req
         const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
         const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
 
-        const docRef = firestore.collection(collectionName).doc(targetUid)
+        const docRef = getUserDocRef(firestore, collectionName, targetUid)
             .collection(safeChildColl).doc(safeChildDoc);
 
         const docSnap = await docRef.get();
@@ -156,7 +201,7 @@ router.post('/workspaces/:userKey/child/:childCollection/:childDocId', async (re
         const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
         const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
 
-        const docRef = firestore.collection(collectionName).doc(targetUid)
+        const docRef = getUserDocRef(firestore, collectionName, targetUid)
             .collection(safeChildColl).doc(safeChildDoc);
 
         await docRef.set(data, { merge: merge === 'true' || merge === true });
@@ -182,7 +227,7 @@ router.delete('/workspaces/:userKey/child/:childCollection/:childDocId', async (
         const safeChildColl = childCollection.replace(/[^a-zA-Z0-9_.-]/g, '-');
         const safeChildDoc = childDocId.replace(/[^a-zA-Z0-9_.-]/g, '-');
 
-        const docRef = firestore.collection(collectionName).doc(targetUid)
+        const docRef = getUserDocRef(firestore, collectionName, targetUid)
             .collection(safeChildColl).doc(safeChildDoc);
 
         await docRef.delete();
