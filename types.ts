@@ -8,10 +8,49 @@ export interface ChatMessage {
 export enum AppState {
   IDLE = 'IDLE',
   ANALYZING = 'ANALYZING',
-  READY = 'READY',
+  WIZARD = 'WIZARD', // New state for the step-by-step editing
+  HARVIS = 'HARVIS', // New state for final view
   ERROR = 'ERROR'
 }
 
-export interface AnalysisResult {
-  text: string;
+export interface ExperienceItem {
+  company: string;
+  role: string;
+  period: string;
+  description: string;
+}
+
+export interface ProjectItem {
+  name: string;
+  description: string;
+  technologies: string;
+  link?: string;
+}
+
+export interface EducationItem {
+  institution: string;
+  title: string;
+  period: string;
+}
+
+export interface LanguageItem {
+  language: string;
+  level: string;
+}
+
+export interface CVProfile {
+  summary: string; // Brief intro
+  experience: ExperienceItem[];
+  skills: string[]; // Soft & Hard generic
+  techStack: {
+    languages: string[];
+    ides: string[];
+    frameworks: string[];
+    tools: string[];
+  };
+  projects: ProjectItem[];
+  volunteering: ExperienceItem[]; // Similar structure to experience
+  awards: string[];
+  languages: LanguageItem[];
+  hobbies: string[];
 }
