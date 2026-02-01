@@ -8,6 +8,14 @@ export const config = {
         return process.env.EXTERNAL_URL || `http://localhost:${this.PORT}`;
     },
 
+    // Logging configuration
+    LOGGING: {
+        LOG_DIR: process.env.LOG_DIR || './logs',
+        MAX_BUFFER_SIZE: 500,           // FIFO buffer size for in-memory logs
+        ROTATION_INTERVAL: '1d',         // Rotate logs daily
+        MAX_FILES: 7,                    // Keep 7 days of logs
+        FILENAME_PATTERN: 'app-%Y%m%d.jsonl',  // Log filename pattern
+    },
 
     FIREBASE: {
         PROJECT_ID: process.env.FIREBASE_PROJECT_ID,

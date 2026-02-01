@@ -2,6 +2,7 @@
 import { initializeApp, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { env } from "../utils/env";
+import { loggingService } from "../utils/loggingService";
 
 // Type for the config object
 interface FirebaseConfig {
@@ -24,12 +25,12 @@ let initPromise: Promise<Auth | undefined> | null = null;
 async function fetchConfigFromBackend(): Promise<FirebaseConfig | null> {
   try {
     const url = `${env.BACKEND_URL}/api/auth/config/firebase-public`;
-    console.log(`[Firebase Client] Fetching config from: ${url}`);
+    loggingService.info(`[Firebase Client] Fetching config from: ${url}`);
     const res = await fetch(url);
     if (!res.ok) throw new Error("Backend did not return config");
     return await res.json();
   } catch (e) {
-    console.warn("[Firebase Client] Could not fetch config from backend:", e);
+    loggingService.warn("[Firebase Client] Could not fetch config from backend", { error: e });
     return null;
   }
 }
@@ -43,7 +44,7 @@ export async function getFirebaseAuth(): Promise<Auth> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    console.log("[Firebase Client] Fetching config from backend...");
+    loggingService.info("[Firebase Client] Fetching config from backend...");
     const config = await fetchConfigFromBackend();
 
     if (!config) {
@@ -52,7 +53,7 @@ export async function getFirebaseAuth(): Promise<Auth> {
 
     app = initializeApp(config);
     authClient = getAuth(app);
-    console.log("[Firebase Client] Initialized successfully.");
+    loggingService.info("[Firebase Client] Initialized successfully.");
     return authClient;
   })();
 

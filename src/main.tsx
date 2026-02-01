@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { loggingService } from './utils/loggingService';
 
-console.log("Main entry point loaded");
+loggingService.info("Main entry point loaded");
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
     constructor(props: { children: React.ReactNode }) {
@@ -15,7 +16,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error("Uncaught error:", error, errorInfo);
+        loggingService.error("Uncaught error", { error, errorInfo });
     }
 
     render() {
@@ -36,7 +37,7 @@ if (!rootElement) {
     throw new Error("Could not find root element to mount to");
 }
 
-console.log("Mounting React root...");
+loggingService.info("Mounting React root...");
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(

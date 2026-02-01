@@ -1,5 +1,6 @@
 import express from 'express';
 import { getAuth } from '../firebaseAdmin.js';
+import { logger } from '../logger.js';
 // Using global fetch (Node 18+)
 import { config } from '../config.js';
 
@@ -73,7 +74,7 @@ router.post('/session-login', async (req, res) => {
         await setSessionCookie(res, idToken);
         res.json({ success: true, message: "Session created" });
     } catch (error) {
-        console.error("Session creation failed", error);
+        logger.error("Session creation failed", { error: error.message });
         res.status(401).json({ error: "Unauthorized" });
     }
 });
@@ -118,7 +119,7 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Login failed:", error);
+        logger.error("Login failed", { error: error.message });
         res.status(401).json({ error: error.message });
     }
 });
@@ -146,7 +147,7 @@ router.post('/register', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Registration failed:", error);
+        logger.error("Registration failed", { error: error.message });
         res.status(400).json({ error: error.message });
     }
 });
@@ -171,7 +172,7 @@ router.post('/guest', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Guest login failed:", error);
+        logger.error("Guest login failed", { error: error.message });
         res.status(500).json({ error: error.message });
     }
 });
@@ -204,7 +205,7 @@ router.post('/custom-token', async (req, res) => {
             token: customToken,
         });
     } catch (error) {
-        console.error('[ERROR] Custom token creation failed:', error);
+        logger.error('Custom token creation failed', { error: error.message });
         res.status(500).json({ error: 'Failed to create custom token', details: error.message });
     }
 });
@@ -236,7 +237,7 @@ router.get('/user/:uid', async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('[ERROR] Failed to get user:', error);
+        logger.error('Failed to get user', { uid, error: error.message });
         res.status(404).json({ error: 'User not found', details: error.message });
     }
 });
@@ -258,7 +259,7 @@ router.put('/user/:uid', async (req, res) => {
             message: 'User updated successfully',
         });
     } catch (error) {
-        console.error('[ERROR] Failed to update user:', error);
+        logger.error('Failed to update user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to update user', details: error.message });
     }
 });
@@ -279,7 +280,7 @@ router.delete('/user/:uid', async (req, res) => {
             message: 'User deleted successfully',
         });
     } catch (error) {
-        console.error('[ERROR] Failed to delete user:', error);
+        logger.error('Failed to delete user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to delete user', details: error.message });
     }
 });

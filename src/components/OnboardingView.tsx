@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LinkedinSyncView } from './LinkedinSyncView';
 import { AITrainingView } from './AITrainingView';
 import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
+import { loggingService } from '../utils/loggingService';
 
 interface OnboardingViewProps {
   onComplete: () => void;
@@ -49,14 +50,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  
+
   // Upload State
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState("Ready");
   const [progressPercent, setProgressPercent] = useState(0);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSteps = STEPS_CONFIG.filter(step => selectedItems.includes(step.id));
   const currentStep = activeSteps[currentStepIndex];
@@ -93,7 +94,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
   const processFiles = async (files: FileList | File[]) => {
       if (!files || files.length === 0) return;
-      
+
       setIsUploading(true);
       setUploadError(null);
       setProgressPercent(0);
@@ -108,16 +109,16 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
           for (let i = 0; i < rawFiles.length; i++) {
               const file = rawFiles[i];
               setProcessingStatus(`Analyzing ${file.name}...`);
-              
+
               const ext = file.name.split('.').pop()?.toLowerCase();
-              
+
               if (ext === 'zip') {
                   try {
                       setProcessingStatus(`Unpacking ${file.name}...`);
                       const extracted = await extractFilesFromZip(file);
                       filesToProcess.push(...extracted);
                   } catch (e: any) {
-                      console.warn(`Skipping invalid zip: ${file.name}`);
+                      loggingService.warn(`Skipping invalid zip: ${file.name}`, { error: e });
                       errors.push(`${file.name}: ${e.message}`);
                   }
               } else {
@@ -127,7 +128,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
           // Phase 2: Filtering
           const filteredFiles = filesToProcess.filter(f => !KNOWN_LINKEDIN_NOISE_FILES.includes(f.name));
-          
+
           if (filteredFiles.length === 0 && errors.length === 0) throw new Error("No valid files found (PDF, DOCX, CSV, IMG supported).");
           if (filteredFiles.length === 0 && errors.length > 0) throw new Error(errors[0]);
 
@@ -137,39 +138,39 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
               const file = filteredFiles[i];
               const progress = Math.round(((i + 1) / filteredFiles.length) * 100);
               setProgressPercent(progress);
-              
+
               const isImage = ['jpg','jpeg','png'].includes(file.name.split('.').pop()?.toLowerCase() || '');
-              
+
               if (isImage) {
                    setProcessingStatus(`Layout Analysis (PP-Structure Sim): ${file.name}...`);
               } else {
                    setProcessingStatus(`Secure Parsing ${file.name}...`);
               }
-              
+
               if (file.size > MAX_FILE_SIZE) {
-                  console.warn(`Skipping ${file.name}: File too large`);
+                  loggingService.warn(`Skipping ${file.name}: File too large`);
                   errors.push(`${file.name}: File too large (>15MB)`);
                   continue;
               }
 
               try {
                   const text = await parseFileContent(file);
-                  if (text && text.trim().length > 0) { 
-                       processed.push({ 
+                  if (text && text.trim().length > 0) {
+                       processed.push({
                           name: sanitizeFileNameUI(file.name),
-                          data: text, 
-                          size: file.size, 
-                          type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN' 
+                          data: text,
+                          size: file.size,
+                          type: file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN'
                       });
                   } else {
                       errors.push(`${file.name}: No readable text found`);
                   }
               } catch (parseErr: any) {
-                  console.error(`Failed to parse ${file.name}`, parseErr);
+                  loggingService.error(`Failed to parse ${file.name}`, { error: parseErr });
                   errors.push(`${file.name}: ${parseErr.message}`);
               }
           }
-          
+
           if (processed.length === 0) {
               const errorDetails = errors.length > 0 ? errors.slice(0, 3).join('. ') + (errors.length > 3 ? '...' : '') : "Unknown error";
               throw new Error(`Security/Parsing Error: ${errorDetails}`);
@@ -178,7 +179,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
           setUploadedFiles(processed);
           setDataLoaded(true);
       } catch (err: any) {
-          console.error("Upload Error:", err);
+          loggingService.error("Upload Error", { error: err });
           setUploadError(err.message || "An error occurred during secure upload.");
       } finally {
           setIsUploading(false);
@@ -210,7 +211,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
 
   return (
     <div className="relative w-full min-h-screen bg-surface-variant dark:bg-surface-darkVariant flex flex-col md:flex-row">
-        
+
         {/* Sidebar Desktop / Topbar Mobile */}
         <div className="w-full md:w-80 bg-[var(--md-sys-color-background)] border-b md:border-b-0 md:border-r border-outline-variant p-4 md:p-6 flex flex-col shrink-0 md:h-screen z-10 shadow-sm md:shadow-none">
             <div className="flex items-center justify-between md:justify-start gap-2 mb-2 md:mb-8">
@@ -223,20 +224,20 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                     <span className="material-symbols-outlined">close</span>
                 </button>
             </div>
-            
+
             {/* Steps Container - Improved Mobile Scrolling */}
             <div className="relative md:flex-1">
                 {/* Scroll Mask for Mobile */}
                 <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--md-sys-color-background)] to-transparent pointer-events-none md:hidden z-10" />
-                
-                <div 
+
+                <div
                     ref={stepsContainerRef}
                     className="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide snap-x snap-mandatory pr-8 md:pr-0"
                 >
                     {activeSteps.map((step, index) => {
                         const isActive = index === currentStepIndex;
                         const isCompleted = index < currentStepIndex;
-                        
+
                         return (
                             <div key={step.id} className={`snap-center flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-full md:rounded-2xl transition-colors whitespace-nowrap md:whitespace-normal shrink-0 border border-transparent ${isActive ? 'bg-secondary-container text-secondary-onContainer border-secondary-container/50' : 'text-outline hover:bg-surface-variant'}`}>
                                 <div className={`w-8 h-8 md:w-8 md:h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-secondary-onContainer text-secondary-container' : (isCompleted ? 'bg-green-100 text-green-700' : 'bg-surface-variant text-outline')}`}>
@@ -263,7 +264,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto h-[calc(100dvh-80px)] md:h-screen">
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-                
+
                 {currentStep?.id === 'import' && (
                     !dataLoaded ? (
                         <div className="flex-1 flex flex-col items-center justify-center animate-fade-in bg-[var(--md-sys-color-background)] rounded-[24px] md:rounded-[28px] p-6 md:p-8 shadow-sm border border-outline-variant/30">
@@ -285,25 +286,25 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                                     <p className="text-outline text-center text-sm md:text-base max-w-md mb-6 md:mb-8">
                                         Upload your Resume (PDF), Portfolio (PDF/Images), or LinkedIn Archive (ZIP).
                                     </p>
-                                    
+
                                     {/* Upload Box */}
-                                    <div 
+                                    <div
                                         onDragOver={handleDragOver}
                                         onDragLeave={handleDragLeave}
                                         onDrop={handleDrop}
                                         onClick={() => fileInputRef.current?.click()}
                                         className={`w-full max-w-xl p-6 md:p-10 rounded-[20px] md:rounded-[24px] border border-dashed transition-all cursor-pointer flex flex-col items-center gap-4 group relative ${
-                                            isDragging 
-                                            ? 'border-primary bg-primary-container/30' 
+                                            isDragging
+                                            ? 'border-primary bg-primary-container/30'
                                             : 'border-outline-variant hover:border-primary hover:bg-surface-variant'
                                         }`}
                                     >
                                         <input type="file" ref={fileInputRef} className="hidden" multiple accept=".pdf,.docx,.csv,.zip,.txt,.png,.jpg,.jpeg" onChange={handleFileInputChange} />
-                                        
+
                                         <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface-variant flex items-center justify-center transition-transform duration-300 ${isDragging ? 'scale-110' : 'group-hover:scale-110'}`}>
                                             <span className="material-symbols-outlined text-xl md:text-2xl text-primary">upload_file</span>
                                         </div>
-                                        
+
                                         <div className="text-center">
                                             <h3 className="text-sm md:text-base font-medium text-[var(--md-sys-color-on-background)] mb-1">
                                                 {isDragging ? 'Drop files here' : 'Click or Drag files here'}

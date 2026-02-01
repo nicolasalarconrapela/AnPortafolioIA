@@ -6,6 +6,7 @@ import { Input } from "./ui/Input";
 import { Icon } from "./ui/Icon";
 
 import { authService } from "../services/authService";
+import { loggingService } from "../utils/loggingService";
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
@@ -108,7 +109,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const user = await authService.loginGoogle();
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Google Sign In Failed", { error: err });
       setGeneralError(err?.message || "Google Sign In Failed");
     } finally {
       setIsLoading(false);
@@ -123,7 +124,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const user = await authService.loginGuest();
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Guest Login Failed", { error: err });
       setGeneralError(err?.message || "Guest Login Failed");
     } finally {
       setIsLoading(false);
@@ -156,7 +157,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       }
       onAuthSuccess(user);
     } catch (err: any) {
-      console.error(err);
+      loggingService.error("Authentication failed", { error: err });
       // Tu backend/servicio suele devolver message, o { error: "..." }
       setGeneralError(err?.message || err?.error || "Authentication failed");
     } finally {

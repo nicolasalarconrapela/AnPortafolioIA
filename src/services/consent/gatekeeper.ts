@@ -1,8 +1,9 @@
 
 import { ConsentState } from './types';
+import { loggingService } from '../../utils/loggingService';
 
 // Variables de entorno
-const GA_ID = process.env.GEMINI_API_KEY ? '' : ((import.meta as any).env.VITE_GA_ID || ''); 
+const GA_ID = process.env.GEMINI_API_KEY ? '' : ((import.meta as any).env.VITE_GA_ID || '');
 
 /**
  * Gatekeeper: Responsable de cargar scripts de terceros y gestionar Google Consent Mode v2.
@@ -18,12 +19,12 @@ class Gatekeeper {
   // Inicializa el estado por defecto a 'denied' antes de que cargue cualquier script
   private initializeConsentMode() {
     if (this.isConsentModeInitialized) return;
-    
+
     // @ts-ignore
     window.dataLayer = window.dataLayer || [];
     // @ts-ignore
     function gtag(){window.dataLayer.push(arguments);}
-    
+
     // @ts-ignore
     gtag('consent', 'default', {
       'ad_storage': 'denied',
@@ -32,10 +33,10 @@ class Gatekeeper {
       'analytics_storage': 'denied',
       'wait_for_update': 500
     });
-    
+
     // @ts-ignore
     gtag('js', new Date());
-    
+
     this.isConsentModeInitialized = true;
   }
 
@@ -47,7 +48,7 @@ class Gatekeeper {
     if (consent.analytics) {
       this.loadGoogleAnalytics();
     }
-    
+
     if (consent.marketing) {
       this.loadMarketingScripts();
     }
@@ -58,7 +59,7 @@ class Gatekeeper {
     if (typeof window.gtag === 'function') {
       const status = consent.analytics ? 'granted' : 'denied';
       const marketingStatus = consent.marketing ? 'granted' : 'denied';
-      
+
       // @ts-ignore
       window.gtag('consent', 'update', {
         'analytics_storage': status,
@@ -71,7 +72,7 @@ class Gatekeeper {
 
   private loadScript(id: string, src: string, onLoad?: () => void) {
     if (this.loadedScripts.has(id) || document.getElementById(id)) {
-      return; 
+      return;
     }
 
     const script = document.createElement('script');
@@ -98,7 +99,7 @@ class Gatekeeper {
 
   private loadMarketingScripts() {
     // Ejemplo: Meta Pixel
-    console.log('[Gatekeeper] Marketing allowed. Loading Pixel/Ads scripts...');
+    loggingService.info('[Gatekeeper] Marketing allowed. Loading Pixel/Ads scripts...');
   }
 }
 
