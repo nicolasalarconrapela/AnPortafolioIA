@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2 } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
 import { AppState, CVProfile, ChatMessage } from './types';
 import { MarkdownView } from './components/MarkdownView';
+import JSZip from 'jszip';
 
 // --- Components for the Wizard Sections ---
 
@@ -165,9 +166,62 @@ function App() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setAppState(AppState.ANALYZING);
     setError(null);
 
+    // --- JSON IMPORT ---
+    if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const json = JSON.parse(e.target?.result as string);
+                // Basic validation
+                if (!json.experience || !Array.isArray(json.skills)) {
+                    throw new Error("Formato JSON inválido.");
+                }
+                setProfile(json);
+                setAppState(AppState.WIZARD);
+                setCurrentStep(0); // Show Rotenmeir success screen
+            } catch (err) {
+                setError("El archivo JSON está corrupto o no es válido.");
+            }
+        };
+        reader.readAsText(file);
+        return;
+    }
+
+    setAppState(AppState.ANALYZING);
+
+    // --- ZIP HANDLING ---
+    if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || file.name.endsWith('.zip')) {
+        try {
+            const zip = await JSZip.loadAsync(file);
+            // Find first valid file
+            const validFile = Object.values(zip.files).find((f: any) => 
+                !f.dir && (f.name.endsWith('.pdf') || f.name.match(/\.(jpg|jpeg|png)$/i))
+            );
+
+            if (!validFile) {
+                throw new Error("No se encontró un PDF o imagen válido dentro del ZIP.");
+            }
+
+            const base64Data = await validFile.async('base64');
+            const mimeType = validFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'; // Simplification for images
+
+             if (geminiServiceRef.current) {
+                const result = await geminiServiceRef.current.analyzeCVJSON(base64Data, mimeType);
+                setProfile(result);
+                setAppState(AppState.WIZARD);
+                setCurrentStep(0); // Show Rotenmeir success screen
+            }
+
+        } catch (err: any) {
+            setError(err.message || "Error al procesar el archivo ZIP.");
+            setAppState(AppState.IDLE); // Go back to idle on error
+        }
+        return;
+    }
+
+    // --- NORMAL PDF/IMAGE HANDLING ---
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64String = reader.result as string;
@@ -179,7 +233,7 @@ function App() {
           const result = await geminiServiceRef.current.analyzeCVJSON(base64Data, file.type);
           setProfile(result);
           setAppState(AppState.WIZARD);
-          setCurrentStep(1); // Go to first Googlito
+          setCurrentStep(0); // Show Rotenmeir success screen
         } catch (err: any) {
           setError("La Señorita Rotenmeir rechazó este documento. (Error de análisis)");
           setAppState(AppState.ERROR);
@@ -187,6 +241,17 @@ function App() {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleExportJSON = () => {
+      if (!profile) return;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "perfil_rotenmeir.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
   };
 
   const handleNext = async () => {
@@ -208,7 +273,7 @@ function App() {
   };
 
   const handleBack = () => {
-      if (currentStep > 1) {
+      if (currentStep > 0) {
           setCurrentStep(c => c - 1);
       }
   };
@@ -246,7 +311,7 @@ function App() {
                 </div>
                 <h1 className="text-3xl font-bold mb-2 tracking-tight text-slate-200">Señorita Rotenmeir</h1>
                 <p className="text-red-400 text-sm font-bold uppercase tracking-widest mb-6">Directora de Ingesta de Datos</p>
-                <p className="text-slate-400 italic mb-8 font-serif leading-relaxed">"Entrégueme sus documentos. Si encuentro un solo error de formato, tendré que rechazarlo. Proceda con orden."</p>
+                <p className="text-slate-400 italic mb-8 font-serif leading-relaxed">"Entrégueme sus documentos. Acepto PDF, Imágenes, ZIP o archivos JSON previamente aprobados."</p>
                 
                 {appState === AppState.ANALYZING ? (
                     <div className="space-y-4">
@@ -254,10 +319,18 @@ function App() {
                         <p className="text-xs text-slate-500 font-mono animate-pulse">ANALIZANDO ESTRUCTURA...</p>
                     </div>
                 ) : (
-                    <label className="block w-full cursor-pointer bg-red-900 hover:bg-red-800 text-red-100 font-bold py-4 px-6 transition-all transform hover:scale-[1.02] shadow-lg border border-red-950">
-                        <span className="flex items-center justify-center gap-2"><Upload className="w-5 h-5"/> Entregar CV</span>
-                        <input type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileUpload} />
-                    </label>
+                    <div className="space-y-4">
+                        <label className="block w-full cursor-pointer bg-red-900 hover:bg-red-800 text-red-100 font-bold py-4 px-6 transition-all transform hover:scale-[1.02] shadow-lg border border-red-950 flex items-center justify-center gap-3">
+                            <Upload className="w-5 h-5"/> 
+                            <span>Entregar Documentación</span>
+                            <input type="file" className="hidden" accept="application/pdf,image/*,.json,.zip,application/zip,application/x-zip-compressed" onChange={handleFileUpload} />
+                        </label>
+                        
+                        <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-4">
+                             <FileArchive className="w-4 h-4"/>
+                             <span>Soporta ZIP y JSON</span>
+                        </div>
+                    </div>
                 )}
                 {error && <p className="mt-4 text-red-400 text-sm bg-red-900/20 p-2 border border-red-900">{error}</p>}
             </div>
@@ -269,8 +342,41 @@ function App() {
   const renderGooglitoStep = () => {
       if (!profile) return null;
 
+      // STEP 0: Rotenmeir Approval Screen
+      if (currentStep === 0) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white font-serif">
+                <div className="max-w-lg w-full bg-slate-800 p-8 border border-slate-700 shadow-2xl relative text-center animate-fade-in-up">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-green-600"></div>
+                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
+                    <h2 className="text-2xl font-bold mb-2">Análisis Completado</h2>
+                    <p className="text-slate-400 mb-8 leading-relaxed">"La extracción de datos ha sido satisfactoria. Puede descargar el registro JSON para sus archivos antes de proceder con el equipo de Googlitos."</p>
+                    
+                    <div className="flex flex-col gap-4">
+                        <button 
+                            onClick={handleExportJSON}
+                            className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 transition-colors border border-slate-600 font-sans"
+                        >
+                            <FileJson className="w-5 h-5" />
+                            Descargar JSON de Datos
+                        </button>
+                        
+                        <button 
+                            onClick={() => setCurrentStep(1)}
+                            className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600 text-white py-3 px-4 transition-colors font-bold font-sans shadow-lg"
+                        >
+                            Proceder a Googlitos
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <p className="mt-6 text-xs text-slate-500 font-mono">DATA_INTEGRITY: VERIFIED</p>
+                </div>
+            </div>
+        );
+      }
+
       const steps = [
-          null, // 0 is Rotenmeir
+          null, // 0 is Rotenmeir Success
           { id: 'exp', title: 'Experiencia', icon: <Briefcase />, desc: 'Define tu trayectoria profesional.', ai: 'Googlito Experto' },
           { id: 'skills', title: 'Skills Generales', icon: <Star />, desc: 'Tus superpoderes y habilidades blandas.', ai: 'Googlito Talento' },
           { id: 'tech', title: 'Stack Tecnológico', icon: <Terminal />, desc: 'Lenguajes, Frameworks y Herramientas.', ai: 'Googlito Tech' },
@@ -602,7 +708,7 @@ function App() {
               {/* Navigation Footer */}
               <footer className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                   <div className="max-w-4xl mx-auto flex justify-between items-center w-full">
-                      <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
+                      <Button variant="ghost" onClick={handleBack} disabled={currentStep === 0}>
                           <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
                       </Button>
                       <Button onClick={handleNext} className="bg-slate-800 hover:bg-slate-900 text-white px-8">
