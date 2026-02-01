@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, FileText, Send, RefreshCw, MessageSquare, Briefcase, CheckCircle, AlertCircle, Download, FileJson, Sparkles, X, ChevronRight } from 'lucide-react';
+import { Upload, Send, RefreshCw, MessageSquare, Briefcase, CheckCircle, AlertCircle, Download, FileJson, Sparkles, X, ChevronRight } from 'lucide-react';
 import { Button } from './components/Button';
 import { MarkdownView } from './components/MarkdownView';
 import { createGeminiService, GeminiService } from './services/geminiService';
@@ -386,30 +386,7 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Document Preview */}
-                  {cvImage && (
-                    <div className="space-y-4 pt-4">
-                       <h3 className="text-lg font-semibold text-slate-700 flex items-center">
-                         <FileText className="w-5 h-5 mr-2" />
-                         Documento Original
-                       </h3>
-                       <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 h-[600px]">
-                         {cvMimeType === 'application/pdf' ? (
-                           <object 
-                             data={cvImage} 
-                             type="application/pdf" 
-                             className="w-full h-full"
-                           >
-                             <div className="flex items-center justify-center h-full text-slate-500">
-                               <p>Tu navegador no puede visualizar este PDF directamente.</p>
-                             </div>
-                           </object>
-                         ) : (
-                           <img src={cvImage} alt="CV Preview" className="w-full h-full object-contain" />
-                         )}
-                       </div>
-                    </div>
-                  )}
+                  {/* Document Preview Removed */}
                </div>
             </div>
 
