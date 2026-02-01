@@ -16,15 +16,16 @@ export interface ProfileData {
   location?: string;
   email?: string;
   avatarUrl?: string;
+  skills?: string[];
+  experiences?: ExperienceData[];
 }
-// TODO: Replace with real data
-const DEFAULT_PROFILE: ProfileData = {
-  fullName: "Alex Morgan",
-  jobTitle: "Senior Product Designer",
-  bio: "Passionate about creating accessible and inclusive user experiences.",
-  location: "San Francisco, CA",
-  email: "alex.morgan@example.com"
-};
+
+export interface ExperienceData {
+  role: string;
+  company: string;
+  period: string;
+  desc: string;
+}
 
 type OptimizationCategory = 'experience' | 'skills' | 'education' | 'projects';
 
@@ -125,62 +126,85 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   // Mobile-specific state to switch between Form and Chat views
   const [mobileView, setMobileView] = useState<'form' | 'chat'>('form');
 
-  const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
+  // Initial state is empty, waiting for Firestore
+  const [profile, setProfile] = useState<ProfileData>({
+    fullName: "",
+    jobTitle: "",
+    bio: "",
+    location: "",
+    email: "",
+    skills: [],
+    experiences: []
+  });
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Logic State for Profile View
   const [activeCategory, setActiveCategory] = useState<OptimizationCategory>('experience');
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'ai', text: "Welcome back, Alex. I'm ready to audit your profile. Select a category on the top right to focus our session." }
-  ]);
+  const [messages, setMessages] = useState<{id: number, sender: 'ai' | 'user', text: string}[]>([]);
   const [inputText, setInputText] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Mock Data
-  const experiences = [
-    { role: "Senior Product Designer", company: "TechFlow", period: "2020 - Present", desc: "Led the design system migration reducing dev time by 30%." },
-    { role: "UX Designer", company: "Creative Sol", period: "2018 - 2020", desc: "Designed mobile-first interfaces for fintech clients." }
-  ];
 
   // --- WORKSPACE SYNC ---
   useEffect(() => {
     const storedUserKey = localStorage.getItem("anportafolio_user_id");
     if (storedUserKey) {
+      setIsLoading(true);
       const unsubscribe = listenWorkspaceByUser(
         storedUserKey,
         (data) => {
+          setIsLoading(false);
           if (data && data.profile) {
-            // Merge remote profile with local defaults to ensure safety
             setProfile(prev => ({
               ...prev,
               ...data.profile,
-              // Ensure email fallback if not in profile but we have key (though key handles it)
             }));
+
+            // Set initial welcome message only if empty
+            setMessages(prev => {
+              if (prev.length > 0) return prev;
+              const name = data.profile.fullName ? data.profile.fullName.split(' ')[0] : 'User';
+              return [{
+                id: 1,
+                sender: 'ai',
+                text: `Welcome back, ${name}. I'm ready to audit your profile. Select a category on the top right to focus our session.`
+              }];
+            });
+          } else {
+             // Default welcome if no profile data yet
+             setMessages(prev => {
+                if (prev.length > 0) return prev;
+                return [{ id: 1, sender: 'ai', text: "Welcome! I'm ready to help you build your profile. Let's start by adding some details." }];
+             });
           }
         },
-        (error) => console.error("Workspace sync error:", error)
+        (error) => {
+          console.error("Workspace sync error:", error);
+          setIsLoading(false);
+        }
       );
       return () => unsubscribe();
+    } else {
+        setIsLoading(false);
     }
   }, []);
 
   const handleSendMessage = async (text: string = inputText) => {
     if (!text.trim()) return;
 
-    const newMsg = { id: Date.now(), sender: 'user', text };
-    // @ts-ignore
+    const newMsg = { id: Date.now(), sender: 'user' as const, text };
     setMessages(prev => [...prev, newMsg]);
     setInputText("");
     setIsThinking(true);
 
-    // Simulate AI Response
+    // Simulate AI Response (Placeholder for real AI integration)
     setTimeout(() => {
       const categoryConfig = CATEGORY_CONFIG[activeCategory];
-      const responseText = `[${categoryConfig.label} Mode]: I've analyzed that input. Consider quantifying your impact more. For example, instead of "Led design", try "Spearheaded design initiatives resulting in X% growth."`;
+      const responseText = `[${categoryConfig.label} Mode]: I've analyzed that input. (AI Integration Pending)`;
 
       setIsThinking(false);
-      // @ts-ignore
       setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: responseText }]);
     }, 1200);
   };
@@ -199,7 +223,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       {isSettingsOpen && (
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
-          userKey={profile.email || "demo-user"}
+          userKey={profile.email || ""}
         />
       )}
 
@@ -295,22 +319,51 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                 <Card variant="elevated" className="p-4 md:p-6 mt-4 md:mt-0">
                   <div className="flex items-start justify-between">
                     <div className="flex gap-4 min-w-0">
-                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-xl md:text-2xl font-bold shrink-0" aria-hidden="true">
-                        {profile.fullName.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <h2 className="text-lg md:text-xl font-normal font-display truncate">{profile.fullName}</h2>
-                        <p className="text-primary font-medium text-sm md:text-base truncate">{profile.jobTitle}</p>
-                        <div className="flex items-center gap-2 text-xs text-outline mt-1 truncate">
-                          <Icon name="location_on" size="sm" />
-                          {profile.location}
-                        </div>
+                      {/* Avatar or Placeholder */}
+                      {profile.fullName ? (
+                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-xl md:text-2xl font-bold shrink-0" aria-hidden="true">
+                            {profile.fullName.charAt(0)}
+                         </div>
+                      ) : (
+                         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-surface-variant border border-outline-variant/20 flex items-center justify-center text-outline shrink-0 animate-pulse">
+                            <Icon name="person" size="md" />
+                         </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        {isLoading ? (
+                            <div className="animate-pulse space-y-2">
+                                <div className="h-6 bg-surface-variant rounded w-3/4"></div>
+                                <div className="h-4 bg-surface-variant rounded w-1/2"></div>
+                            </div>
+                        ) : (
+                            <>
+                                <h2 className="text-lg md:text-xl font-normal font-display truncate">
+                                    {profile.fullName || "Your Name"}
+                                </h2>
+                                <p className="text-primary font-medium text-sm md:text-base truncate">
+                                    {profile.jobTitle || "Add your job title"}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-outline mt-1 truncate">
+                                    <Icon name="location_on" size="sm" />
+                                    {profile.location || "Add location"}
+                                </div>
+                            </>
+                        )}
                       </div>
                     </div>
                     <Button variant="outlined" size="sm" icon="edit" className="!rounded-full !px-0 !w-10 shrink-0" aria-label="Edit Profile" />
                   </div>
-                  <div className="mt-4 p-3 bg-surface-variant/50 rounded-xl text-sm text-[var(--md-sys-color-on-background)] leading-relaxed">
-                    {profile.bio}
+
+                  <div className="mt-4 p-3 bg-surface-variant/50 rounded-xl text-sm text-[var(--md-sys-color-on-background)] leading-relaxed min-h-[60px]">
+                    {isLoading ? (
+                        <div className="animate-pulse space-y-2">
+                            <div className="h-3 bg-surface-variant rounded w-full"></div>
+                            <div className="h-3 bg-surface-variant rounded w-5/6"></div>
+                        </div>
+                    ) : (
+                        profile.bio || "Add a short bio to introduce yourself."
+                    )}
                   </div>
                 </Card>
 
@@ -324,9 +377,15 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                     <Button variant="filled" size="sm" icon="add" className="!rounded-full !px-0 !w-8 !h-8" />
                   </div>
                   <div className="space-y-3">
-                    {experiences.map((exp, i) => (
-                      <ExperienceCard key={i} {...exp} active={activeCategory === 'experience' && i === 0} />
-                    ))}
+                    {profile.experiences && profile.experiences.length > 0 ? (
+                        profile.experiences.map((exp, i) => (
+                            <ExperienceCard key={i} {...exp} active={activeCategory === 'experience' && i === 0} />
+                        ))
+                    ) : (
+                        <div className="text-center py-6 text-outline border border-dashed border-outline-variant/50 rounded-lg">
+                            <p className="text-sm">No experience added yet.</p>
+                        </div>
+                    )}
                   </div>
                 </Card>
 
@@ -339,11 +398,15 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                     <Button variant="text" size="sm">Edit</Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {['React', 'TypeScript', 'Node.js', 'Figma', 'System Design'].map((skill, i) => (
-                      <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-variant border border-outline-variant/50 text-sm font-medium text-[var(--md-sys-color-on-background)]">
-                        {skill}
-                      </span>
-                    ))}
+                    {profile.skills && profile.skills.length > 0 ? (
+                        profile.skills.map((skill, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-variant border border-outline-variant/50 text-sm font-medium text-[var(--md-sys-color-on-background)]">
+                            {skill}
+                        </span>
+                        ))
+                    ) : (
+                         <div className="text-sm text-outline italic py-2">No skills added yet.</div>
+                    )}
                     <Button variant="outlined" size="sm" icon="add" className="border-dashed">Add</Button>
                   </div>
                 </Card>
