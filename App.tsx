@@ -8,6 +8,71 @@ import { MarkdownView } from './components/MarkdownView';
 import { CompanyLogo } from './components/CompanyLogo';
 import JSZip from 'jszip';
 
+// --- Helper: Simple CSV Parser ---
+// Handles quoted fields containing commas or newlines
+const parseCSV = (text: string): Record<string, string>[] => {
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentCell = '';
+    let insideQuote = false;
+    
+    // Normalize line endings
+    const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    for (let i = 0; i < normalizedText.length; i++) {
+        const char = normalizedText[i];
+        const nextChar = normalizedText[i + 1];
+
+        if (char === '"') {
+            if (insideQuote && nextChar === '"') {
+                // Escaped quote
+                currentCell += '"';
+                i++; // Skip next quote
+            } else {
+                // Toggle quote state
+                insideQuote = !insideQuote;
+            }
+        } else if (char === ',' && !insideQuote) {
+            // End of cell
+            currentRow.push(currentCell.trim());
+            currentCell = '';
+        } else if (char === '\n' && !insideQuote) {
+            // End of row
+            currentRow.push(currentCell.trim());
+            rows.push(currentRow);
+            currentRow = [];
+            currentCell = '';
+        } else {
+            currentCell += char;
+        }
+    }
+    // Push last tokens
+    if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        rows.push(currentRow);
+    }
+
+    if (rows.length < 2) return [];
+
+    // Map headers to objects
+    const headers = rows[0].map(h => h.replace(/^"|"$/g, '').trim()); // Clean quotes from headers
+    const result: Record<string, string>[] = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.length === 0 || (row.length === 1 && !row[0])) continue;
+        
+        const obj: Record<string, string> = {};
+        headers.forEach((header, index) => {
+            // Handle header naming variations if needed, or strict mapping
+            obj[header] = row[index] || '';
+        });
+        result.push(obj);
+    }
+    return result;
+};
+
+
 // --- Components for the Wizard Sections ---
 
 const SectionHeader = ({ 
@@ -432,28 +497,132 @@ function App() {
     if (file.type === 'application/zip' || file.type === 'application/x-zip-compressed' || file.name.endsWith('.zip')) {
         try {
             const zip = await JSZip.loadAsync(file);
-            // Find first valid file
+            const files = zip.files;
+
+            // 1. Check for Internal JSON Backup First (Highest Priority)
+            // Look for any file ending in .json that might be our backup
+            const jsonFile = Object.values(files).find(f => !f.dir && f.name.endsWith('.json'));
+            if (jsonFile) {
+                const jsonText = await jsonFile.async('text');
+                try {
+                    const json = JSON.parse(jsonText);
+                     if (Array.isArray(json.experience) && Array.isArray(json.skills)) {
+                        setProfile(json);
+                        setAppState(AppState.WIZARD);
+                        setCurrentStep(0);
+                        return;
+                     }
+                } catch(e) {
+                    console.log("Found JSON in zip but failed to parse as valid profile", e);
+                }
+            }
+
+            // 2. Check for LinkedIn Export CSVs (Positions.csv is the key signature)
+            // Typical files: Positions.csv, Education.csv, Skills.csv, Profile.csv, etc.
+            if (files['Positions.csv'] || files['Profile.csv']) {
+                const newProfile: CVProfile = {
+                    summary: '',
+                    experience: [],
+                    education: [],
+                    skills: [],
+                    techStack: { languages: [], ides: [], frameworks: [], tools: [] },
+                    projects: [],
+                    volunteering: [],
+                    awards: [],
+                    languages: [],
+                    hobbies: []
+                };
+
+                // --- Parse Profile.csv or Profile Summary.csv for Summary ---
+                const profileSummaryFile = files['Profile Summary.csv'] || files['Profile.csv'];
+                if (profileSummaryFile) {
+                    const text = await profileSummaryFile.async('text');
+                    const data = parseCSV(text);
+                    if (data.length > 0) {
+                        newProfile.summary = data[0]['Summary'] || data[0]['Headline'] || '';
+                    }
+                }
+
+                // --- Parse Positions.csv for Experience ---
+                if (files['Positions.csv']) {
+                    const text = await files['Positions.csv'].async('text');
+                    const data = parseCSV(text);
+                    newProfile.experience = data.map(row => ({
+                        company: row['Company Name'] || row['Company'] || '',
+                        role: row['Title'] || '',
+                        description: row['Description'] || '',
+                        period: `${row['Started On'] || ''} - ${row['Finished On'] || 'Present'}`
+                    }));
+                }
+
+                // --- Parse Education.csv ---
+                if (files['Education.csv']) {
+                    const text = await files['Education.csv'].async('text');
+                    const data = parseCSV(text);
+                    newProfile.education = data.map(row => ({
+                        institution: row['School Name'] || '',
+                        title: `${row['Degree Name'] || ''} ${row['Notes'] || ''}`.trim(),
+                        period: `${row['Start Date'] || ''} - ${row['End Date'] || ''}`
+                    }));
+                }
+
+                // --- Parse Skills.csv ---
+                if (files['Skills.csv']) {
+                    const text = await files['Skills.csv'].async('text');
+                    const data = parseCSV(text);
+                    newProfile.skills = data.map(row => row['Name']).filter(Boolean);
+                }
+
+                // --- Parse Projects.csv ---
+                if (files['Projects.csv']) {
+                    const text = await files['Projects.csv'].async('text');
+                    const data = parseCSV(text);
+                    newProfile.projects = data.map(row => ({
+                        name: row['Title'] || '',
+                        description: row['Description'] || '',
+                        technologies: '',
+                        link: row['Url'] || ''
+                    }));
+                }
+
+                // --- Parse Languages.csv ---
+                if (files['Languages.csv']) {
+                    const text = await files['Languages.csv'].async('text');
+                    const data = parseCSV(text);
+                    newProfile.languages = data.map(row => ({
+                        language: row['Name'] || '',
+                        level: row['Proficiency'] || ''
+                    }));
+                }
+                
+                setProfile(newProfile);
+                setAppState(AppState.WIZARD);
+                setCurrentStep(0);
+                return;
+            }
+
+            // 3. Fallback: Find valid PDF/Image for Gemini Analysis
             const validFile: any = Object.values(zip.files).find((f: any) => 
                 !f.dir && (f.name.endsWith('.pdf') || f.name.match(/\.(jpg|jpeg|png)$/i))
             );
 
             if (!validFile) {
-                throw new Error("No se encontró un PDF o imagen válido dentro del ZIP.");
+                throw new Error("No se encontraron archivos CSV de LinkedIn ni documentos válidos (PDF/Imagen) dentro del ZIP.");
             }
 
             const base64Data = await validFile.async('base64');
-            const mimeType = validFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'; // Simplification for images
+            const mimeType = validFile.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
 
              if (geminiServiceRef.current) {
                 const result = await geminiServiceRef.current.analyzeCVJSON(base64Data, mimeType);
                 setProfile(result);
                 setAppState(AppState.WIZARD);
-                setCurrentStep(0); // Show Rotenmeir success screen
+                setCurrentStep(0);
             }
 
         } catch (err: any) {
             setError(err.message || "Error al procesar el archivo ZIP.");
-            setAppState(AppState.IDLE); // Go back to idle on error
+            setAppState(AppState.IDLE); 
         }
         return;
     }
@@ -637,7 +806,7 @@ function App() {
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-slate-200">Señorita Rotenmeir</h1>
                 <p className="text-red-400 text-xs md:text-sm font-bold uppercase tracking-widest mb-6">Directora de Ingesta de Datos</p>
-                <p className="text-slate-400 italic mb-8 font-serif leading-relaxed text-sm md:text-base">"Entrégueme sus documentos. Acepto PDF, Imágenes, ZIP o archivos JSON previamente aprobados."</p>
+                <p className="text-slate-400 italic mb-8 font-serif leading-relaxed text-sm md:text-base">"Entrégueme sus documentos. Acepto PDF, Imágenes, ZIP (LinkedIn Export) o archivos JSON previamente aprobados."</p>
                 
                 {appState === AppState.ANALYZING ? (
                     <div className="space-y-4">
@@ -661,7 +830,7 @@ function App() {
                         
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-4">
                              <FileArchive className="w-4 h-4"/>
-                             <span>Soporta ZIP y JSON</span>
+                             <span>Soporta ZIP (LinkedIn Data) y JSON</span>
                         </div>
                     </div>
                 )}
