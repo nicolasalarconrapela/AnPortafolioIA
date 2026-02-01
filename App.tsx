@@ -1,20 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, CheckCircle2 } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2 } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
-import { AppState, CVProfile } from './types';
+import { AppState, CVProfile, ChatMessage } from './types';
+import { MarkdownView } from './components/MarkdownView';
 
 // --- Components for the Wizard Sections ---
 
-const SectionHeader = ({ title, description, icon }: { title: string, description: string, icon: React.ReactNode }) => (
+const SectionHeader = ({ title, description, icon, aiName }: { title: string, description: string, icon: React.ReactNode, aiName: string }) => (
   <div className="mb-6 border-b border-slate-200 pb-4">
-    <div className="flex items-center space-x-3 mb-2">
-      <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-        {icon}
-      </div>
-      <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+    <div className="flex justify-between items-start">
+        <div className="flex items-center space-x-3 mb-2">
+            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                {icon}
+            </div>
+            <div>
+                <h2 className="text-2xl font-bold text-slate-800">{title}</h2>
+                <div className="flex items-center space-x-1 mt-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-mono text-slate-500 uppercase tracking-wide">AI AGENT: {aiName}</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <p className="text-slate-500">{description}</p>
+    <p className="text-slate-500 mt-2">{description}</p>
   </div>
 );
 
@@ -24,6 +33,101 @@ const EmptyState = ({ text }: { text: string }) => (
     </div>
 );
 
+// --- Janice Improvement Modal ---
+
+const JaniceModal = ({ 
+    isOpen, 
+    onClose, 
+    initialText, 
+    context, 
+    onApply 
+}: { 
+    isOpen: boolean; 
+    onClose: () => void; 
+    initialText: string; 
+    context: string;
+    onApply: (text: string) => void;
+}) => {
+    const [instruction, setInstruction] = useState("Mejóralo para que suene más profesional");
+    const [result, setResult] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const serviceRef = useRef(createGeminiService());
+
+    useEffect(() => {
+        setResult("");
+        setIsLoading(false);
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleAskJanice = async () => {
+        setIsLoading(true);
+        try {
+            const improved = await serviceRef.current.askJanice(initialText, instruction, context);
+            setResult(improved);
+        } catch (e) {
+            setResult("Lo siento, estoy tomando un café. Inténtalo de nuevo.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border-2 border-purple-100">
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white">
+                    <div className="flex items-center space-x-2">
+                        <Sparkles className="w-5 h-5 text-yellow-300" />
+                        <h3 className="font-bold text-lg">Hola, soy Janice</h3>
+                    </div>
+                    <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Texto Original</label>
+                        <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg max-h-32 overflow-y-auto italic border border-slate-100">
+                            "{initialText || 'Vacío'}"
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">¿Qué necesitas?</label>
+                        <div className="flex gap-2 mt-1">
+                            <input 
+                                className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                value={instruction}
+                                onChange={(e) => setInstruction(e.target.value)}
+                                placeholder="Ej: Hazlo más ejecutivo, corrige ortografía..."
+                            />
+                            <Button onClick={handleAskJanice} disabled={isLoading || !initialText} className="!bg-purple-600 hover:!bg-purple-700">
+                                {isLoading ? 'Pensando...' : 'Mejorar'}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {result && (
+                        <div className="animate-fade-in">
+                            <label className="text-xs font-bold text-green-600 uppercase flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3"/> Sugerencia de Janice
+                            </label>
+                            <textarea 
+                                className="w-full mt-1 p-3 text-sm text-slate-800 bg-green-50 border border-green-200 rounded-lg focus:outline-none h-32"
+                                value={result}
+                                onChange={(e) => setResult(e.target.value)}
+                            />
+                            <div className="mt-4 flex justify-end">
+                                <Button onClick={() => { onApply(result); onClose(); }} className="!bg-green-600 hover:!bg-green-700">
+                                    Aplicar Cambio
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Main App Component ---
 
 function App() {
@@ -31,11 +135,31 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<CVProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Chat state for Donna
+  const [donnaChat, setDonnaChat] = useState<ChatMessage[]>([]);
+  const [donnaInput, setDonnaInput] = useState("");
+  const [donnaLoading, setDonnaLoading] = useState(false);
+
+  // Janice State
+  const [janiceOpen, setJaniceOpen] = useState(false);
+  const [janiceData, setJaniceData] = useState<{text: string, context: string, callback: (t: string) => void} | null>(null);
+
   const geminiServiceRef = useRef<GeminiService | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     geminiServiceRef.current = createGeminiService();
   }, []);
+
+  useEffect(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [donnaChat]);
+
+  const openJanice = (text: string, context: string, callback: (t: string) => void) => {
+      setJaniceData({ text, context, callback });
+      setJaniceOpen(true);
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,11 +189,21 @@ function App() {
     reader.readAsDataURL(file);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
       if (currentStep < 8) {
           setCurrentStep(c => c + 1);
       } else {
-          setAppState(AppState.HARVIS);
+          // Initialize Donna
+          if (geminiServiceRef.current && profile) {
+              await geminiServiceRef.current.initDonnaChat(profile);
+              setDonnaChat([{
+                  id: 'intro',
+                  role: 'model',
+                  text: "**Donna:** Soy Donna. He revisado el archivo. Está bien, pero podría venderlo mejor. ¿Qué quieres saber?",
+                  timestamp: new Date()
+              }]);
+          }
+          setAppState(AppState.DONNA);
       }
   };
 
@@ -79,35 +213,55 @@ function App() {
       }
   };
 
+  const handleDonnaSend = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!donnaInput.trim() || donnaLoading || !geminiServiceRef.current) return;
+
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: donnaInput, timestamp: new Date() };
+      setDonnaChat(prev => [...prev, userMsg]);
+      setDonnaInput("");
+      setDonnaLoading(true);
+
+      try {
+          const response = await geminiServiceRef.current.talkToDonna(userMsg.text);
+          setDonnaChat(prev => [...prev, { id: (Date.now()+1).toString(), role: 'model', text: response, timestamp: new Date() }]);
+      } catch (e) {
+          console.error(e);
+      } finally {
+          setDonnaLoading(false);
+      }
+  };
+
   // --- Render Functions for Personas ---
 
   const renderRotenmeir = () => (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white relative overflow-hidden">
-        {/* Background Accents */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-800 via-slate-700 to-red-800"></div>
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white relative overflow-hidden font-serif">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/black-linen.png')] opacity-20"></div>
         
-        <div className="max-w-md w-full text-center space-y-8 relative z-10">
-            <div className="bg-slate-800 p-8 rounded-t-lg rounded-b-3xl border-t-4 border-red-700 shadow-2xl">
-                <div className="w-20 h-20 bg-slate-700 mx-auto rounded-full flex items-center justify-center mb-6 border-2 border-slate-600">
-                    <User className="w-10 h-10 text-slate-300" />
+        <div className="max-w-md w-full text-center space-y-8 relative z-10 animate-fade-in">
+            <div className="bg-slate-800 p-8 border border-slate-700 shadow-2xl relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-red-800"></div>
+                <div className="w-24 h-24 bg-slate-700 mx-auto rounded-full flex items-center justify-center mb-6 border-4 border-slate-600 shadow-inner">
+                    <User className="w-12 h-12 text-slate-400" />
                 </div>
-                <h1 className="text-3xl font-serif font-bold mb-2">Señorita Rotenmeir</h1>
-                <p className="text-slate-400 italic mb-6">"Entrégueme sus papeles. Sin arrugas, por favor."</p>
+                <h1 className="text-3xl font-bold mb-2 tracking-tight text-slate-200">Señorita Rotenmeir</h1>
+                <p className="text-red-400 text-sm font-bold uppercase tracking-widest mb-6">Directora de Ingesta de Datos</p>
+                <p className="text-slate-400 italic mb-8 font-serif leading-relaxed">"Entrégueme sus documentos. Si encuentro un solo error de formato, tendré que rechazarlo. Proceda con orden."</p>
                 
                 {appState === AppState.ANALYZING ? (
                     <div className="space-y-4">
-                        <div className="w-12 h-12 border-4 border-red-700 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                        <p className="text-sm text-slate-400 animate-pulse">Examinando minuciosamente...</p>
+                        <div className="w-12 h-12 border-4 border-red-800 border-t-slate-500 rounded-full animate-spin mx-auto"></div>
+                        <p className="text-xs text-slate-500 font-mono animate-pulse">ANALIZANDO ESTRUCTURA...</p>
                     </div>
                 ) : (
-                    <label className="block w-full cursor-pointer bg-red-800 hover:bg-red-900 text-white font-bold py-4 px-6 rounded-xl transition-all transform hover:scale-105 shadow-lg">
-                        <span>Subir CV para Inspección</span>
+                    <label className="block w-full cursor-pointer bg-red-900 hover:bg-red-800 text-red-100 font-bold py-4 px-6 transition-all transform hover:scale-[1.02] shadow-lg border border-red-950">
+                        <span className="flex items-center justify-center gap-2"><Upload className="w-5 h-5"/> Entregar CV</span>
                         <input type="file" className="hidden" accept="application/pdf,image/*" onChange={handleFileUpload} />
                     </label>
                 )}
-                {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
+                {error && <p className="mt-4 text-red-400 text-sm bg-red-900/20 p-2 border border-red-900">{error}</p>}
             </div>
-            <p className="text-xs text-slate-600 font-mono">SYSTEM: DATA_INGEST_V1 // AUTHORIZED_PERSONNEL_ONLY</p>
+            <p className="text-[10px] text-slate-600 font-mono tracking-widest">SISTEMA STRICT-CHECK v4.0 // SOLO PERSONAL AUTORIZADO</p>
         </div>
     </div>
   );
@@ -117,68 +271,102 @@ function App() {
 
       const steps = [
           null, // 0 is Rotenmeir
-          { id: 'exp', title: 'Experiencia', icon: <Briefcase />, desc: 'Revisemos tu trayectoria laboral.' },
-          { id: 'skills', title: 'Skills Generales', icon: <Star />, desc: 'Tus superpoderes y habilidades blandas.' },
-          { id: 'tech', title: 'Stack Tecnológico', icon: <Terminal />, desc: 'Lenguajes, Frameworks y Herramientas.' },
-          { id: 'projects', title: 'Proyectos', icon: <Code />, desc: 'Lo que has construido.' },
-          { id: 'vol', title: 'Voluntariado', icon: <Heart />, desc: 'Tu impacto social.' },
-          { id: 'awards', title: 'Reconocimientos', icon: <Award />, desc: 'Premios y certificaciones.' },
-          { id: 'lang', title: 'Idiomas', icon: <Globe />, desc: '¿Qué lenguas dominas?' },
-          { id: 'hobbies', title: 'Hobbies', icon: <BookOpen />, desc: '¿Qué te apasiona fuera del trabajo?' },
+          { id: 'exp', title: 'Experiencia', icon: <Briefcase />, desc: 'Define tu trayectoria profesional.', ai: 'Googlito Experto' },
+          { id: 'skills', title: 'Skills Generales', icon: <Star />, desc: 'Tus superpoderes y habilidades blandas.', ai: 'Googlito Talento' },
+          { id: 'tech', title: 'Stack Tecnológico', icon: <Terminal />, desc: 'Lenguajes, Frameworks y Herramientas.', ai: 'Googlito Tech' },
+          { id: 'projects', title: 'Proyectos', icon: <Code />, desc: 'Lo que has construido.', ai: 'Googlito Maker' },
+          { id: 'vol', title: 'Voluntariado', icon: <Heart />, desc: 'Tu impacto social.', ai: 'Googlito Social' },
+          { id: 'awards', title: 'Reconocimientos', icon: <Award />, desc: 'Premios y certificaciones.', ai: 'Googlito Fame' },
+          { id: 'lang', title: 'Idiomas', icon: <Globe />, desc: '¿Qué lenguas dominas?', ai: 'Googlito Lingua' },
+          { id: 'hobbies', title: 'Hobbies', icon: <BookOpen />, desc: '¿Qué te apasiona fuera del trabajo?', ai: 'Googlito Life' },
       ];
 
       const step = steps[currentStep];
       if (!step) return null;
 
       return (
-          <div className="min-h-screen bg-slate-50 flex flex-col">
+          <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+              <JaniceModal 
+                isOpen={janiceOpen} 
+                onClose={() => setJaniceOpen(false)}
+                initialText={janiceData?.text || ''}
+                context={janiceData?.context || ''}
+                onApply={janiceData?.callback || (() => {})}
+              />
+
               {/* Googlito Header */}
-              <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
+              <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
                   <div className="flex items-center space-x-2">
                       <div className="flex space-x-1">
-                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
                       </div>
-                      <span className="font-bold text-slate-700 ml-2">Googlito #{currentStep}</span>
+                      <span className="font-bold text-slate-700 ml-2">Googlito System</span>
                   </div>
-                  <div className="text-sm text-slate-400">Paso {currentStep} de 8</div>
+                  <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Janice is Online
+                      </span>
+                      <div className="text-sm font-medium text-slate-400">Paso {currentStep} / 8</div>
+                  </div>
               </header>
 
-              <main className="flex-1 max-w-3xl w-full mx-auto p-6 lg:p-10 animate-fade-in">
-                  <SectionHeader title={step.title} description={step.desc} icon={step.icon} />
+              <main className="flex-1 max-w-4xl w-full mx-auto p-6 lg:p-10 animate-fade-in">
+                  <SectionHeader title={step.title} description={step.desc} icon={step.icon} aiName={step.ai} />
                   
                   {/* DYNAMIC FORM CONTENT BASED ON STEP */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                  <div className="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-8">
                       
                       {/* STEP 1: EXPERIENCE */}
                       {currentStep === 1 && (
-                          <div className="space-y-6">
+                          <div className="space-y-8">
                               {profile.experience.map((exp, idx) => (
-                                  <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 relative group">
-                                      <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-800" value={exp.role} onChange={(e) => {
-                                          const newExp = [...profile.experience];
-                                          newExp[idx].role = e.target.value;
-                                          setProfile({...profile, experience: newExp});
-                                      }} placeholder="Rol" />
-                                      <div className="flex gap-2 mt-2">
-                                        <input className="flex-1 text-sm bg-white border border-slate-200 rounded px-2 py-1" value={exp.company} onChange={(e) => {
-                                            const newExp = [...profile.experience];
-                                            newExp[idx].company = e.target.value;
-                                            setProfile({...profile, experience: newExp});
-                                        }} placeholder="Empresa" />
-                                        <input className="w-32 text-sm bg-white border border-slate-200 rounded px-2 py-1" value={exp.period} onChange={(e) => {
-                                            const newExp = [...profile.experience];
-                                            newExp[idx].period = e.target.value;
-                                            setProfile({...profile, experience: newExp});
-                                        }} placeholder="Periodo" />
+                                  <div key={idx} className="p-6 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-300 transition-colors">
+                                      <div className="flex justify-between items-start mb-4">
+                                          <div className="w-full mr-4">
+                                              <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 p-0" value={exp.role} onChange={(e) => {
+                                                  const newExp = [...profile.experience];
+                                                  newExp[idx].role = e.target.value;
+                                                  setProfile({...profile, experience: newExp});
+                                              }} placeholder="Cargo / Rol" />
+                                              <div className="flex gap-2 mt-1">
+                                                  <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0 placeholder-blue-300" value={exp.company} onChange={(e) => {
+                                                      const newExp = [...profile.experience];
+                                                      newExp[idx].company = e.target.value;
+                                                      setProfile({...profile, experience: newExp});
+                                                  }} placeholder="Empresa" />
+                                              </div>
+                                          </div>
+                                          <input className="w-32 text-right text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-500" value={exp.period} onChange={(e) => {
+                                              const newExp = [...profile.experience];
+                                              newExp[idx].period = e.target.value;
+                                              setProfile({...profile, experience: newExp});
+                                          }} placeholder="Periodo" />
                                       </div>
-                                      <textarea className="w-full mt-2 text-sm text-slate-600 bg-white border border-slate-200 rounded p-2 h-24" value={exp.description} onChange={(e) => {
-                                          const newExp = [...profile.experience];
-                                          newExp[idx].description = e.target.value;
-                                          setProfile({...profile, experience: newExp});
-                                      }} placeholder="Descripción" />
+                                      
+                                      <div className="relative">
+                                        <textarea className="w-full text-sm text-slate-600 bg-white border border-slate-200 rounded-lg p-3 h-28 focus:ring-2 focus:ring-blue-100 outline-none resize-none" value={exp.description} onChange={(e) => {
+                                            const newExp = [...profile.experience];
+                                            newExp[idx].description = e.target.value;
+                                            setProfile({...profile, experience: newExp});
+                                        }} placeholder="Describe tus logros y responsabilidades..." />
+                                        <button 
+                                            onClick={() => openJanice(exp.description, `Experiencia laboral como ${exp.role}`, (txt) => {
+                                                const newExp = [...profile.experience];
+                                                newExp[idx].description = txt;
+                                                setProfile({...profile, experience: newExp});
+                                            })}
+                                            className="absolute bottom-2 right-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 flex items-center gap-1 transition-colors"
+                                        >
+                                            <Sparkles className="w-3 h-3" /> Janice
+                                        </button>
+                                      </div>
+                                      <button onClick={() => {
+                                           const newExp = profile.experience.filter((_, i) => i !== idx);
+                                           setProfile({...profile, experience: newExp});
+                                      }} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 p-1"><XIcon /></button>
                                   </div>
                               ))}
                               {profile.experience.length === 0 && <EmptyState text="No se detectó experiencia. ¡Añade una!" />}
@@ -186,60 +374,63 @@ function App() {
                           </div>
                       )}
 
-                      {/* STEP 2: SKILLS (Array string) */}
+                      {/* STEP 2: SKILLS */}
                       {currentStep === 2 && (
-                          <div className="space-y-4">
-                              <div className="flex flex-wrap gap-2">
-                                  {profile.skills.map((skill, idx) => (
-                                      <div key={idx} className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm border border-blue-100">
-                                          <input 
-                                            className="bg-transparent border-none focus:ring-0 text-blue-700 w-full min-w-[50px]" 
-                                            value={skill} 
-                                            onChange={(e) => {
-                                                const newSkills = [...profile.skills];
-                                                newSkills[idx] = e.target.value;
-                                                setProfile({...profile, skills: newSkills});
-                                            }}
-                                          />
-                                          <button onClick={() => {
-                                               const newSkills = profile.skills.filter((_, i) => i !== idx);
-                                               setProfile({...profile, skills: newSkills});
-                                          }} className="ml-2 hover:text-red-500"><XIcon /></button>
-                                      </div>
-                                  ))}
+                          <div className="space-y-6">
+                              <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                                  <p className="text-sm text-blue-800 mb-2">💡 Tip de Janice: Mantén una mezcla equilibrada de habilidades técnicas y blandas.</p>
+                                  <div className="flex flex-wrap gap-3">
+                                      {profile.skills.map((skill, idx) => (
+                                          <div key={idx} className="flex items-center bg-white text-slate-700 pl-3 pr-2 py-1.5 rounded-full text-sm border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-200">
+                                              <input 
+                                                className="bg-transparent border-none focus:ring-0 text-slate-700 w-full min-w-[60px] p-0 text-sm" 
+                                                value={skill} 
+                                                onChange={(e) => {
+                                                    const newSkills = [...profile.skills];
+                                                    newSkills[idx] = e.target.value;
+                                                    setProfile({...profile, skills: newSkills});
+                                                }}
+                                              />
+                                              <button onClick={() => {
+                                                   const newSkills = profile.skills.filter((_, i) => i !== idx);
+                                                   setProfile({...profile, skills: newSkills});
+                                              }} className="ml-2 text-slate-400 hover:text-red-500"><XIcon /></button>
+                                          </div>
+                                      ))}
+                                      <button onClick={() => setProfile({...profile, skills: [...profile.skills, "Nueva habilidad"]})} className="flex items-center bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm hover:bg-blue-200 transition">+ Añadir</button>
+                                  </div>
                               </div>
-                              <Button variant="outline" onClick={() => setProfile({...profile, skills: [...profile.skills, "Nueva habilidad"]})}>+ Añadir Skill</Button>
                           </div>
                       )}
 
                       {/* STEP 3: TECH STACK */}
                       {currentStep === 3 && (
-                          <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               {['languages', 'frameworks', 'ides', 'tools'].map((cat) => (
-                                  <div key={cat}>
-                                      <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">{cat}</h3>
+                                  <div key={cat} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{cat}</h3>
                                       <div className="flex flex-wrap gap-2">
                                           {(profile.techStack as any)[cat]?.map((item: string, idx: number) => (
-                                              <span key={idx} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-md text-sm border border-slate-200 flex items-center gap-1">
+                                              <span key={idx} className="bg-white text-slate-700 px-2 py-1 rounded text-sm border border-slate-200 flex items-center gap-1 shadow-sm">
                                                   {item}
                                                   <button onClick={() => {
                                                       const newStack = {...profile.techStack};
                                                       (newStack as any)[cat] = (newStack as any)[cat].filter((_:any, i:number) => i !== idx);
                                                       setProfile({...profile, techStack: newStack});
-                                                  }} className="text-slate-400 hover:text-red-500">×</button>
+                                                  }} className="text-slate-300 hover:text-red-500">×</button>
                                               </span>
                                           ))}
                                           <button 
                                             onClick={() => {
-                                                const newItem = prompt(`Añadir ${cat}:`);
+                                                const newItem = prompt(`Añadir a ${cat}:`);
                                                 if (newItem) {
                                                     const newStack = {...profile.techStack};
                                                     (newStack as any)[cat] = [...(newStack as any)[cat], newItem];
                                                     setProfile({...profile, techStack: newStack});
                                                 }
                                             }}
-                                            className="px-3 py-1 rounded-md text-sm border border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500"
-                                          >+ Add</button>
+                                            className="px-2 py-1 rounded text-sm border border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-500"
+                                          >+</button>
                                       </div>
                                   </div>
                               ))}
@@ -250,22 +441,40 @@ function App() {
                       {currentStep === 4 && (
                            <div className="space-y-6">
                            {profile.projects.map((proj, idx) => (
-                               <div key={idx} className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-                                   <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-indigo-900" value={proj.name} onChange={(e) => {
+                               <div key={idx} className="p-6 bg-indigo-50/30 rounded-xl border border-indigo-100 relative">
+                                   <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-indigo-900 placeholder-indigo-300" value={proj.name} onChange={(e) => {
                                        const newP = [...profile.projects];
                                        newP[idx].name = e.target.value;
                                        setProfile({...profile, projects: newP});
                                    }} placeholder="Nombre del Proyecto" />
-                                   <textarea className="w-full mt-2 text-sm text-slate-600 bg-white/50 border border-indigo-100 rounded p-2 h-20" value={proj.description} onChange={(e) => {
-                                       const newP = [...profile.projects];
-                                       newP[idx].description = e.target.value;
-                                       setProfile({...profile, projects: newP});
-                                   }} placeholder="Descripción" />
+                                   
+                                   <div className="relative mt-3">
+                                        <textarea className="w-full text-sm text-slate-600 bg-white border border-indigo-100 rounded-lg p-3 h-24 focus:ring-2 focus:ring-indigo-100 outline-none resize-none" value={proj.description} onChange={(e) => {
+                                            const newP = [...profile.projects];
+                                            newP[idx].description = e.target.value;
+                                            setProfile({...profile, projects: newP});
+                                        }} placeholder="Descripción" />
+                                        <button 
+                                            onClick={() => openJanice(proj.description, `Proyecto: ${proj.name}`, (txt) => {
+                                                const newP = [...profile.projects];
+                                                newP[idx].description = txt;
+                                                setProfile({...profile, projects: newP});
+                                            })}
+                                            className="absolute bottom-2 right-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 flex items-center gap-1 transition-colors"
+                                        >
+                                            <Sparkles className="w-3 h-3" /> Janice
+                                        </button>
+                                   </div>
+
                                    <input className="w-full mt-2 text-xs text-indigo-500 bg-white/50 border border-indigo-100 rounded px-2 py-1" value={proj.technologies} onChange={(e) => {
                                        const newP = [...profile.projects];
                                        newP[idx].technologies = e.target.value;
                                        setProfile({...profile, projects: newP});
                                    }} placeholder="Tecnologías usadas (sep. por comas)" />
+                                    <button onClick={() => {
+                                           const newP = profile.projects.filter((_, i) => i !== idx);
+                                           setProfile({...profile, projects: newP});
+                                      }} className="absolute top-4 right-4 text-indigo-200 hover:text-red-500"><XIcon /></button>
                                </div>
                            ))}
                            {profile.projects.length === 0 && <EmptyState text="Sin proyectos destacados." />}
@@ -277,17 +486,23 @@ function App() {
                       {currentStep === 5 && (
                           <div className="space-y-4">
                               {profile.volunteering.map((vol, idx) => (
-                                  <div key={idx} className="p-4 bg-green-50/50 rounded-xl border border-green-100">
-                                      <input className="font-bold bg-transparent w-full" value={vol.role} onChange={(e) => {
-                                          const newV = [...profile.volunteering];
-                                          newV[idx].role = e.target.value;
-                                          setProfile({...profile, volunteering: newV});
-                                      }} placeholder="Rol Voluntario"/>
-                                      <input className="text-sm w-full mt-1 bg-transparent" value={vol.company} onChange={(e) => {
-                                          const newV = [...profile.volunteering];
-                                          newV[idx].company = e.target.value;
-                                          setProfile({...profile, volunteering: newV});
-                                      }} placeholder="Organización"/>
+                                  <div key={idx} className="p-4 bg-green-50/50 rounded-xl border border-green-100 flex justify-between items-center">
+                                      <div className="flex-1 mr-4">
+                                          <input className="font-bold bg-transparent w-full border-none p-0 focus:ring-0 text-slate-800" value={vol.role} onChange={(e) => {
+                                              const newV = [...profile.volunteering];
+                                              newV[idx].role = e.target.value;
+                                              setProfile({...profile, volunteering: newV});
+                                          }} placeholder="Rol Voluntario"/>
+                                          <input className="text-sm w-full mt-1 bg-transparent border-none p-0 text-slate-500" value={vol.company} onChange={(e) => {
+                                              const newV = [...profile.volunteering];
+                                              newV[idx].company = e.target.value;
+                                              setProfile({...profile, volunteering: newV});
+                                          }} placeholder="Organización"/>
+                                      </div>
+                                      <button onClick={() => {
+                                           const newV = profile.volunteering.filter((_, i) => i !== idx);
+                                           setProfile({...profile, volunteering: newV});
+                                      }} className="text-slate-300 hover:text-red-500"><XIcon /></button>
                                   </div>
                               ))}
                               {profile.volunteering.length === 0 && <EmptyState text="No hay voluntariado registrado." />}
@@ -297,11 +512,11 @@ function App() {
 
                       {/* STEP 6: AWARDS */}
                       {currentStep === 6 && (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                               {profile.awards.map((award, idx) => (
-                                  <div key={idx} className="flex gap-2">
-                                      <div className="p-2 bg-yellow-100 text-yellow-600 rounded"><Award className="w-4 h-4"/></div>
-                                      <input className="flex-1 border-b border-slate-200 focus:border-yellow-500 outline-none pb-1 bg-transparent" value={award} onChange={(e) => {
+                                  <div key={idx} className="flex gap-3 items-center">
+                                      <div className="p-2 bg-yellow-100 text-yellow-600 rounded-lg"><Award className="w-5 h-5"/></div>
+                                      <input className="flex-1 border-b border-slate-200 focus:border-yellow-500 outline-none py-2 bg-transparent text-slate-700" value={award} onChange={(e) => {
                                           const newA = [...profile.awards];
                                           newA[idx] = e.target.value;
                                           setProfile({...profile, awards: newA});
@@ -309,7 +524,7 @@ function App() {
                                        <button onClick={() => {
                                             const newA = profile.awards.filter((_, i) => i !== idx);
                                             setProfile({...profile, awards: newA});
-                                       }} className="text-slate-400">×</button>
+                                       }} className="text-slate-300 hover:text-red-500"><XIcon /></button>
                                   </div>
                               ))}
                               <Button variant="outline" className="mt-4" onClick={() => setProfile({...profile, awards: [...profile.awards, "Nuevo Reconocimiento"]})}>+ Añadir Premio</Button>
@@ -320,22 +535,32 @@ function App() {
                       {currentStep === 7 && (
                           <div className="space-y-4">
                               {profile.languages.map((lang, idx) => (
-                                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                                      <input className="font-medium bg-transparent border-none w-1/2" value={lang.language} onChange={(e) => {
-                                          const newL = [...profile.languages];
-                                          newL[idx].language = e.target.value;
-                                          setProfile({...profile, languages: newL});
-                                      }} />
-                                      <select className="bg-white border border-slate-200 rounded px-2 py-1 text-sm" value={lang.level} onChange={(e) => {
-                                          const newL = [...profile.languages];
-                                          newL[idx].level = e.target.value;
-                                          setProfile({...profile, languages: newL});
-                                      }}>
-                                          <option>Básico</option>
-                                          <option>Intermedio</option>
-                                          <option>Avanzado</option>
-                                          <option>Nativo</option>
-                                      </select>
+                                  <div key={idx} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                      <div className="flex items-center gap-3 flex-1">
+                                          <Globe className="w-5 h-5 text-slate-400"/>
+                                          <input className="font-medium bg-transparent border-none w-full focus:ring-0 text-slate-800" value={lang.language} onChange={(e) => {
+                                              const newL = [...profile.languages];
+                                              newL[idx].language = e.target.value;
+                                              setProfile({...profile, languages: newL});
+                                          }} placeholder="Idioma" />
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                          <select className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-sm text-slate-600 outline-none" value={lang.level} onChange={(e) => {
+                                              const newL = [...profile.languages];
+                                              newL[idx].level = e.target.value;
+                                              setProfile({...profile, languages: newL});
+                                          }}>
+                                              <option>Básico</option>
+                                              <option>Intermedio</option>
+                                              <option>Avanzado</option>
+                                              <option>Nativo</option>
+                                              <option>Bilingüe</option>
+                                          </select>
+                                          <button onClick={() => {
+                                               const newL = profile.languages.filter((_, i) => i !== idx);
+                                               setProfile({...profile, languages: newL});
+                                          }} className="text-slate-300 hover:text-red-500 ml-2"><XIcon /></button>
+                                      </div>
                                   </div>
                               ))}
                               <Button variant="outline" onClick={() => setProfile({...profile, languages: [...profile.languages, { language: 'Idioma', level: 'Intermedio' }]})}>+ Añadir Idioma</Button>
@@ -344,20 +569,21 @@ function App() {
 
                       {/* STEP 8: HOBBIES */}
                       {currentStep === 8 && (
-                          <div className="space-y-4">
-                               <div className="flex flex-wrap gap-2">
+                          <div className="space-y-6">
+                               <div className="flex flex-wrap gap-3">
                                   {profile.hobbies.map((hobby, idx) => (
-                                      <span key={idx} className="bg-pink-50 text-pink-700 px-3 py-1 rounded-full text-sm border border-pink-100 flex items-center gap-2">
+                                      <span key={idx} className="bg-pink-50 text-pink-700 px-4 py-2 rounded-full text-sm border border-pink-100 flex items-center gap-2 shadow-sm">
                                           {hobby}
                                           <button onClick={() => {
                                                const newH = profile.hobbies.filter((_, i) => i !== idx);
                                                setProfile({...profile, hobbies: newH});
-                                          }} className="hover:text-pink-900">×</button>
+                                          }} className="hover:text-pink-900"><XIcon /></button>
                                       </span>
                                   ))}
                               </div>
-                              <div className="flex gap-2">
-                                <input id="newHobby" className="border border-slate-200 rounded px-3 py-2 text-sm flex-1" placeholder="Ej: Fotografía, Ajedrez..." onKeyDown={(e) => {
+                              <div className="flex gap-2 items-center">
+                                <div className="p-2 bg-slate-100 rounded-full"><BookOpen className="w-5 h-5 text-slate-500"/></div>
+                                <input id="newHobby" className="border-b-2 border-slate-200 px-3 py-2 text-sm flex-1 outline-none focus:border-pink-500 bg-transparent" placeholder="Escribe un hobby y presiona Enter..." onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         const val = e.currentTarget.value;
                                         if(val) {
@@ -367,7 +593,6 @@ function App() {
                                     }
                                 }}/>
                               </div>
-                              <p className="text-xs text-slate-400">Presiona Enter para agregar.</p>
                           </div>
                       )}
 
@@ -375,126 +600,180 @@ function App() {
               </main>
 
               {/* Navigation Footer */}
-              <footer className="bg-white border-t border-slate-200 p-4 flex justify-between items-center max-w-3xl mx-auto w-full">
-                  <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
-                      <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
-                  </Button>
-                  <Button onClick={handleNext}>
-                      {currentStep === 8 ? (
-                          <>Finalizar <Save className="w-4 h-4 ml-2" /></>
-                      ) : (
-                          <>Siguiente <ChevronRight className="w-4 h-4 ml-2" /></>
-                      )}
-                  </Button>
+              <footer className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                  <div className="max-w-4xl mx-auto flex justify-between items-center w-full">
+                      <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
+                          <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                      </Button>
+                      <Button onClick={handleNext} className="bg-slate-800 hover:bg-slate-900 text-white px-8">
+                          {currentStep === 8 ? (
+                              <>Conocer a Donna <ArrowRightIcon /></>
+                          ) : (
+                              <>Siguiente <ChevronRight className="w-4 h-4 ml-2" /></>
+                          )}
+                      </Button>
+                  </div>
               </footer>
           </div>
       );
   };
 
-  const renderHarvis = () => {
+  const renderDonna = () => {
       if (!profile) return null;
       
       return (
-          <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white pb-20 pt-10 px-6">
-                 <div className="max-w-5xl mx-auto">
-                    <div className="flex items-center space-x-3 mb-4 opacity-70">
-                         <div className="w-8 h-8 rounded bg-cyan-500/20 flex items-center justify-center border border-cyan-500/50">
-                             <span className="font-mono text-cyan-400 font-bold">H</span>
-                         </div>
-                         <span className="font-mono tracking-widest text-sm text-cyan-400">HARVIS DASHBOARD // V.3.1</span>
-                    </div>
-                    <h1 className="text-4xl font-light">Perfil del Candidato</h1>
-                    <p className="text-xl text-slate-300 mt-2 font-light max-w-2xl">{profile.summary || "Perfil profesional procesado y optimizado."}</p>
-                 </div>
-              </div>
-
-              <div className="max-w-5xl mx-auto px-6 -mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                  
-                  {/* Left Column */}
-                  <div className="space-y-6">
-                      <div className="bg-white p-6 rounded-lg shadow-sm border-t-4 border-blue-500">
-                          <h3 className="font-bold text-slate-900 mb-4 flex items-center"><Code className="w-4 h-4 mr-2 text-blue-500"/> Tech Stack</h3>
-                          <div className="flex flex-wrap gap-2">
-                              {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
-                                  <span key={i} className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded font-medium">{t}</span>
-                              ))}
-                          </div>
+          <div className="min-h-screen bg-[#F5F5F7] font-sans text-slate-800 flex flex-col md:flex-row">
+              {/* Sidebar / Chat with Donna */}
+              <div className="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 z-30 shadow-2xl">
+                  <div className="p-6 border-b border-slate-100 flex items-center space-x-4 bg-slate-900 text-white">
+                      <div className="relative">
+                          <img src="https://ui-avatars.com/api/?name=Donna+Paulsen&background=dca54c&color=fff" alt="Donna" className="w-12 h-12 rounded-full border-2 border-[#dca54c]" />
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
                       </div>
-
-                      <div className="bg-white p-6 rounded-lg shadow-sm border-t-4 border-purple-500">
-                          <h3 className="font-bold text-slate-900 mb-4 flex items-center"><Star className="w-4 h-4 mr-2 text-purple-500"/> Skills</h3>
-                          <ul className="space-y-2">
-                              {profile.skills.slice(0, 5).map((s, i) => (
-                                  <li key={i} className="flex items-center text-sm text-slate-600">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mr-2"></div>
-                                      {s}
-                                  </li>
-                              ))}
-                          </ul>
-                      </div>
-
-                      <div className="bg-white p-6 rounded-lg shadow-sm border-t-4 border-pink-500">
-                          <h3 className="font-bold text-slate-900 mb-4 flex items-center"><Globe className="w-4 h-4 mr-2 text-pink-500"/> Idiomas</h3>
-                          <div className="space-y-3">
-                              {profile.languages.map((l, i) => (
-                                  <div key={i} className="flex justify-between text-sm">
-                                      <span className="font-medium text-slate-700">{l.language}</span>
-                                      <span className="text-slate-400">{l.level}</span>
-                                  </div>
-                              ))}
-                          </div>
+                      <div>
+                          <h2 className="font-bold text-lg font-serif">Donna</h2>
+                          <p className="text-xs text-[#dca54c] tracking-widest uppercase">Executive Assistant</p>
                       </div>
                   </div>
 
-                  {/* Right Column (Wider) */}
-                  <div className="md:col-span-2 space-y-6">
-                       
-                       {/* Experience */}
-                       <div className="bg-white p-8 rounded-lg shadow-sm">
-                           <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center"><Briefcase className="w-5 h-5 mr-2 text-slate-400"/> Experiencia Profesional</h3>
-                           <div className="space-y-8 border-l-2 border-slate-100 pl-8 ml-2 relative">
-                               {profile.experience.map((exp, i) => (
-                                   <div key={i} className="relative">
-                                       <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-white border-4 border-slate-200"></div>
-                                       <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
-                                       <div className="flex justify-between items-center mb-2">
-                                            <span className="text-blue-600 font-medium">{exp.company}</span>
-                                            <span className="text-xs text-slate-400 uppercase tracking-wider">{exp.period}</span>
-                                       </div>
-                                       <p className="text-slate-600 text-sm leading-relaxed">{exp.description}</p>
-                                   </div>
-                               ))}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-thin">
+                      {donnaChat.map((msg) => (
+                          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[85%] rounded-2xl py-3 px-4 text-sm shadow-sm ${
+                                  msg.role === 'user' 
+                                  ? 'bg-slate-800 text-white rounded-tr-none' 
+                                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none font-medium'
+                              }`}>
+                                  <MarkdownView content={msg.text} />
+                              </div>
+                          </div>
+                      ))}
+                      {donnaLoading && (
+                           <div className="flex justify-start">
+                             <div className="bg-white rounded-2xl rounded-tl-none py-3 px-4 flex items-center space-x-1 shadow-sm">
+                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></div>
+                               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></div>
+                             </div>
                            </div>
-                       </div>
+                      )}
+                      <div ref={chatEndRef} />
+                  </div>
 
-                       {/* Projects */}
-                       {profile.projects.length > 0 && (
-                           <div className="bg-white p-8 rounded-lg shadow-sm">
-                               <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center"><Terminal className="w-5 h-5 mr-2 text-slate-400"/> Proyectos Destacados</h3>
-                               <div className="grid gap-4">
-                                   {profile.projects.map((proj, i) => (
-                                       <div key={i} className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                                           <div className="flex justify-between items-start">
-                                               <h4 className="font-bold text-slate-800">{proj.name}</h4>
-                                               {proj.link && <a href={proj.link} className="text-blue-500 text-xs hover:underline">Ver link</a>}
+                  <div className="p-4 bg-white border-t border-slate-200">
+                      <form onSubmit={handleDonnaSend} className="flex gap-2">
+                          <input 
+                            className="flex-1 bg-slate-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-[#dca54c] outline-none"
+                            placeholder="Pregúntale a Donna sobre el candidato..."
+                            value={donnaInput}
+                            onChange={(e) => setDonnaInput(e.target.value)}
+                          />
+                          <button type="submit" disabled={donnaLoading || !donnaInput.trim()} className="p-2 bg-slate-900 text-white rounded-full hover:bg-slate-700 transition disabled:opacity-50">
+                              <MessageSquare className="w-5 h-5" />
+                          </button>
+                      </form>
+                  </div>
+              </div>
+
+              {/* Main Profile View */}
+              <div className="flex-1 overflow-y-auto h-screen p-8 lg:p-12">
+                  <div className="max-w-4xl mx-auto bg-white shadow-2xl shadow-slate-200 rounded-none overflow-hidden">
+                      {/* Executive Header */}
+                      <div className="bg-slate-900 text-white p-12 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-[#dca54c] opacity-10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                          <div className="relative z-10">
+                              <h1 className="text-4xl font-serif font-bold tracking-tight mb-4">Perfil Confidencial</h1>
+                              <p className="text-lg text-slate-300 leading-relaxed max-w-2xl font-light italic">
+                                  "{profile.summary || 'Un candidato excepcional que habla por sí mismo.'}"
+                              </p>
+                          </div>
+                      </div>
+
+                      <div className="p-12 grid grid-cols-1 lg:grid-cols-3 gap-12">
+                          {/* Sidebar Info */}
+                          <div className="space-y-10 border-r border-slate-100 pr-8">
+                                <div>
+                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Code className="w-4 h-4"/> Stack Tecnológico
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {[...profile.techStack.languages, ...profile.techStack.frameworks].map((t, i) => (
+                                            <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wide">{t}</span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Star className="w-4 h-4"/> Aptitudes
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {profile.skills.slice(0, 6).map((s, i) => (
+                                            <li key={i} className="text-sm text-slate-700 font-medium border-l-2 border-slate-200 pl-3">{s}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-xs font-bold text-[#dca54c] uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <Globe className="w-4 h-4"/> Idiomas
+                                    </h3>
+                                    <ul className="space-y-2">
+                                        {profile.languages.map((l, i) => (
+                                            <li key={i} className="flex justify-between text-sm border-b border-slate-50 pb-1">
+                                                <span className="font-bold text-slate-800">{l.language}</span>
+                                                <span className="text-slate-500 italic">{l.level}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                          </div>
+
+                          {/* Main Content */}
+                          <div className="lg:col-span-2 space-y-12">
+                               <section>
+                                   <h3 className="text-2xl font-serif font-bold text-slate-900 mb-8 pb-2 border-b-2 border-slate-900 inline-block">Experiencia</h3>
+                                   <div className="space-y-10">
+                                       {profile.experience.map((exp, i) => (
+                                           <div key={i} className="group">
+                                               <div className="flex justify-between items-baseline mb-2">
+                                                   <h4 className="text-xl font-bold text-slate-800 group-hover:text-[#dca54c] transition-colors">{exp.role}</h4>
+                                                   <span className="text-sm font-mono text-slate-400">{exp.period}</span>
+                                               </div>
+                                               <div className="text-md text-slate-600 font-semibold mb-3">{exp.company}</div>
+                                               <p className="text-slate-600 leading-relaxed text-sm">{exp.description}</p>
                                            </div>
-                                           <p className="text-sm text-slate-600 mt-1">{proj.description}</p>
-                                           <p className="text-xs text-slate-400 mt-2 font-mono">{proj.technologies}</p>
-                                       </div>
-                                   ))}
-                               </div>
-                           </div>
-                       )}
+                                       ))}
+                                   </div>
+                               </section>
 
-                       {/* Action Bar */}
-                       <div className="flex justify-end space-x-4 pt-6">
-                           <Button variant="outline" onClick={() => {
-                               setCurrentStep(1);
-                               setAppState(AppState.WIZARD);
-                           }}>Editar Datos</Button>
-                           <Button onClick={() => window.print()}>Exportar PDF</Button>
-                       </div>
+                               {profile.projects.length > 0 && (
+                                   <section>
+                                       <h3 className="text-2xl font-serif font-bold text-slate-900 mb-8 pb-2 border-b-2 border-slate-900 inline-block">Proyectos Clave</h3>
+                                       <div className="grid grid-cols-1 gap-6">
+                                           {profile.projects.map((proj, i) => (
+                                               <div key={i} className="bg-slate-50 p-6 border-l-4 border-slate-900">
+                                                   <h4 className="font-bold text-lg text-slate-900">{proj.name}</h4>
+                                                   <p className="text-sm text-slate-600 mt-2 mb-3">{proj.description}</p>
+                                                   <p className="text-xs font-mono text-slate-400 uppercase">{proj.technologies}</p>
+                                               </div>
+                                           ))}
+                                       </div>
+                                   </section>
+                               )}
+                          </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-6 flex justify-between items-center border-t border-slate-200">
+                          <p className="text-xs text-slate-400 font-mono">CONFIDENTIAL DOCUMENT // DONNA PAULSEN APPROVED</p>
+                          <div className="flex gap-4">
+                              <Button variant="outline" onClick={() => {
+                                  setAppState(AppState.WIZARD);
+                                  setCurrentStep(1);
+                              }}>Revisar Datos</Button>
+                              <Button className="!bg-slate-900" onClick={() => window.print()}>Exportar Expediente</Button>
+                          </div>
+                      </div>
                   </div>
               </div>
           </div>
@@ -505,13 +784,17 @@ function App() {
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
   );
 
+  const ArrowRightIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+  );
+
   return (
     <>
         {appState === AppState.IDLE && renderRotenmeir()}
         {appState === AppState.ANALYZING && renderRotenmeir()}
         {appState === AppState.ERROR && renderRotenmeir()} 
         {appState === AppState.WIZARD && renderGooglitoStep()}
-        {appState === AppState.HARVIS && renderHarvis()}
+        {appState === AppState.DONNA && renderDonna()}
     </>
   );
 }

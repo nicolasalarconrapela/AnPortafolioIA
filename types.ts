@@ -8,8 +8,8 @@ export interface ChatMessage {
 export enum AppState {
   IDLE = 'IDLE',
   ANALYZING = 'ANALYZING',
-  WIZARD = 'WIZARD', // New state for the step-by-step editing
-  HARVIS = 'HARVIS', // New state for final view
+  WIZARD = 'WIZARD', // Step-by-step editing with Googlitos
+  DONNA = 'DONNA', // Final view (formerly HARVIS)
   ERROR = 'ERROR'
 }
 

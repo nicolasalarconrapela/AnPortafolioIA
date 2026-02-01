@@ -97,7 +97,8 @@ export class GeminiService {
   }
 
   /**
-   * Initializes analysis extracting JSON data
+   * SEÑORITA ROTENMEIR
+   * Initializes analysis extracting JSON data strictly.
    */
   async analyzeCVJSON(base64Image: string, mimeType: string): Promise<CVProfile> {
     try {
@@ -130,15 +131,68 @@ export class GeminiService {
     }
   }
 
-  // Legacy method kept for Chat features if needed, but updated to just return string
-  async sendChatMessage(text: string, context?: string): Promise<string> {
-      // Simplified chat for Harvis context
-      const model = "gemini-3-flash-preview";
+  /**
+   * JANICE (Assistant)
+   * Helps user improve specific text fields during the Wizard flow.
+   */
+  async askJanice(currentText: string, userInstruction: string, context: string): Promise<string> {
+    try {
+      const prompt = `Actúa como Janice, una asistente de carrera amigable, servicial y experta en redacción de CVs.
+      
+      Contexto: Estamos editando la sección de "${context}".
+      Texto actual: "${currentText}"
+      Instrucción del usuario: "${userInstruction}"
+      
+      Tu tarea: Reescribe el texto para mejorarlo profesionalmente, haciéndolo más impactante y claro, pero manteniendo la veracidad. Devuelve SOLO el texto mejorado, sin introducciones ni comillas.`;
+
       const response = await this.ai.models.generateContent({
-          model: model,
-          contents: `Contexto del perfil del candidato: ${context || ''}\n\nPregunta del usuario: ${text}`
+        model: 'gemini-3-flash-preview',
+        contents: prompt
       });
-      return response.text || "";
+
+      return response.text || currentText;
+    } catch (error) {
+      console.error("Janice error:", error);
+      return currentText;
+    }
+  }
+
+  /**
+   * DONNA (Recruiter Persona)
+   * Initializes a chat session acting as Donna Paulsen.
+   */
+  async initDonnaChat(profile: CVProfile): Promise<void> {
+    const profileContext = JSON.stringify(profile, null, 2);
+    
+    const systemInstruction = `Eres Donna. Sí, LA Donna de 'Suits'.
+    Tu trabajo es representar a este candidato ante un reclutador.
+    
+    Tus reglas:
+    1. Eres increíblemente segura, ingeniosa y un poco arrogante, pero siempre con clase.
+    2. Conoces todo sobre el candidato basándote EXCLUSIVAMENTE en este JSON: ${profileContext}.
+    3. Si el reclutador pregunta algo que está en el JSON, véndelo como si fuera el mayor logro de la historia.
+    4. Si preguntan algo que NO está en el JSON, responde algo como: "Si no está en mi archivo, no necesitas saberlo todavía", o "Eso es algo que tendrás que descubrir en la entrevista, si logras conseguir una". NO inventes datos.
+    5. Tu objetivo es que contraten al candidato, pero haciendo sentir al reclutador que el candidato les está haciendo un favor al unirse.
+    
+    Mantén respuestas breves, impactantes y con el estilo inconfundible de Donna.`;
+
+    this.chat = this.ai.chats.create({
+      model: 'gemini-3-flash-preview',
+      config: {
+        systemInstruction: systemInstruction,
+      },
+    });
+  }
+
+  /**
+   * Sends a message to Donna
+   */
+  async talkToDonna(text: string): Promise<string> {
+    if (!this.chat) {
+      throw new Error("Donna is not at her desk (Chat not initialized)");
+    }
+    const response = await this.chat.sendMessage({ message: text });
+    return response.text || "Donna is busy being awesome.";
   }
 }
 
