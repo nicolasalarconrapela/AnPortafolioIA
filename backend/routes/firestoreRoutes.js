@@ -38,13 +38,34 @@ router.get('/workspaces/:userKey', async (req, res) => {
         const docSnap = await docRef.get();
 
         if (!docSnap.exists) {
-            // Auto-create workspace for the user
+            // Auto-create workspace for the user with default data
+            const defaultWorkspaceId = `ws-${Date.now()}`;
             const initialData = {
                 ownerId: targetUid,
+                email: req.user.email || null,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                workspaces: [],
-                settings: {},
+                workspaces: [
+                    {
+                        id: defaultWorkspaceId,
+                        name: "Mi Espacio de Trabajo",
+                        isDefault: true,
+                        role: "owner",
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ],
+                profile: {
+                    fullName: req.user.name || req.user.email?.split('@')[0] || "Usuario",
+                    title: "",
+                    location: "",
+                    bio: "",
+                    avatarUrl: req.user.picture || ""
+                },
+                settings: {
+                    theme: 'system',
+                    language: 'es'
+                },
                 onboardingCompleted: false
             };
 

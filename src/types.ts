@@ -29,7 +29,7 @@ export interface UnifiedLogEntry {
 // View & UI Types
 // ============================================================
 
-export type ViewState = 'landing' | 'auth-candidate' | 'auth-candidate-register' | 'auth-recruiter' | 'candidate-onboarding' | 'recruiter-flow' | 'candidate-dashboard' | 'design-system';
+export type ViewState = 'landing' | 'auth-candidate' | 'auth-candidate-register' | 'candidate-onboarding' | 'candidate-dashboard' | 'design-system';
 
 export interface FloatingNodeProps {
   title: string;

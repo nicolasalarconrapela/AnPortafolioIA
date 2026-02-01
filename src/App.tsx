@@ -42,7 +42,6 @@ const AppContent: React.FC = () => {
       {view === 'auth-candidate' && (
         <AuthView
           onNavigate={(nextView) => setView(nextView)}
-          userType="candidate"
           initialMode="login"
         />
       )}
@@ -50,15 +49,7 @@ const AppContent: React.FC = () => {
       {view === 'auth-candidate-register' && (
         <AuthView
           onNavigate={(nextView) => setView(nextView)}
-          userType="candidate"
           initialMode="register"
-        />
-      )}
-
-      {view === 'auth-recruiter' && (
-        <AuthView
-          onNavigate={(nextView) => setView(nextView)}
-          userType="recruiter"
         />
       )}
 

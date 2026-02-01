@@ -10,7 +10,6 @@ import { loggingService } from "../utils/loggingService";
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
-  userType?: "candidate" | "recruiter";
   initialMode?: "login" | "register";
 }
 
@@ -18,17 +17,14 @@ type FieldErrors = { email?: string; password?: string };
 
 export const AuthView: React.FC<AuthViewProps> = ({
   onNavigate,
-  userType = "candidate",
   initialMode = "login",
 }) => {
-  const isRecruiter = userType === "recruiter";
-
   // UI State
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
-  const [email, setEmail] = useState(isRecruiter ? "recruiter@techcorp.com" : "");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -36,25 +32,21 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  const copy = useMemo(() => {
-    return {
+  const copy = useMemo(
+    () => ({
       title: isLogin ? "Sign in" : "Create account",
-      subtitle: isLogin
-        ? `Access the ${isRecruiter ? "recruiter" : "candidate"} portal.`
-        : "Join the platform today.",
-      heroTitle: isRecruiter ? "Intelligent matching." : "Your work, simply showcased.",
-      heroText: isRecruiter
-        ? "Recruitment stripped of the noise. Just talent and fit."
-        : "The portfolio platform that focuses on what matters: you.",
-    };
-  }, [isLogin, isRecruiter]);
+      subtitle: isLogin ? "Access your portfolio workspace." : "Join the platform today.",
+      heroTitle: "Your work, simply showcased.",
+      heroText: "The portfolio platform that focuses on what matters: you.",
+    }),
+    [isLogin]
+  );
 
   const handleToggle = () => {
     setIsLogin((prev) => !prev);
     setErrors({});
     setGeneralError(null);
-    // Reset fields (igual que tu HEAD)
-    if (!isRecruiter) setEmail("");
+    setEmail("");
     setPassword("");
   };
 
@@ -90,15 +82,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
   // --- feature/firebase-add: success handling ---
   const onAuthSuccess = (user: any) => {
-    // Persistencia compatible con lo que ya uses (feature/firebase-add)
     localStorage.setItem("anportafolio_user_id", user?.uid || user?.localId || "");
-
-    // Navegación consistente
-    if (userType === "recruiter") {
-      onNavigate("recruiter-flow");
-    } else {
-      onNavigate("candidate-onboarding");
-    }
+    onNavigate("candidate-onboarding");
   };
 
   // --- Firebase Auth actions ---
@@ -171,8 +156,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setGeneralError(null);
     try {
       await new Promise((r) => setTimeout(r, 250));
-      if (userType === "recruiter") onNavigate("recruiter-flow");
-      else onNavigate("candidate-dashboard");
+      onNavigate("candidate-dashboard");
     } finally {
       setIsLoading(false);
     }
