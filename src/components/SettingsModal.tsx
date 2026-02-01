@@ -1,9 +1,65 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
 import { loggingService } from '../utils/loggingService';
+import { env } from '../utils/env';
+
+const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
+
+async function compressImageToBase64(file: File, maxBytes: number): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No se pudo acceder al lienzo para procesar la imagen.');
+
+  let width = bitmap.width;
+  let height = bitmap.height;
+  let quality = 0.9;
+  let blob = await renderBlob();
+
+  let attempt = 0;
+  while (blob.size > maxBytes && attempt < 20) {
+    attempt += 1;
+    if (quality > 0.35) {
+      quality -= 0.05;
+    } else {
+      width = Math.max(64, Math.floor(width * 0.9));
+      height = Math.max(64, Math.floor(height * 0.9));
+    }
+    blob = await renderBlob();
+  }
+
+  bitmap.close();
+
+  if (blob.size > maxBytes) {
+    throw new Error('No se pudo comprimir la imagen lo suficiente. Usa una más pequeña.');
+  }
+
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Falla al convertir la imagen a Base64.'));
+    reader.readAsDataURL(blob);
+  });
+
+  async function renderBlob() {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((generated) => {
+        if (!generated) {
+          reject(new Error('No se pudo generar el blob de la imagen.'));
+          return;
+        }
+        resolve(generated);
+      }, 'image/jpeg', quality);
+    });
+  }
+}
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -27,11 +83,13 @@ interface UserProfile {
   email: string;
   firstName?: string;
   lastName?: string;
+  avatarUrl?: string;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const { openModal } = useConsent();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for settings
   const [settings, setSettings] = useState<UserSettings>({
@@ -48,11 +106,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     fullName: '',
     email: '',
     firstName: '',
-    lastName: ''
+    lastName: '',
+    avatarUrl: ''
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   // Load settings from Firestore
@@ -86,7 +146,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
               fullName: data.profile.fullName || '',
               email: data.profile.email || data.email || '',
               firstName: data.profile.firstName || nameParts[0] || '',
-              lastName: data.profile.lastName || nameParts.slice(1).join(' ') || ''
+              lastName: data.profile.lastName || nameParts.slice(1).join(' ') || '',
+              avatarUrl: data.profile.avatarUrl || ''
             });
           }
         }
@@ -99,6 +160,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
     return () => unsubscribe();
   }, [userKey]);
+
+  // Handle Avatar Upload
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const base64String = await compressImageToBase64(file, MAX_AVATAR_BASE64_BYTES);
+      setProfile(prev => ({ ...prev, avatarUrl: base64String }));
+      setHasChanges(true);
+      loggingService.info('Avatar processed locally. Save changes to persist.');
+    } catch (error: any) {
+      loggingService.error('Error processing avatar', error);
+      alert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Save settings to Firestore
   const handleSaveChanges = async () => {
@@ -116,7 +200,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
           fullName: `${profile.firstName} ${profile.lastName}`.trim() || profile.fullName,
           email: profile.email,
           firstName: profile.firstName,
-          lastName: profile.lastName
+          lastName: profile.lastName,
+          avatarUrl: profile.avatarUrl
         },
         updatedAt: new Date().toISOString()
       };
@@ -274,14 +359,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
               {activeTab === 'account' && (
                 <div className="space-y-8 animate-fade-in">
                   <div className="flex items-center gap-4 md:gap-6 mb-8">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-2xl md:text-3xl font-bold shadow-sm shrink-0">
-                      {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
+                    <div
+                      className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary-container text-primary-onContainer flex items-center justify-center text-2xl md:text-3xl font-bold shadow-sm shrink-0 cursor-pointer group overflow-hidden"
+                      onClick={handleAvatarClick}
+                      title="Click to upload avatar"
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept="image/*"
+                      />
+
+                      {profile.avatarUrl ? (
+                         <img
+                            src={profile.avatarUrl}
+                            alt="Profile"
+                            className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : ''}`}
+                         />
+                      ) : (
+                         <span className={isUploading ? 'opacity-50' : ''}>
+                           {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
+                         </span>
+                      )}
+
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                         {isUploading ? (
+                              <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                         ) : (
+                              <span className="material-symbols-outlined text-white">camera_alt</span>
+                         )}
+                      </div>
                     </div>
+
                     <div className="min-w-0">
                       <h4 className="text-lg md:text-xl font-display font-medium text-[var(--md-sys-color-on-background)] truncate">
                         {isLoading ? 'Loading...' : (profile.fullName || 'User')}
                       </h4>
                       <p className="text-sm text-outline truncate">{profile.email || 'No email'}</p>
+                      <button
+                         onClick={handleAvatarClick}
+                         className="text-xs text-primary hover:underline mt-1 disabled:opacity-50"
+                         disabled={isUploading}
+                      >
+                         Change Photo
+                      </button>
                     </div>
                   </div>
                   <section>
