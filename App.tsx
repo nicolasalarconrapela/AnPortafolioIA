@@ -1,14 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
+import { createGretchenService, GretchenService } from './services/gretchenService';
 import { AppState, CVProfile, ChatMessage } from './types';
 import { MarkdownView } from './components/MarkdownView';
 import JSZip from 'jszip';
 
 // --- Components for the Wizard Sections ---
 
-const SectionHeader = ({ title, description, icon, aiName }: { title: string, description: string, icon: React.ReactNode, aiName: string }) => (
+const SectionHeader = ({ 
+    title, 
+    description, 
+    icon, 
+    aiName,
+    onGretchenClick
+}: { 
+    title: string, 
+    description: string, 
+    icon: React.ReactNode, 
+    aiName: string,
+    onGretchenClick: () => void
+}) => (
   <div className="mb-6 border-b border-slate-200 pb-4">
     <div className="flex justify-between items-start">
         <div className="flex items-center space-x-3 mb-2">
@@ -23,6 +36,13 @@ const SectionHeader = ({ title, description, icon, aiName }: { title: string, de
                 </div>
             </div>
         </div>
+        <button 
+            onClick={onGretchenClick}
+            className="group flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-all shadow-md border border-slate-600"
+        >
+            <ShieldAlert className="w-4 h-4 text-red-400 group-hover:text-red-300 animate-pulse" />
+            <span className="text-sm font-medium">Auditoría Automática</span>
+        </button>
     </div>
     <p className="text-slate-500 mt-2">{description}</p>
   </div>
@@ -33,6 +53,177 @@ const EmptyState = ({ text }: { text: string }) => (
         {text}
     </div>
 );
+
+// --- Gretchen Audit & Fix Modal ---
+
+const GretchenModal = ({
+    isOpen,
+    onClose,
+    sectionName,
+    sectionData,
+    onApplyFix
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    sectionName: string;
+    sectionData: any;
+    onApplyFix: (newData: any) => void;
+}) => {
+    const [auditResult, setAuditResult] = useState("");
+    const [fixedData, setFixedData] = useState<any>(null);
+    const [step, setStep] = useState<'IDLE' | 'AUDITING' | 'FIXING' | 'REVIEW'>('IDLE');
+    
+    const gretchenServiceRef = useRef<GretchenService | null>(null);
+    const geminiServiceRef = useRef<GeminiService | null>(null);
+
+    useEffect(() => {
+        gretchenServiceRef.current = createGretchenService();
+        geminiServiceRef.current = createGeminiService();
+    }, []);
+
+    useEffect(() => {
+        if (isOpen && sectionData) {
+            runAutoFlow();
+        } else {
+            reset();
+        }
+    }, [isOpen]);
+
+    const reset = () => {
+        setAuditResult("");
+        setFixedData(null);
+        setStep('IDLE');
+    }
+
+    const runAutoFlow = async () => {
+        if (!gretchenServiceRef.current || !geminiServiceRef.current) return;
+        
+        // 1. Audit
+        setStep('AUDITING');
+        let critique = "";
+        try {
+            critique = await gretchenServiceRef.current.auditSection(sectionName, sectionData);
+            setAuditResult(critique);
+        } catch (e) {
+            setAuditResult("Error en auditoría. Gretchen se ha ido a comer.");
+            return;
+        }
+
+        // 2. Googlito Fixing
+        setStep('FIXING');
+        try {
+            const improvements = await geminiServiceRef.current.improveSectionBasedOnCritique(sectionName, sectionData, critique);
+            setFixedData(improvements);
+            setStep('REVIEW');
+        } catch (e) {
+            setAuditResult(prev => prev + "\n\n[ERROR: El Googlito no pudo aplicar los cambios]");
+            setStep('REVIEW');
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-all">
+            <div className="bg-[#fcfcfc] rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in-up border border-slate-300 flex flex-col max-h-[90vh]">
+                
+                {/* Header Dinámico */}
+                <div className={`p-5 flex justify-between items-center text-white border-b-4 transition-colors duration-500 ${step === 'FIXING' || step === 'REVIEW' ? 'bg-indigo-600 border-indigo-800' : 'bg-slate-800 border-red-700'}`}>
+                    <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-full ${step === 'FIXING' || step === 'REVIEW' ? 'bg-indigo-800' : 'bg-red-800'}`}>
+                            {step === 'AUDITING' ? <ShieldAlert className="w-6 h-6 animate-pulse" /> : 
+                             step === 'FIXING' ? <Wrench className="w-6 h-6 animate-spin" /> :
+                             <CheckCircle2 className="w-6 h-6" />}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-xl tracking-wide">
+                                {step === 'AUDITING' && "Gretchen Bodinski: Auditando..."}
+                                {step === 'FIXING' && "Googlito: Aplicando Correcciones..."}
+                                {step === 'REVIEW' && "Reporte de Calidad Completado"}
+                            </h3>
+                            <p className="text-xs text-white/70 uppercase tracking-widest">
+                                {step === 'AUDITING' ? "Detectando incompetencias" : step === 'FIXING' ? "Resolviendo problemas detectados" : "Revisión Final"}
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full transition text-white"><X className="w-5 h-5"/></button>
+                </div>
+                
+                {/* Content Area */}
+                <div className="p-0 overflow-y-auto flex-1 bg-slate-50 relative">
+                    
+                    {step === 'AUDITING' && (
+                        <div className="flex flex-col items-center justify-center h-64 p-8 text-center space-y-6">
+                            <div className="relative">
+                                <div className="w-20 h-20 border-4 border-slate-200 border-t-red-700 rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-2xl">🧐</span>
+                                </div>
+                            </div>
+                            <p className="text-slate-600 font-serif text-lg italic animate-pulse">"Déjame ver qué desastre has hecho aquí..."</p>
+                        </div>
+                    )}
+
+                    {(step === 'FIXING' || (step === 'REVIEW' && auditResult)) && (
+                        <div className="p-8 border-b border-slate-200 bg-white">
+                             <div className="flex items-start gap-4">
+                                <img src="https://ui-avatars.com/api/?name=Gretchen+Bodinski&background=334155&color=fff" className="w-12 h-12 rounded-full border-2 border-red-100 shadow-sm" alt="Gretchen"/>
+                                <div className="flex-1 space-y-2">
+                                    <h4 className="font-bold text-red-700 text-sm uppercase tracking-wide mb-2">Crítica de Gretchen</h4>
+                                    <div className="prose prose-sm prose-red max-w-none text-slate-700">
+                                        <MarkdownView content={auditResult} />
+                                    </div>
+                                </div>
+                             </div>
+                        </div>
+                    )}
+
+                    {step === 'FIXING' && (
+                         <div className="flex items-center gap-3 p-6 bg-indigo-50 animate-pulse border-t border-indigo-100">
+                            <Wrench className="w-5 h-5 text-indigo-600" />
+                            <span className="text-indigo-800 font-medium">El Googlito está reescribiendo la sección basándose en la crítica...</span>
+                         </div>
+                    )}
+
+                    {step === 'REVIEW' && fixedData && (
+                        <div className="p-8 bg-indigo-50/50">
+                             <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-indigo-200">
+                                    <Sparkles className="w-6 h-6 text-indigo-600" />
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-indigo-700 text-sm uppercase tracking-wide mb-3">Propuesta del Googlito</h4>
+                                    <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm text-sm text-slate-600 font-mono overflow-x-auto max-h-60">
+                                        <pre>{JSON.stringify(fixedData, null, 2)}</pre>
+                                    </div>
+                                    <p className="text-xs text-indigo-400 mt-2">* Estos cambios reemplazarán los datos actuales de la sección.</p>
+                                </div>
+                             </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Actions */}
+                {step === 'REVIEW' && (
+                    <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-3">
+                        <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                        <Button 
+                            className="!bg-indigo-600 hover:!bg-indigo-700" 
+                            onClick={() => {
+                                onApplyFix(fixedData);
+                                onClose();
+                            }}
+                        >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Aplicar Correcciones
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 
 // --- Janice Improvement Modal ---
 
@@ -146,6 +337,9 @@ function App() {
   const [janiceOpen, setJaniceOpen] = useState(false);
   const [janiceData, setJaniceData] = useState<{text: string, context: string, callback: (t: string) => void} | null>(null);
 
+  // Gretchen State
+  const [gretchenOpen, setGretchenOpen] = useState(false);
+
   const geminiServiceRef = useRef<GeminiService | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -196,7 +390,7 @@ function App() {
         try {
             const zip = await JSZip.loadAsync(file);
             // Find first valid file
-            const validFile = Object.values(zip.files).find((f: any) => 
+            const validFile: any = Object.values(zip.files).find((f: any) => 
                 !f.dir && (f.name.endsWith('.pdf') || f.name.match(/\.(jpg|jpeg|png)$/i))
             );
 
@@ -296,6 +490,38 @@ function App() {
           setDonnaLoading(false);
       }
   };
+
+  const getSectionDataForGretchen = (step: number) => {
+      if (!profile) return null;
+      switch(step) {
+          case 1: return profile.experience;
+          case 2: return profile.skills;
+          case 3: return profile.techStack;
+          case 4: return profile.projects;
+          case 5: return profile.volunteering;
+          case 6: return profile.awards;
+          case 7: return profile.languages;
+          case 8: return profile.hobbies;
+          default: return null;
+      }
+  }
+
+  const handleGretchenFix = (newData: any) => {
+      if (!profile) return;
+      const newProfile = { ...profile };
+      
+      switch(currentStep) {
+          case 1: newProfile.experience = newData; break;
+          case 2: newProfile.skills = newData; break;
+          case 3: newProfile.techStack = newData; break;
+          case 4: newProfile.projects = newData; break;
+          case 5: newProfile.volunteering = newData; break;
+          case 6: newProfile.awards = newData; break;
+          case 7: newProfile.languages = newData; break;
+          case 8: newProfile.hobbies = newData; break;
+      }
+      setProfile(newProfile);
+  }
 
   // --- Render Functions for Personas ---
 
@@ -400,6 +626,14 @@ function App() {
                 onApply={janiceData?.callback || (() => {})}
               />
 
+              <GretchenModal
+                isOpen={gretchenOpen}
+                onClose={() => setGretchenOpen(false)}
+                sectionName={step.title}
+                sectionData={getSectionDataForGretchen(currentStep)}
+                onApplyFix={handleGretchenFix}
+              />
+
               {/* Googlito Header */}
               <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
                   <div className="flex items-center space-x-2">
@@ -420,7 +654,13 @@ function App() {
               </header>
 
               <main className="flex-1 max-w-4xl w-full mx-auto p-6 lg:p-10 animate-fade-in">
-                  <SectionHeader title={step.title} description={step.desc} icon={step.icon} aiName={step.ai} />
+                  <SectionHeader 
+                    title={step.title} 
+                    description={step.desc} 
+                    icon={step.icon} 
+                    aiName={step.ai} 
+                    onGretchenClick={() => setGretchenOpen(true)}
+                  />
                   
                   {/* DYNAMIC FORM CONTENT BASED ON STEP */}
                   <div className="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 space-y-8">

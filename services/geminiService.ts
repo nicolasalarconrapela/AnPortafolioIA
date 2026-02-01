@@ -158,6 +158,51 @@ export class GeminiService {
   }
 
   /**
+   * GOOGLITO (Fixer based on Gretchen)
+   * Applies fixes to data based on critique.
+   */
+  async improveSectionBasedOnCritique(sectionName: string, currentData: any, critique: string): Promise<any> {
+    try {
+        const dataStr = JSON.stringify(currentData, null, 2);
+        const prompt = `
+        Eres el 'Googlito' encargado de la sección "${sectionName}".
+        
+        SITUACIÓN:
+        Gretchen Bodinski ha realizado una auditoría brutal de nuestros datos.
+        
+        CRÍTICA DE GRETCHEN:
+        "${critique}"
+        
+        DATOS ACTUALES:
+        ${dataStr}
+        
+        TU MISIÓN:
+        Reescribe y mejora los DATOS ACTUALES para satisfacer las demandas de Gretchen.
+        1. Corrige los puntos débiles mencionados.
+        2. Mantén la estructura JSON exacta de los datos originales.
+        3. Haz que suene profesional, directo y orientado a logros.
+        
+        IMPORTANTE: Devuelve SOLO el JSON corregido, nada más.
+        `;
+
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        if (!response.text) return currentData;
+        return JSON.parse(response.text);
+
+    } catch (error) {
+        console.error("Googlito fix error:", error);
+        return currentData;
+    }
+  }
+
+  /**
    * DONNA (Recruiter Persona)
    * Initializes a chat session acting as Donna Paulsen.
    */
