@@ -5,7 +5,6 @@ import { LandingView } from './components/LandingView';
 import { AuthView } from './components/AuthView';
 import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
-import { RecruiterFlow } from './components/RecruiterFlow';
 import { DesignSystemView } from './components/DesignSystemView';
 import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView'; // Nueva vista importada
 import { ViewState } from './types';
@@ -76,13 +75,6 @@ const AppContent: React.FC = () => {
             setIsAuthenticated(false);
             setView('landing');
           }}
-        />
-      )}
-
-      {view === 'recruiter-flow' && (
-        <RecruiterFlow
-          isAuthenticated={true}
-          onExit={() => setView('landing')}
         />
       )}
 
