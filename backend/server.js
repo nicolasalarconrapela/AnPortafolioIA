@@ -198,7 +198,7 @@ function isDevLocalhost(normalized) {
 const allowGoogleAiStudio = (origin) =>
   typeof origin === "string" &&
   /^https:\/\/[a-z0-9-]+\.scf\.usercontent\.goog$/i.test(origin);
-  
+
 const corsOptions = {
   origin(origin, cb) {
     if (!origin) return cb(null, true);
@@ -285,6 +285,9 @@ app.get("/health", (req, res) => {
     status: "ok",
     message: "AnPortafolioIA Backend is running",
   });
+});
+app.get("/healthz", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 app.use("/api/firestore", firestoreRoutes);
