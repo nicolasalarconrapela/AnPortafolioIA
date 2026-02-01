@@ -122,6 +122,7 @@ const ChatMessage: React.FC<{ sender: 'ai' | 'user', text: string }> = ({ sender
 
 export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'training'>('profile');
+  const [currentUserId] = useState(() => localStorage.getItem("anportafolio_user_id") || "");
 
   // Mobile-specific state to switch between Form and Chat views
   const [mobileView, setMobileView] = useState<'form' | 'chat'>('form');
@@ -223,7 +224,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       {isSettingsOpen && (
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
-          userKey={profile.email || ""}
+          userKey={currentUserId || profile.email || ""}
         />
       )}
 
