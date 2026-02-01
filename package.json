@@ -1,10 +1,10 @@
 {
   "name": "anportafolioia",
   "private": true,
-  "version": "0.6.0-beta",
+  "version": "0.6.1-beta",
   "type": "module",
   "scripts": {
-    "dev": "tsc && vite",
+    "dev": "tsc && vite dev",
     "build": "tsc && vite build",
     "build:test": "tsc && vite build --mode test",
     "build:prod": "tsc && vite build --mode production",
