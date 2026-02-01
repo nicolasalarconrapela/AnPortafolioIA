@@ -30,22 +30,17 @@ function isDevelopmentEnvironment(): boolean {
 // Encryption enabled in production/non-dev environments
 const SHOULD_ENCRYPT = !isDevelopmentEnvironment();
 
+function forceLogout() {
+  loggingService.warn("FirestoreWorkspaces: 401/404 encountered. Forcing logout.");
+  // localStorage.removeItem("anportafolio_user_id"); // Removed: We rely on Session Cookie only
+  window.location.href = "/";
+}
+
 function resolveWorkspaceCollection(): string {
-  const env = resolveEnv();
-  const fromEnv = env?.VITE_FIRESTORE_WORKSPACES_COLLECTION as
-    | string
-    | undefined;
-
-  if (fromEnv && fromEnv.trim().length > 0) {
-    return fromEnv.trim();
-  }
-
-  const mode = env?.MODE as string | undefined;
-  if (mode && mode.trim().length > 0) {
-    return `workspace-${mode.trim()}`;
-  }
-
-  return DEFAULT_TEST_COLLECTION;
+  // STRICT: Always return workspace-[mode] to ensure correct backend nesting
+  // Structure: workspace-development -> global -> users -> [uid]
+  const isDev = isDevelopmentEnvironment();
+  return isDev ? "workspace-development" : "workspace-production";
 }
 
 const WORKSPACE_COLLECTION = resolveWorkspaceCollection();
@@ -292,18 +287,17 @@ export async function getWorkspaceByUserFromFirestore(
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
-    const response = await fetch(url, { credentials: 'include' });
+    // Force no-store to ensure we always get the full document (200) on initial load,
+    // avoiding 304s which this function isn't equipped to handle (no local cache).
+    const response = await fetch(url, {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
 
-    if (response.status === 404) {
-      loggingService.info(
-        "FirestoreWorkspaces: no existe workspace para el usuario solicitado (Backend).",
-        {
-          userKey,
-          encryptedUserKey: docKey,
-          collection: collectionName,
-        }
-      );
-
+    // Handle Auth Errors (401), Forbidden (403), or Not Found (404)
+    if (response.status === 401 || response.status === 403 || response.status === 404) {
+      forceLogout();
       return null;
     }
 
@@ -438,12 +432,10 @@ export function listenWorkspaceByUser(
         return;
       }
 
-      if (response.status === 404) {
-        lastModifiedHeader = null;
-        lastAppliedHash = null;
-        onData(null);
-        currentInterval = Math.min(currentInterval * 1.5, MAX_INTERVAL);
-        schedule(currentInterval);
+      // Handle Auth Errors
+      if (response.status === 401 || response.status === 403 || response.status === 404) {
+        forceLogout();
+        isActive = false;
         return;
       }
 
@@ -597,6 +589,11 @@ export async function deleteWorkspaceForUser(
       method: "DELETE",
       credentials: "include",
     });
+
+    if (response.status === 401 || response.status === 403 || response.status === 404) {
+      forceLogout();
+      return;
+    }
 
     if (!response.ok) {
       throw new Error(`Backend returned ${response.status}`);

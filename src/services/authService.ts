@@ -22,6 +22,27 @@ class AuthService {
   }
 
   /**
+   * Verify Session Validity
+   * Calls GET /api/auth/verify (Protected by requireAuth)
+   */
+  async verifySession() {
+    const response = await fetch(`${BASE_URL}/verify`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Session Invalid");
+    }
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Verification failed");
+
+    return data.user;
+  }
+
+  /**
    * Register with Email and Password
    * Calls POST /api/auth/register
    */

@@ -31,6 +31,7 @@ type OptimizationCategory = 'experience' | 'skills' | 'education' | 'projects';
 
 interface CandidateDashboardProps {
   onLogout: () => void;
+  userId: string;
 }
 
 // --- CONFIGURATION ---
@@ -120,9 +121,9 @@ const ChatMessage: React.FC<{ sender: 'ai' | 'user', text: string }> = ({ sender
 
 // --- MAIN COMPONENT ---
 
-export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout }) => {
+export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout, userId }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'training'>('profile');
-  const [currentUserId] = useState(() => localStorage.getItem("anportafolio_user_id") || "");
+  // const [currentUserId] = useState(() => localStorage.getItem("anportafolio_user_id") || ""); // Removed LocalStorage usage
 
   // Mobile-specific state to switch between Form and Chat views
   const [mobileView, setMobileView] = useState<'form' | 'chat'>('form');
@@ -150,11 +151,10 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
   // --- WORKSPACE SYNC ---
   useEffect(() => {
-    const storedUserKey = localStorage.getItem("anportafolio_user_id");
-    if (storedUserKey) {
+    if (userId) {
       setIsLoading(true);
       const unsubscribe = listenWorkspaceByUser(
-        storedUserKey,
+        userId,
         (data) => {
           setIsLoading(false);
           if (data && data.profile) {
@@ -190,7 +190,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
     } else {
         setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   const handleSendMessage = async (text: string = inputText) => {
     if (!text.trim()) return;
@@ -224,7 +224,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       {isSettingsOpen && (
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
-          userKey={currentUserId || profile.email || ""}
+          userKey={userId || profile.email || ""}
         />
       )}
 

@@ -13,6 +13,7 @@ interface UploadedFile {
 interface OnboardingViewProps {
   onComplete: () => void;
   onExit: () => void;
+  userId: string;
 }
 
 const STEPS_CONFIG = [
@@ -44,7 +45,7 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 // Simple filename sanitizer for UI display safety
 const sanitizeFileNameUI = (name: string) => name.replace(/[^\w\s.\-\(\)]/gi, '_');
 
-export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit }) => {
+export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit, userId }) => {
   const [selectedItems] = useState<string[]>(['import', 'ai']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -65,10 +66,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const stepsContainerRef = useRef<HTMLDivElement>(null);
 
   const handleOnboardingComplete = async () => {
-    const userKey = localStorage.getItem("anportafolio_user_id");
-    if (userKey) {
+    // const userKey = localStorage.getItem("anportafolio_user_id"); // Removed
+    if (userId) {
       try {
-        await upsertWorkspaceForUser(userKey, {
+        await upsertWorkspaceForUser(userId, {
           profile: { onboardingCompleted: true }
         });
       } catch (error) {

@@ -4,8 +4,33 @@ import { logger } from '../logger.js';
 import { syncUserToFirestore } from '../services/userService.js';
 // Using global fetch (Node 18+)
 import { config } from '../config.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/auth/verify
+ * Verifica si la cookie de sesión es válida y devuelve el usuario.
+ * Útil para comprobar estado al cargar la SPA.
+ */
+router.get('/verify', requireAuth, async (req, res) => {
+    // req.userRecord is guaranteed by requireAuth
+    const userRecord = req.userRecord;
+
+    res.json({
+        success: true,
+        user: {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName,
+            photoURL: userRecord.photoURL,
+            // Add session claims metadata if needed
+            iat: req.user.iat,
+            exp: req.user.exp
+        }
+    });
+});
+
 // Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 

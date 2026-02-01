@@ -12,19 +12,20 @@ import { ConsentProvider, useConsent } from './components/consent/ConsentContext
 import { ConsentUI } from './components/consent/ConsentUI';
 import { LogViewer } from './components/debug/LogViewer';
 import { env } from './utils/env';
+import { loggingService } from './utils/loggingService';
 import { getWorkspaceByUserFromFirestore } from './services/firestoreWorkspaces';
+import { authService } from './services/authService';
 
 // Extend ViewState locally if needed or assume it's updated in types.ts
 // For now, we cast strings if types aren't updated yet to avoid breaking compile
 type ExtendedViewState = ViewState | 'privacy-policy';
 
 const AppContent: React.FC = () => {
-  // Initialize state based on localStorage for session persistence
-  const hasSession = !!localStorage.getItem("anportafolio_user_id");
-
-  // If authenticated, start at dashboard. Otherwise start at landing.
-  const [view, setView] = useState<ExtendedViewState>(hasSession ? 'candidate-dashboard' : 'landing');
-  const [isAuthenticated, setIsAuthenticated] = useState(hasSession);
+  // Session State (No LocalStorage)
+  const [view, setView] = useState<ExtendedViewState>('landing');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [isSessionChecking, setIsSessionChecking] = useState(true);
 
   const { openModal } = useConsent();
 
@@ -34,54 +35,78 @@ const AppContent: React.FC = () => {
 
     // If trying to access a protected view without authentication
     if (protectedViews.includes(view)) {
-      // Double check localStorage in case state is stale but session exists
-      const storedSession = localStorage.getItem("anportafolio_user_id");
-      if (!isAuthenticated && !storedSession) {
+      if (!isSessionChecking && !isAuthenticated) {
         setView('auth-candidate');
-      } else if (!isAuthenticated && storedSession) {
-        // Sync state if storage exists
-        setIsAuthenticated(true);
       }
     }
-  }, [view, isAuthenticated]);
+  }, [view, isAuthenticated, isSessionChecking]);
 
-  // Session Restoration Effect: Check for Onboarding Completion
+  // Session Restoration Effect: Verify Session & Check Onboarding
   useEffect(() => {
-    if (hasSession && view === 'candidate-dashboard') {
-      const checkOnboarding = async () => {
-        const uid = localStorage.getItem("anportafolio_user_id");
-        if (uid) {
-           try {
-             // If this returns null (404) or falsy completed flag, redirect
-             const ws = await getWorkspaceByUserFromFirestore(uid);
-             if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
-                // Check if we found a profile but it wasn't complete
-                // If ws is null, it means no workspace -> maybe new user? -> Onboarding
-                setView('candidate-onboarding');
+      const verifyAndRestore = async () => {
+        setIsSessionChecking(true);
+        try {
+          // 1. Verify Backend Session (HttpOnly Cookie)
+          const user = await authService.verifySession();
+
+          if (user && user.uid) {
+             setCurrentUserId(user.uid);
+             setIsAuthenticated(true);
+
+             // 2. Logic to decide if we stay on landing or go to dashboard
+             // Only if we are currently on landing or auth page do we Auto-Redirect.
+             if (view === 'landing' || view.startsWith('auth-')) {
+                // Check Onboarding
+                try {
+                    const ws = await getWorkspaceByUserFromFirestore(user.uid);
+                    if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
+                       setView('candidate-onboarding');
+                    } else {
+                       setView('candidate-dashboard');
+                    }
+                } catch {
+                    // Fallback to dashboard if workspace fetch fails but auth is good
+                    setView('candidate-dashboard');
+                }
              }
-           } catch (e) {
-             // Ignore error, stay on dashboard (it handles its own errors)
-           }
+          }
+        } catch (e) {
+             console.warn("Session verification failed or no session.", e);
+             setIsAuthenticated(false);
+             setCurrentUserId("");
+             // If we were on a protected route, route protection effect will kick in
+        } finally {
+            setIsSessionChecking(false);
         }
       };
-      checkOnboarding();
-    }
-  }, []); // Run once on mount if session exists
 
-  // Handle navigation from AuthView (Login/Register success)
+      verifyAndRestore();
+  }, []); // Run once on mount
+
+  // Handle Log In Success
+  const handleLoginSuccess = (user: any) => {
+     setCurrentUserId(user.uid);
+     setIsAuthenticated(true);
+  };
+
+  // Handle navigation from AuthView
   const handleAuthNavigation = (nextView: ViewState) => {
-    if (nextView === 'candidate-onboarding' || nextView === 'candidate-dashboard') {
-      setIsAuthenticated(true);
-    }
     setView(nextView);
   };
 
   // Handle Logout
-  const handleLogout = () => {
-    localStorage.removeItem("anportafolio_user_id");
+  const handleLogout = async () => {
+    // Call backend logout if needed, for now just clear state
+    // Ideally await authService.logout();
+    setCurrentUserId("");
     setIsAuthenticated(false);
     setView('landing');
   };
+
+  if (isSessionChecking) {
+      // Simple Loading State
+      return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  }
 
   return (
     <>
@@ -103,6 +128,7 @@ const AppContent: React.FC = () => {
       {view === 'auth-candidate' && (
         <AuthView
           onNavigate={handleAuthNavigation}
+          onLoginSuccess={handleLoginSuccess}
           initialMode="login"
         />
       )}
@@ -110,12 +136,14 @@ const AppContent: React.FC = () => {
       {view === 'auth-candidate-register' && (
         <AuthView
           onNavigate={handleAuthNavigation}
+          onLoginSuccess={handleLoginSuccess}
           initialMode="register"
         />
       )}
 
       {view === 'candidate-onboarding' && (
         <OnboardingView
+          userId={currentUserId}
           onComplete={() => setView('candidate-dashboard')}
           onExit={() => setView('landing')}
         />
@@ -123,6 +151,7 @@ const AppContent: React.FC = () => {
 
       {view === 'candidate-dashboard' && (
         <CandidateDashboard
+          userId={currentUserId}
           onLogout={handleLogout}
         />
       )}
