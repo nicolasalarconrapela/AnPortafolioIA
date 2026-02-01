@@ -18,24 +18,6 @@ let authClient: Auth | undefined;
 let initPromise: Promise<Auth | undefined> | null = null;
 
 /**
- * Tries to get config from Vite Environment variables first.
- */
-function getConfigFromEnv(): FirebaseConfig | null {
-  const metaEnv = (import.meta as any).env;
-  if (metaEnv?.VITE_FIREBASE_API_KEY) {
-    return {
-      apiKey: metaEnv.VITE_FIREBASE_API_KEY,
-      authDomain: metaEnv.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: metaEnv.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: metaEnv.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: metaEnv.VITE_FIREBASE_APP_ID,
-    };
-  }
-  return null;
-}
-
-/**
  * Fetches public config from the backend.
  * Useful for environments like GAIS where we can't inject frontend .env files easy.
  */
@@ -54,21 +36,15 @@ async function fetchConfigFromBackend(): Promise<FirebaseConfig | null> {
 
 /**
  * Singleton initializer.
- * Ensures we only initialize once, using Env vars or Backend Fallback.
+ * Ensures we only initialize once, fetching config from the backend.
  */
 export async function getFirebaseAuth(): Promise<Auth> {
   if (authClient) return authClient;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    let config = getConfigFromEnv();
-
-    if (!config) {
-      console.log(
-        "[Firebase Client] No env config found. Trying backend fallback..."
-      );
-      config = await fetchConfigFromBackend();
-    }
+    console.log("[Firebase Client] Fetching config from backend...");
+    const config = await fetchConfigFromBackend();
 
     if (!config) {
       throw new Error("Missing Firebase Configuration (Env or Backend)");
