@@ -292,7 +292,7 @@ export async function getWorkspaceByUserFromFirestore(
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { credentials: 'include' });
 
     if (response.status === 404) {
       loggingService.info(
@@ -425,6 +425,7 @@ export function listenWorkspaceByUser(
         headers,
         signal: inFlight.signal,
         cache: "no-store",
+        credentials: "include",
       });
 
       // Standard Optimization: Data hasn't changed at the server level
@@ -550,6 +551,7 @@ export async function upsertWorkspaceForUser(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(envelope),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -593,6 +595,7 @@ export async function deleteWorkspaceForUser(
   try {
     const response = await fetch(url, {
       method: "DELETE",
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -653,6 +656,7 @@ export async function upsertWorkspaceChildDocument(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(envelope),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -707,6 +711,7 @@ export async function deleteWorkspaceChildDocument(
   try {
     const response = await fetch(url, {
       method: "DELETE",
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -759,7 +764,7 @@ export async function getWorkspaceChildDocument(
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { credentials: "include" });
 
     if (response.status === 404) {
       loggingService.info(
