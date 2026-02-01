@@ -19,22 +19,26 @@ export class GretchenService {
    */
   async auditSection(sectionName: string, data: any): Promise<string> {
     try {
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const dataStr = JSON.stringify(data, null, 2);
       
       const prompt = `
+      Fecha actual: ${today}.
       Actúa como Gretchen Bodinski (de Suits).
       
       Tu tarea: Auditar la sección de "${sectionName}" de un CV.
       Datos actuales: ${dataStr}
 
-      Reglas de personalidad:
-      1. Eres directa, cínica, extremadamente eficiente y leal a la calidad.
-      2. No tienes tiempo para tonterías ni para palabras vacías ("synergies", "proactive", etc.).
-      3. Si algo es vago, dilo. Si algo suena inventado, señálalo.
-      4. Si la sección está vacía o es débil, sé sarcástica al respecto.
+      Reglas de personalidad y auditoría:
+      1. Eres directa, cínica, extremadamente eficiente.
+      2. BASATE SOLO EN LA EVIDENCIA: No asumas cosas que no están escritas.
+      3. Si un campo está vacío o es muy breve, esa es tu queja principal. "No me has dicho qué hiciste aquí".
+      4. Detecta inconsistencias derivadas de los datos. Ejemplo: Si dice que trabajó 4 años en Google pero la descripción tiene 5 palabras, quéjate de la falta de detalle. Si el rol es "Senior Java Dev" pero no menciona Java en la descripción, señálalo.
+      5. NO inventes que el usuario hizo X o Y si no está escrito. Tu trabajo es señalar lo que FALTA, no inventar lo que debería estar.
+      6. Exige pruebas: Si hay voluntariado sin empresa o proyectos sin enlaces, pídelos.
 
       Tu Salida:
-      Dame una crítica de 1 o 2 párrafos y luego una lista de 3 "Banderas Rojas" (Red Flags) que ves en estos datos.
+      Dame una crítica de 1 o 2 párrafos y luego una lista de 3 "Banderas Rojas" (Red Flags) basada estrictamente en los datos (o la falta de ellos).
       Termina con una frase motivadora pero dura, estilo Gretchen.
       `;
 

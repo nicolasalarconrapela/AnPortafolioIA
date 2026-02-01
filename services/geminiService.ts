@@ -113,7 +113,8 @@ export class GeminiService {
    */
   async analyzeCVJSON(base64Image: string, mimeType: string): Promise<CVProfile> {
     try {
-      const prompt = "Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío, no inventes.";
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío. PROHIBIDO INVENTAR DATOS que no estén explícitos en el documento.`;
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -143,18 +144,63 @@ export class GeminiService {
   }
 
   /**
+   * SEÑORITA ROTENMEIR (Text/JSON Mode)
+   * Analyzes raw text or generic JSON and extracts CVProfile.
+   */
+  async analyzeCVText(text: string): Promise<CVProfile> {
+    try {
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir'. Analiza el siguiente texto estructurado (JSON/Texto) que contiene datos curriculares. 
+      
+      Tu misión es mapear estos datos al esquema estricto de salida. Si es un JSON genérico, adáptalo.
+      
+      REGLA DE ORO: NO INVENTES INFORMACIÓN. Si un campo no existe en la entrada, déjalo vacío.
+      
+      DATOS DE ENTRADA:
+      ${text.substring(0, 50000)}
+      `;
+
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: this.getResponseSchema(),
+        }
+      });
+
+      if (!response.text) {
+        throw new Error("No response received from Gemini.");
+      }
+
+      const json = JSON.parse(response.text);
+      return json as CVProfile;
+    } catch (error) {
+      console.error("Error analyzing CV Text:", error);
+      throw error;
+    }
+  }
+
+  /**
    * JANICE (Assistant)
    * Helps user improve specific text fields during the Wizard flow.
    */
   async askJanice(currentText: string, userInstruction: string, context: string): Promise<string> {
     try {
-      const prompt = `Actúa como Janice, una asistente de carrera amigable, servicial y experta en redacción de CVs.
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como Janice, una asistente de carrera amigable.
       
       Contexto: Estamos editando la sección de "${context}".
       Texto actual: "${currentText}"
       Instrucción del usuario: "${userInstruction}"
       
-      Tu tarea: Reescribe el texto para mejorarlo profesionalmente, haciéndolo más impactante y claro, pero manteniendo la veracidad. Devuelve SOLO el texto mejorado, sin introducciones ni comillas.`;
+      REGLAS CRÍTICAS DE EDICIÓN:
+      1. Mejora la redacción para que suene profesional.
+      2. MANTÉN LA VERACIDAD: No inventes números, tecnologías o logros que no estén en el "Texto actual".
+      3. Si el texto actual es muy escaso y el usuario pide mejorarlo, NO inventes los detalles. En su lugar, escribe una estructura profesional y usa corchetes para decirle al usuario qué debe rellenar.
+         Ejemplo: "Lideré el desarrollo de [INSERTAR PROYECTO] utilizando [TECNOLOGÍAS], logrando [INSERTAR MÉTRICA DE ÉXITO]."
+      
+      Devuelve SOLO el texto mejorado.`;
 
       const response = await this.ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -174,12 +220,14 @@ export class GeminiService {
    */
   async improveSectionBasedOnCritique(sectionName: string, currentData: any, critique: string): Promise<any> {
     try {
+        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const dataStr = JSON.stringify(currentData, null, 2);
         const prompt = `
+        Fecha actual: ${today}.
         Eres el 'Googlito' encargado de la sección "${sectionName}".
         
         SITUACIÓN:
-        Gretchen Bodinski ha realizado una auditoría brutal de nuestros datos.
+        Gretchen Bodinski ha auditado estos datos y ha encontrado fallos.
         
         CRÍTICA DE GRETCHEN:
         "${critique}"
@@ -187,13 +235,18 @@ export class GeminiService {
         DATOS ACTUALES:
         ${dataStr}
         
-        TU MISIÓN:
-        Reescribe y mejora los DATOS ACTUALES para satisfacer las demandas de Gretchen.
-        1. Corrige los puntos débiles mencionados.
-        2. Mantén la estructura JSON exacta de los datos originales.
-        3. Haz que suene profesional, directo y orientado a logros.
+        TU MISIÓN (REGLAS DE SEGURIDAD DE DATOS):
+        1. Tu trabajo es reestructurar y pulir, PERO TIENES ESTRICTAMENTE PROHIBIDO INVENTAR DATOS REALES.
+        2. No inventes nombres de empresas, fechas, tecnologías específicas o métricas numéricas que no estén en "DATOS ACTUALES".
+        3. Si Gretchen se queja de que falta información (ej: "Falta el stack tecnológico" o "Falta enlace al proyecto"), NO TE LO INVENTES.
+        4. En su lugar, modifica el campo de texto añadiendo un PLACEHOLDER claro y en mayúsculas entre corchetes para que el usuario sepa que debe rellenarlo.
+           
+           Ejemplos de Placeholders permitidos:
+           - "[ACCIÓN REQUERIDA: Listar lenguajes de programación usados]"
+           - "[FALTA: Enlace al repositorio]"
+           - "[COMPLETAR: Añadir métricas de impacto en %]"
         
-        IMPORTANTE: Devuelve SOLO el JSON corregido, nada más.
+        5. Devuelve el JSON con la misma estructura, pero con los textos mejorados y los placeholders insertados donde falte información.
         `;
 
         const response = await this.ai.models.generateContent({
@@ -218,15 +271,16 @@ export class GeminiService {
    * Initializes a chat session acting as Donna in her most professional, neutral capacity.
    */
   async initDonnaChat(profile: CVProfile): Promise<void> {
+    const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     const profileContext = JSON.stringify(profile, null, 2);
     
-    const systemInstruction = `Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.
+    const systemInstruction = `Fecha actual: ${today}. Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.
     
     Tus reglas para esta sesión:
-    1. Tono: PROFESIONAL, NEUTRAL, OBJETIVO y CLARO. Ya no estás en modo "Suits" arrogante. Ahora eres una presentadora eficiente de hechos.
+    1. Tono: PROFESIONAL, NEUTRAL, OBJETIVO y CLARO.
     2. Base de conocimiento: Todo lo que sabes está en este JSON: ${profileContext}.
     3. Objetivo: Responder preguntas sobre el candidato de manera informativa y precisa.
-    4. Si te preguntan algo que NO está en el perfil, di cortesmente que esa información no está disponible en el expediente actual.
+    4. NO ALUCINES: Si te preguntan algo que NO está en el perfil, di cortesmente que esa información no está disponible en el expediente actual. No intentes adivinar.
     5. Sé concisa. Usa formato Markdown para listas si es necesario.
     
     Tu misión es exponer la información del candidato de la forma más limpia posible.`;
