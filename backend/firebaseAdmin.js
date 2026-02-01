@@ -6,7 +6,7 @@ let firestore = null;
 
 /**
  * Initialize Firebase Admin SDK for Firestore.
- * 
+ *
  * Required environment variables:
  * - FIREBASE_PROJECT_ID
  * - FIREBASE_PRIVATE_KEY
@@ -66,12 +66,13 @@ export function initializeFirebaseAdmin() {
 
         console.log('[INFO] Firebase Admin initialized successfully (Firestore only).');
         console.log(`[INFO] Project: ${projectId}`);
+
         return { firestore };
     } catch (error) {
         console.error('[ERROR] Failed to initialize Firebase Admin:', error.message);
         // Do not re-throw here to allow server to start, but API calls will fail later.
         // Re-throwing causes the whole backend to crash on startup.
-        // throw error; 
+        // throw error;
     }
 }
 

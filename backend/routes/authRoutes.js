@@ -1,10 +1,36 @@
 import express from 'express';
 import { getAuth } from '../firebaseAdmin.js';
 import { logger } from '../logger.js';
+import { syncUserToFirestore } from '../services/userService.js';
 // Using global fetch (Node 18+)
 import { config } from '../config.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+/**
+ * GET /api/auth/verify
+ * Verifica si la cookie de sesión es válida y devuelve el usuario.
+ * Útil para comprobar estado al cargar la SPA.
+ */
+router.get('/verify', requireAuth, async (req, res) => {
+    // req.userRecord is guaranteed by requireAuth
+    const userRecord = req.userRecord;
+
+    res.json({
+        success: true,
+        user: {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: userRecord.displayName,
+            photoURL: userRecord.photoURL,
+            // Add session claims metadata if needed
+            iat: req.user.iat,
+            exp: req.user.exp
+        }
+    });
+});
+
 // Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
@@ -126,7 +152,7 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /api/auth/register
- * Register with Email/Password -> Sets Session Cookie
+ * Register with Email/Password -> Syncs to Firestore -> Sets Session Cookie
  */
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
@@ -135,6 +161,13 @@ router.post('/register', async (req, res) => {
     try {
         const data = await callFirebaseREST('signUp', { email, password });
 
+        // Sync to Firestore
+        await syncUserToFirestore(data.localId, {
+            email: data.email,
+            isAnonymous: false,
+            provider: 'password'
+        });
+
         await setSessionCookie(res, data.idToken);
 
         res.json({
@@ -142,8 +175,9 @@ router.post('/register', async (req, res) => {
             user: {
                 uid: data.localId,
                 email: data.email,
-                idToken: data.idToken,
-                refreshToken: data.refreshToken
+                // Client usually doesn't need idToken if using cookies, but keeping for compatibility if needed
+                // idToken: data.idToken,
+                // refreshToken: data.refreshToken
             }
         });
     } catch (error) {
@@ -154,11 +188,17 @@ router.post('/register', async (req, res) => {
 
 /**
  * POST /api/auth/guest
- * Guest Login -> Sets Session Cookie
+ * Guest Login -> Syncs to Firestore -> Sets Session Cookie
  */
 router.post('/guest', async (req, res) => {
     try {
         const data = await callFirebaseREST('signUp', {});
+
+        // Sync to Firestore
+        await syncUserToFirestore(data.localId, {
+            isAnonymous: true,
+            provider: 'anonymous'
+        });
 
         await setSessionCookie(res, data.idToken);
 
@@ -167,8 +207,8 @@ router.post('/guest', async (req, res) => {
             user: {
                 uid: data.localId,
                 isAnonymous: true,
-                idToken: data.idToken,
-                refreshToken: data.refreshToken
+                // idToken: data.idToken,
+                // refreshToken: data.refreshToken
             }
         });
     } catch (error) {

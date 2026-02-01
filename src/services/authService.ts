@@ -12,10 +12,32 @@ class AuthService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "Login failed");
+
+    return data.user;
+  }
+
+  /**
+   * Verify Session Validity
+   * Calls GET /api/auth/verify (Protected by requireAuth)
+   */
+  async verifySession() {
+    const response = await fetch(`${BASE_URL}/verify`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Session Invalid");
+    }
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Verification failed");
 
     return data.user;
   }
@@ -29,6 +51,7 @@ class AuthService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();
@@ -45,6 +68,7 @@ class AuthService {
     const response = await fetch(`${BASE_URL}/guest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", // Ensure cookie is set
     });
 
     const data = await response.json();

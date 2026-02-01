@@ -22,6 +22,7 @@ export const config = {
         PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
         CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
         DATABASE_URL: process.env.FIREBASE_DATABASE_URL,
+        STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET,
     }
 };
 
