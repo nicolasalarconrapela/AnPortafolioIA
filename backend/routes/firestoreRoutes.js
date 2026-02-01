@@ -27,20 +27,29 @@ router.get('/workspaces/:userKey', async (req, res) => {
         // Current logic maps userKey -> DocId. We keep this but secured.
         const collectionName = collectionOverride || 'users-workspaces';
 
-        // We use the UID directly as the document verification key, 
+        // We use the UID directly as the document verification key,
         // avoiding obscure base64 transforms unless strictly needed for legacy compatibility.
         // If legacy compat is needed, we keep the transform but I'll simplify to use UID if possible.
         // Let's stick to the previous base64 logic to avoid breaking existing data IF it was important,
-        // BUT for a clean migration, using UID as Doc Name is better. 
+        // BUT for a clean migration, using UID as Doc Name is better.
         // Let's assume we WANT to migrate to UID-based keys.
 
         const docRef = firestore.collection(collectionName).doc(targetUid);
         const docSnap = await docRef.get();
 
         if (!docSnap.exists) {
-            // Return empty object for new users instead of 404 to simplify frontend logic?
-            // Or 404. Let's return 404 and let frontend handle initialization.
-            return res.status(404).json({ error: 'Workspace not found' });
+            // Auto-create workspace for the user
+            const initialData = {
+                ownerId: targetUid,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                workspaces: [],
+                settings: {},
+                onboardingCompleted: false
+            };
+
+            await docRef.set(initialData);
+            return res.json(initialData);
         }
 
         // --- Professional Caching Logic ---
