@@ -5,6 +5,7 @@ import { createGeminiService, GeminiService } from './services/geminiService';
 import { createGretchenService, GretchenService } from './services/gretchenService';
 import { AppState, CVProfile, ChatMessage } from './types';
 import { MarkdownView } from './components/MarkdownView';
+import { CompanyLogo } from './components/CompanyLogo';
 import JSZip from 'jszip';
 
 // --- Components for the Wizard Sections ---
@@ -772,21 +773,26 @@ function App() {
                               {profile.experience.map((exp, idx) => (
                                   <div key={idx} className="p-4 md:p-6 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-300 transition-colors">
                                       <div className="flex flex-col md:flex-row justify-between items-start mb-4 gap-3 md:gap-0">
-                                          <div className="w-full md:mr-4">
-                                              <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 p-0" value={exp.role} onChange={(e) => {
-                                                  const newExp = [...profile.experience];
-                                                  newExp[idx].role = e.target.value;
-                                                  setProfile({...profile, experience: newExp});
-                                              }} placeholder="Cargo / Rol" />
-                                              <div className="flex gap-2 mt-1">
-                                                  <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0 placeholder-blue-300" value={exp.company} onChange={(e) => {
+                                          <div className="flex items-start gap-4 w-full md:mr-4">
+                                              <div className="hidden md:block">
+                                                  <CompanyLogo name={exp.company} />
+                                              </div>
+                                              <div className="w-full">
+                                                  <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 p-0" value={exp.role} onChange={(e) => {
                                                       const newExp = [...profile.experience];
-                                                      newExp[idx].company = e.target.value;
+                                                      newExp[idx].role = e.target.value;
                                                       setProfile({...profile, experience: newExp});
-                                                  }} placeholder="Empresa" />
+                                                  }} placeholder="Cargo / Rol" />
+                                                  <div className="flex gap-2 mt-1">
+                                                      <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0 placeholder-blue-300" value={exp.company} onChange={(e) => {
+                                                          const newExp = [...profile.experience];
+                                                          newExp[idx].company = e.target.value;
+                                                          setProfile({...profile, experience: newExp});
+                                                      }} placeholder="Empresa" />
+                                                  </div>
                                               </div>
                                           </div>
-                                          <input className="w-full md:w-32 text-left md:text-right text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-500" value={exp.period} onChange={(e) => {
+                                          <input className="w-full md:w-32 text-left md:text-right text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-500 shrink-0" value={exp.period} onChange={(e) => {
                                               const newExp = [...profile.experience];
                                               newExp[idx].period = e.target.value;
                                               setProfile({...profile, experience: newExp});
@@ -1168,10 +1174,16 @@ function App() {
                   return (
                       <div className="space-y-6 animate-fade-in">
                           {profile.experience.map((exp, i) => (
-                              <div key={i} className="border-l-2 border-slate-200 pl-4 pb-2">
-                                  <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
-                                  <div className="text-sm text-blue-600 font-medium mb-1">{exp.company} <span className="text-slate-400 mx-1">•</span> {exp.period}</div>
-                                  <p className="text-slate-600 text-sm leading-relaxed">{exp.description}</p>
+                              <div key={i} className="flex gap-4">
+                                  <div className="flex flex-col items-center">
+                                      <CompanyLogo name={exp.company} className="w-10 h-10 md:w-12 md:h-12" />
+                                      <div className="w-0.5 bg-slate-200 flex-1 my-2"></div>
+                                  </div>
+                                  <div className="pb-6 flex-1">
+                                      <h4 className="font-bold text-lg text-slate-800">{exp.role}</h4>
+                                      <div className="text-sm text-blue-600 font-medium mb-1">{exp.company} <span className="text-slate-400 mx-1">•</span> {exp.period}</div>
+                                      <p className="text-slate-600 text-sm leading-relaxed">{exp.description}</p>
+                                  </div>
                               </div>
                           ))}
                           {profile.experience.length === 0 && <p className="text-slate-400 italic">No hay experiencia registrada.</p>}
@@ -1182,8 +1194,8 @@ function App() {
                       <div className="space-y-4 animate-fade-in">
                           {profile.education && profile.education.length > 0 ? profile.education.map((edu, i) => (
                               <div key={i} className="bg-slate-50 p-4 rounded-lg flex items-center gap-4">
-                                  <div className="p-3 bg-white rounded-full shadow-sm shrink-0">
-                                      <GraduationCap className="w-6 h-6 text-blue-500" />
+                                  <div className="shrink-0">
+                                      <CompanyLogo name={edu.institution} className="w-12 h-12" />
                                   </div>
                                   <div>
                                       <h4 className="font-bold text-slate-800">{edu.title}</h4>
