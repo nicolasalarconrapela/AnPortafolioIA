@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight, GraduationCap, Layout, Search } from 'lucide-react';
+import { Upload, Briefcase, Award, Code, Heart, Globe, BookOpen, Star, User, ChevronRight, ChevronLeft, Save, Sparkles, Terminal, MessageSquare, X, CheckCircle2, FileJson, Download, FileArchive, Eye, ShieldAlert, Wrench, ArrowRight, GraduationCap, Layout, Search, FileText, Eraser } from 'lucide-react';
 import { Button } from './components/Button';
 import { createGeminiService, GeminiService } from './services/geminiService';
 import { createGretchenService, GretchenService } from './services/gretchenService';
@@ -372,11 +372,13 @@ function App() {
     setError(null);
 
     // --- JSON IMPORT (ENHANCED) ---
-    if (file.type === 'application/json' || file.name.endsWith('.json')) {
+    // Added check for text/plain or empty types which happen on mobile, validating via file content logic
+    if (file.type === 'application/json' || file.name.endsWith('.json') || file.type === 'text/plain') {
         const reader = new FileReader();
         reader.onload = async (e) => {
             const content = e.target?.result as string;
             try {
+                // Try parsing as JSON first
                 const json = JSON.parse(content);
                 
                 // Detection logic: Does it look like OUR profile format (backup)?
@@ -402,9 +404,19 @@ function App() {
                     }
                 }
             } catch (err) {
+                // If JSON parse fails, and it was a text file, maybe it's a raw text CV?
+                // For now, if it fails to parse as JSON, we treat it as an error or could fallback to text analysis if we wanted.
+                // Assuming "Permitir subir jsons" implies valid JSON files.
                 console.error(err);
-                setError("El archivo JSON no es válido o no pudo ser analizado.");
-                setAppState(AppState.ERROR);
+                if (file.name.endsWith('.json')) {
+                    setError("El archivo JSON no es válido o no pudo ser analizado.");
+                    setAppState(AppState.ERROR);
+                } else {
+                     // If it was a text/plain file that failed JSON parse, it might be an image/pdf flow that got misrouted or just invalid.
+                     // But strictly for JSON upload feature, we stop here.
+                     setError("El archivo no es un JSON válido.");
+                     setAppState(AppState.ERROR);
+                }
             }
         };
         reader.readAsText(file);
@@ -476,16 +488,69 @@ function App() {
       downloadAnchorNode.remove();
   };
 
+  /**
+   * Cleans the profile by removing any field that contains placeholders or empty values.
+   * This ensures that Googlito's "suggestions" that were not filled by the user are not shown.
+   */
+  const cleanProfile = (p: CVProfile): CVProfile => {
+      const isDirty = (s: string) => {
+          if (!s || typeof s !== 'string') return true;
+          const trimmed = s.trim();
+          if (trimmed === "") return true;
+          // Check for Googlito placeholders
+          if (trimmed.includes("[ACCIÓN REQUERIDA") || 
+              trimmed.includes("[FALTA:") || 
+              trimmed.includes("[COMPLETAR:") ||
+              trimmed.includes("[INSERTAR")) {
+              return true;
+          }
+          return false;
+      };
+
+      return {
+          ...p,
+          summary: isDirty(p.summary) ? "" : p.summary,
+          experience: p.experience.filter(e => !isDirty(e.role) && !isDirty(e.company)).map(e => ({
+              ...e,
+              description: isDirty(e.description) ? "" : e.description
+          })),
+          education: p.education.filter(e => !isDirty(e.institution)),
+          skills: p.skills.filter(s => !isDirty(s)),
+          techStack: {
+              languages: p.techStack.languages.filter(s => !isDirty(s)),
+              ides: p.techStack.ides.filter(s => !isDirty(s)),
+              frameworks: p.techStack.frameworks.filter(s => !isDirty(s)),
+              tools: p.techStack.tools.filter(s => !isDirty(s)),
+          },
+          projects: p.projects.filter(pr => !isDirty(pr.name)).map(pr => ({
+              ...pr,
+              description: isDirty(pr.description) ? "" : pr.description,
+              technologies: isDirty(pr.technologies) ? "" : pr.technologies,
+              link: isDirty(pr.link || "") ? undefined : pr.link
+          })),
+          volunteering: p.volunteering.filter(v => !isDirty(v.company)).map(v => ({
+              ...v,
+              description: isDirty(v.description) ? "" : v.description
+          })),
+          awards: p.awards.filter(a => !isDirty(a)),
+          languages: p.languages.filter(l => !isDirty(l.language)),
+          hobbies: p.hobbies.filter(h => !isDirty(h))
+      };
+  };
+
   const handleNext = async () => {
-      if (currentStep < 8) {
+      // Step 10 is the Final Review (Step 10 in array index)
+      if (currentStep < 10) {
           setCurrentStep(c => c + 1);
       } else {
-          // Initialize Donna
+          // Initialize Donna with CLEANED data
           if (geminiServiceRef.current && profile) {
-              await geminiServiceRef.current.initDonnaChat(profile);
+              const cleanedProfile = cleanProfile(profile);
+              setProfile(cleanedProfile); // Update state with clean data
+              await geminiServiceRef.current.initDonnaChat(cleanedProfile);
               setDonnaChat([]);
+              setAppState(AppState.DONNA);
           }
-          setAppState(AppState.DONNA);
       }
   };
 
@@ -525,6 +590,7 @@ function App() {
           case 6: return profile.awards;
           case 7: return profile.languages;
           case 8: return profile.hobbies;
+          case 9: return profile.summary;
           default: return null;
       }
   }
@@ -542,6 +608,7 @@ function App() {
           case 6: newProfile.awards = newData; break;
           case 7: newProfile.languages = newData; break;
           case 8: newProfile.hobbies = newData; break;
+          case 9: newProfile.summary = newData.summary || newData; break; // Handle string or obj
       }
       setProfile(newProfile);
   }
@@ -569,11 +636,18 @@ function App() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <label className="block w-full cursor-pointer bg-red-900 hover:bg-red-800 text-red-100 font-bold py-3 px-4 md:py-4 md:px-6 transition-all transform hover:scale-[1.02] shadow-lg border border-red-950 flex items-center justify-center gap-3 rounded">
-                            <Upload className="w-5 h-5"/> 
-                            <span>Entregar Documentación</span>
-                            <input type="file" className="hidden" accept="application/pdf,image/*,.json,.zip,application/zip,application/x-zip-compressed" onChange={handleFileUpload} />
-                        </label>
+                        <div className="relative w-full group">
+                            <div className="flex items-center justify-center gap-3 bg-red-900 group-hover:bg-red-800 text-red-100 font-bold py-3 px-4 md:py-4 md:px-6 transition-all transform group-hover:scale-[1.02] shadow-lg border border-red-950 rounded cursor-pointer">
+                                <Upload className="w-5 h-5"/> 
+                                <span>Entregar Documentación</span>
+                            </div>
+                            <input 
+                                type="file" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" 
+                                accept=".pdf,.json,.txt,.zip,.jpg,.jpeg,.png,application/pdf,application/json,text/plain,text/json,application/zip,application/x-zip-compressed,image/*" 
+                                onChange={handleFileUpload} 
+                            />
+                        </div>
                         
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-4">
                              <FileArchive className="w-4 h-4"/>
@@ -634,6 +708,8 @@ function App() {
           { id: 'awards', title: 'Reconocimientos', icon: <Award />, desc: 'Premios y certificaciones.', ai: 'Googlito Fame' },
           { id: 'lang', title: 'Idiomas', icon: <Globe />, desc: '¿Qué lenguas dominas?', ai: 'Googlito Lingua' },
           { id: 'hobbies', title: 'Hobbies', icon: <BookOpen />, desc: '¿Qué te apasiona fuera del trabajo?', ai: 'Googlito Life' },
+          { id: 'summary', title: 'Perfil Profesional', icon: <User />, desc: 'Descripción del Candidato y Rol.', ai: 'Googlito Bio' },
+          { id: 'review', title: 'Revisión Final', icon: <FileText />, desc: 'Verifica todos los datos antes de finalizar.', ai: 'Googlito Auditor' },
       ];
 
       const step = steps[currentStep];
@@ -672,7 +748,7 @@ function App() {
                       <span className="hidden md:flex text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100 items-center gap-1">
                           <Sparkles className="w-3 h-3" /> Janice is Online
                       </span>
-                      <div className="text-xs md:text-sm font-medium text-slate-400">Paso {currentStep} / 8</div>
+                      <div className="text-xs md:text-sm font-medium text-slate-400">Paso {currentStep} / {steps.length - 1}</div>
                   </div>
               </header>
 
@@ -967,6 +1043,100 @@ function App() {
                           </div>
                       )}
 
+                       {/* STEP 9: PROFESSIONAL SUMMARY (New Step) */}
+                       {currentStep === 9 && (
+                          <div className="space-y-6">
+                              <div className="p-6 bg-blue-50/50 rounded-xl border border-blue-100 relative">
+                                  <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Descripción del Candidato / Resumen Ejecutivo</h3>
+                                  <textarea 
+                                      className="w-full text-base text-slate-700 bg-white border border-slate-200 rounded-lg p-4 h-64 focus:ring-2 focus:ring-blue-100 outline-none resize-none shadow-inner leading-relaxed" 
+                                      value={profile.summary} 
+                                      onChange={(e) => {
+                                          setProfile({...profile, summary: e.target.value});
+                                      }} 
+                                      placeholder="Escribe un resumen impactante sobre tu perfil profesional..." 
+                                  />
+                                  <button 
+                                      onClick={() => openJanice(profile.summary, `Resumen Profesional`, (txt) => {
+                                          setProfile({...profile, summary: txt});
+                                      })}
+                                      className="absolute bottom-4 right-4 text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-md hover:bg-purple-200 flex items-center gap-2 transition-colors shadow-sm font-bold"
+                                  >
+                                      <Sparkles className="w-4 h-4" /> Janice: Mejorar Redacción
+                                  </button>
+                              </div>
+                              
+                              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm text-yellow-800">
+                                  <strong>Nota Importante:</strong> Este es el texto principal que leerá Donna. Asegúrate de que defina bien quién eres y qué buscas.
+                              </div>
+                          </div>
+                      )}
+
+                       {/* STEP 10: FINAL REVIEW (New Step) */}
+                       {currentStep === 10 && (
+                          <div className="space-y-6">
+                              <div className="bg-slate-800 text-white p-4 rounded-lg flex items-center gap-3">
+                                  <ShieldAlert className="w-6 h-6 text-yellow-400" />
+                                  <div className="text-sm">
+                                      <p className="font-bold">Modo de Revisión Final</p>
+                                      <p className="opacity-80">Los datos vacíos o con marcadores de Googlitos no resueltos (ej: [FALTA...]) serán eliminados automáticamente al finalizar.</p>
+                                  </div>
+                              </div>
+
+                              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                  {/* Preview Header */}
+                                  <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                                      <div>
+                                          <h3 className="font-bold text-slate-800 text-lg">{profile.experience[0]?.role || "Profesional"}</h3>
+                                          <p className="text-xs text-slate-500">Vista Previa de Datos</p>
+                                      </div>
+                                      <div className="flex gap-2">
+                                          {['Experiencia', 'Proyectos', 'Skills'].map(t => (
+                                              <span key={t} className="text-[10px] uppercase bg-slate-200 px-2 py-1 rounded text-slate-600">{t}</span>
+                                          ))}
+                                      </div>
+                                  </div>
+
+                                  {/* Preview Body */}
+                                  <div className="p-6 space-y-6 max-h-[500px] overflow-y-auto text-sm">
+                                      <section>
+                                          <h4 className="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">Resumen</h4>
+                                          <p className="text-slate-600 leading-relaxed">{profile.summary || <span className="text-slate-300 italic">Vacío</span>}</p>
+                                      </section>
+                                      
+                                      <section>
+                                          <h4 className="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">Experiencia ({profile.experience.length})</h4>
+                                          {profile.experience.map((e, i) => (
+                                              <div key={i} className="mb-3 pl-2 border-l-2 border-slate-100">
+                                                  <div className="font-bold text-slate-700">{e.role} @ {e.company}</div>
+                                                  <div className="text-xs text-slate-400 mb-1">{e.period}</div>
+                                                  <p className="text-slate-500 truncate">{e.description}</p>
+                                              </div>
+                                          ))}
+                                      </section>
+
+                                      <section>
+                                          <h4 className="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">Proyectos ({profile.projects.length})</h4>
+                                          {profile.projects.map((p, i) => (
+                                              <div key={i} className="mb-2">
+                                                  <span className="font-bold text-slate-700">{p.name}</span>: <span className="text-slate-500">{p.description.substring(0, 100)}...</span>
+                                              </div>
+                                          ))}
+                                      </section>
+
+                                       <section>
+                                          <h4 className="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">Skills & Stack</h4>
+                                          <div className="flex flex-wrap gap-1">
+                                              {profile.skills.concat(profile.techStack.languages).map((s,i) => (
+                                                  <span key={i} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">{s}</span>
+                                              ))}
+                                          </div>
+                                      </section>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
                   </div>
               </main>
 
@@ -977,8 +1147,8 @@ function App() {
                           <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
                       </Button>
                       <Button onClick={handleNext} className="bg-slate-800 hover:bg-slate-900 text-white px-6 md:px-8 text-sm md:text-base">
-                          {currentStep === 8 ? (
-                              <>Conocer a Donna <ArrowRightIcon /></>
+                          {currentStep === 10 ? (
+                              <>Finalizar y Conocer a Donna <ArrowRightIcon /></>
                           ) : (
                               <>Siguiente <ChevronRight className="w-4 h-4 ml-2" /></>
                           )}
