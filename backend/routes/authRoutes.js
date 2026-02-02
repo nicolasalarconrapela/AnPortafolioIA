@@ -53,6 +53,69 @@ router.get('/verify', requireAuth, async (req, res) => {
 // Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
+const FIREBASE_AUTH_ERROR_TRANSLATIONS = {
+    EMAIL_NOT_FOUND: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "No encontramos una cuenta con ese correo."
+    },
+    INVALID_PASSWORD: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "Correo o contraseña incorrectos."
+    },
+    INVALID_LOGIN_CREDENTIALS: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "Correo o contraseña incorrectos."
+    },
+    USER_DISABLED: {
+        code: "ACCOUNT_DISABLED",
+        message: "Esta cuenta ha sido deshabilitada. Contacta al soporte si crees que fue un error."
+    },
+    TOO_MANY_ATTEMPTS_TRY_LATER: {
+        code: "TOO_MANY_ATTEMPTS",
+        message: "Demasiados intentos fallidos. Intenta de nuevo más tarde."
+    },
+    EMAIL_EXISTS: {
+        code: "EMAIL_ALREADY_EXISTS",
+        message: "Ya existe una cuenta registrada con ese correo."
+    },
+    INVALID_EMAIL: {
+        code: "INVALID_EMAIL",
+        message: "Por favor ingresa un correo con formato válido."
+    },
+    OPERATION_NOT_ALLOWED: {
+        code: "OPERATION_NOT_ALLOWED",
+        message: "Este método de autenticación no está habilitado para este proyecto."
+    },
+    WEAK_PASSWORD: {
+        code: "WEAK_PASSWORD",
+        message: "La contraseña debe tener al menos 6 caracteres."
+    }
+};
+
+const translateFirebaseAuthError = (firebaseCode = "UNKNOWN_FIREBASE_ERROR") => {
+    const translation = FIREBASE_AUTH_ERROR_TRANSLATIONS[firebaseCode];
+    if (translation) {
+        return {
+            code: translation.code,
+            message: translation.message,
+            firebaseCode
+        };
+    }
+
+    return {
+        code: firebaseCode,
+        message: `Error de autenticación: ${firebaseCode}`,
+        firebaseCode
+    };
+};
+
+const sendFirebaseAuthError = (res, status, error, fallbackMessage) => {
+    res.status(status).json({
+        code: error?.code || "FIREBASE_AUTH_ERROR",
+        error: error?.message || fallbackMessage || "Error de autenticación",
+    });
+};
+
 // Helper to call Firebase REST API
 const callFirebaseREST = async (endpoint, body) => {
     if (!FIREBASE_API_KEY) throw new Error("FIREBASE_API_KEY is not configured in backend.");
@@ -64,7 +127,12 @@ const callFirebaseREST = async (endpoint, body) => {
     });
     const data = await response.json();
     if (!response.ok) {
-        throw new Error(data.error?.message || "Firebase REST API Error");
+        const firebaseCode = data.error?.message || "UNKNOWN_FIREBASE_ERROR";
+        const translated = translateFirebaseAuthError(firebaseCode);
+        const error = new Error(translated.message);
+        error.code = translated.code;
+        error.firebaseCode = translated.firebaseCode;
+        throw error;
     }
     return data;
 };
@@ -155,8 +223,12 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Login failed", { error: error.message });
-        res.status(401).json({ error: error.message });
+        logger.error("Login failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 401, error, "Correo o contraseña inválidos");
     }
 });
 
@@ -191,8 +263,12 @@ router.post('/register', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Registration failed", { error: error.message });
-        res.status(400).json({ error: error.message });
+        logger.error("Registration failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 400, error, "No se pudo crear la cuenta");
     }
 });
 
@@ -222,8 +298,12 @@ router.post('/guest', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Guest login failed", { error: error.message });
-        res.status(500).json({ error: error.message });
+        logger.error("Guest login failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 500, error, "No pudimos crear una sesión de invitado");
     }
 });
 
