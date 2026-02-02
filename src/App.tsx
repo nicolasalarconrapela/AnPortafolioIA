@@ -7,6 +7,7 @@ import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
 import { DesignSystemView } from './components/DesignSystemView';
 import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView';
+import BrainRoot from './components/brain/BrainRoot';
 import { ViewState, UserProfile } from './types';
 import { ConsentProvider, useConsent } from './components/consent/ConsentContext';
 import { ConsentUI } from './components/consent/ConsentUI';
@@ -15,6 +16,7 @@ import { env } from './utils/env';
 import { loggingService } from './utils/loggingService';
 import { getWorkspaceByUserFromFirestore, getPublicProfile } from './services/firestoreWorkspaces';
 import { authService } from './services/authService';
+
 
 // Extend ViewState locally if needed or assume it's updated in types.ts
 // For now, we cast strings if types aren't updated yet to avoid breaking compile
@@ -32,7 +34,7 @@ const AppContent: React.FC = () => {
 
   // Route Protection Effect
   useEffect(() => {
-    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system'];
+    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system', 'cv-analysis'];
 
     // If trying to access a protected view without authentication
     if (protectedViews.includes(view)) {
@@ -191,7 +193,12 @@ const AppContent: React.FC = () => {
         <CandidateDashboard
           userId={currentUserId}
           onLogout={handleLogout}
+          onNavigate={(v) => setView(v as ViewState)}
         />
+      )}
+
+      {view === 'cv-analysis' && (
+        <BrainRoot />
       )}
 
       {/* Footer Links (Privacy & Settings) */}

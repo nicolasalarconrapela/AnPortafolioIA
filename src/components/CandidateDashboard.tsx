@@ -31,6 +31,7 @@ type OptimizationCategory = 'experience' | 'skills' | 'education' | 'projects';
 interface CandidateDashboardProps {
   onLogout: () => void;
   userId: string;
+  onNavigate?: (view: string) => void;
 }
 
 // --- CONFIGURATION ---
@@ -120,7 +121,7 @@ const ChatMessage: React.FC<{ sender: 'ai' | 'user', text: string }> = ({ sender
 
 // --- MAIN COMPONENT ---
 
-export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout, userId }) => {
+export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout, userId, onNavigate }) => {
   // Mobile-specific state to switch between Form and Chat views
   const [mobileView, setMobileView] = useState<'form' | 'chat'>('form');
 
@@ -330,6 +331,20 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                   ) : (
                     profile.bio || "Add a short bio to introduce yourself."
                   )}
+                </div>
+              </Card>
+
+              {/* CV Analysis Quick Access */}
+              <Card variant="outlined" className="p-4 md:p-5 bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 hover:border-primary/40 transition-all cursor-pointer group" onClick={() => onNavigate?.('cv-analysis')}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Icon name="auto_awesome" size="md" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-[var(--md-sys-color-on-background)] mb-1">Análisis Profesional de CV</h3>
+                    <p className="text-xs text-outline">Donna te ayudará a mejorar tu currículum con IA</p>
+                  </div>
+                  <Icon name="arrow_forward" className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </Card>
 
