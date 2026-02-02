@@ -1,23 +1,27 @@
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'model';
+  role: "user" | "model";
   text: string;
   timestamp: Date;
 }
 
 export enum AppState {
-  IDLE = 'IDLE',
-  ANALYZING = 'ANALYZING',
-  WIZARD = 'WIZARD', // Step-by-step editing with Googlitos
-  DONNA = 'DONNA', // Final view (formerly HARVIS)
-  ERROR = 'ERROR'
+  IDLE = "IDLE",
+  ANALYZING = "ANALYZING",
+  WIZARD = "WIZARD", // Step-by-step editing with Googlitos
+  DONNA = "DONNA", // Final view (formerly HARVIS)
+  ERROR = "ERROR",
 }
 
 export interface ExperienceItem {
   company: string;
   role: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
   period: string;
   description: string;
+  logo?: string;
 }
 
 export interface ProjectItem {
@@ -25,6 +29,10 @@ export interface ProjectItem {
   description: string;
   technologies: string;
   link?: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  images?: string[];
 }
 
 export interface EducationItem {

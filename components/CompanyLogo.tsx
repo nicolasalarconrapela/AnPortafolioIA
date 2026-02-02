@@ -4,14 +4,21 @@ import { Building2 } from 'lucide-react';
 interface CompanyLogoProps {
   name: string;
   className?: string;
+  logoUrl?: string;
 }
 
-export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, className = "w-12 h-12" }) => {
+export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, className = "w-12 h-12", logoUrl }) => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setHasError(false);
+
+    if (logoUrl) {
+      setImgSrc(logoUrl);
+      return;
+    }
+
     if (!name) {
         setImgSrc(null);
         return;
@@ -34,7 +41,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, className = "w-1
 
     // Configuración de Logo.dev
     // Se requiere un token. Si no existe en el entorno, se intenta fallback a Clearbit para no romper la UI.
-    const token = process.env.LOGO_DEV_TOKEN || 'pk_PnQ8GRcqQDK4cwvIP4rxuQ';
+    const token = import.meta.env.VITE_LOGO_DEV_TOKEN || 'pk_PnQ8GRcqQDK4cwvIP4rxuQ';
     
     if (token) {
         setImgSrc(`https://img.logo.dev/${domain}?token=${token}`);
@@ -43,7 +50,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, className = "w-1
         setImgSrc(`https://logo.clearbit.com/${domain}`);
     }
 
-  }, [name]);
+  }, [name, logoUrl]);
 
   if (hasError || !imgSrc || !name) {
     return (

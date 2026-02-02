@@ -6,36 +6,68 @@ interface MarkdownViewProps {
 }
 
 export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className = '' }) => {
+  const lines = content.split('\n');
+  const elements: React.ReactNode[] = [];
+  
+  let currentList: React.ReactNode[] = [];
+  
+  lines.forEach((line, i) => {
+    // List Item
+    if (line.trim().startsWith('- ')) {
+       currentList.push(
+         <li key={`li-${i}`} className="ml-4 pl-1 my-1 marker:text-slate-400">
+            <span className="flex flex-wrap items-center gap-1">
+                {parseContent(line.replace(/^- /, ''))}
+            </span>
+         </li>
+       );
+    } else {
+       // Flush list if exists
+       if (currentList.length > 0) {
+           elements.push(
+               <ul key={`ul-${i}`} className="list-disc mb-2 space-y-1">
+                   {currentList}
+               </ul>
+           );
+           currentList = [];
+       }
+       
+       const trimmed = line.trim();
+       
+       // Empty line
+       if (trimmed === '') {
+           elements.push(<div key={`empty-${i}`} className="h-2" />);
+       } 
+       // Headers
+       else if (line.startsWith('## ')) {
+           elements.push(<h2 key={`h2-${i}`} className="text-xl font-bold text-slate-800 mt-4 mb-2 flex items-center">{parseContent(line.replace(/^## /, ''))}</h2>);
+       }
+       else if (line.startsWith('### ')) {
+           elements.push(<h3 key={`h3-${i}`} className="text-lg font-semibold text-slate-800 mt-3 mb-1 flex items-center">{parseContent(line.replace(/^### /, ''))}</h3>);
+       }
+       // Paragraph
+       else {
+           elements.push(
+               <p key={`p-${i}`} className="mb-1 leading-relaxed text-slate-700 flex flex-wrap items-center gap-1">
+                   {parseContent(line)}
+               </p>
+           );
+       }
+    }
+  });
+
+  // Flush remaining list
+  if (currentList.length > 0) {
+       elements.push(
+           <ul key={`ul-end`} className="list-disc mb-2 space-y-1">
+               {currentList}
+           </ul>
+       );
+  }
+
   return (
     <div className={`prose prose-slate max-w-none ${className}`}>
-        {content.split('\n').map((line, i) => {
-            // Headers
-            if (line.startsWith('## ')) {
-                return <h2 key={i} className="text-xl font-bold text-slate-800 mt-4 mb-2 flex items-center">{parseContent(line.replace('## ', ''))}</h2>
-            }
-            if (line.startsWith('### ')) {
-                return <h3 key={i} className="text-lg font-semibold text-slate-800 mt-3 mb-1 flex items-center">{parseContent(line.replace('### ', ''))}</h3>
-            }
-            // List items
-            if (line.startsWith('- ')) {
-                 return <li key={i} className="ml-4 list-disc marker:text-slate-400 pl-1 my-1">
-                    <span className="flex flex-wrap items-center gap-1">
-                        {parseContent(line.replace('- ', ''))}
-                    </span>
-                 </li>
-            }
-            // Empty lines
-            if (line.trim() === '') {
-                return <div key={i} className="h-2" />
-            }
-            
-            // Paragraphs
-            return (
-                <p key={i} className="mb-1 leading-relaxed text-slate-700 flex flex-wrap items-center gap-1">
-                    {parseContent(line)}
-                </p>
-            );
-        })}
+        {elements}
     </div>
   );
 };
