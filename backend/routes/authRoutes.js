@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAuth } from '../firebaseAdmin.js';
+import { getAuth, getFirestore } from '../firebaseAdmin.js';
 import { logger } from '../logger.js';
 import { syncUserToFirestore } from '../services/userService.js';
 // Using global fetch (Node 18+)
@@ -7,6 +7,25 @@ import { config } from '../config.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+const SESSION_COOKIE_BASE_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+};
+
+const createSessionCookieOptions = (overrides = {}) => ({
+    ...SESSION_COOKIE_BASE_OPTIONS,
+    ...overrides
+});
+
+const clearSessionCookie = (res) => {
+    res.clearCookie('session', createSessionCookieOptions());
+};
+
+const WORKSPACE_ENV_SUFFIX = process.env.WORKSPACE_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'development');
+const WORKSPACE_COLLECTION = `workspace-${WORKSPACE_ENV_SUFFIX}`;
+const USER_SUBCOLLECTION = `users-${WORKSPACE_ENV_SUFFIX}`;
 
 /**
  * GET /api/auth/verify
@@ -79,12 +98,7 @@ const setSessionCookie = async (res, idToken) => {
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
     const auth = getAuth();
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-    const options = {
-        maxAge: expiresIn,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    };
+    const options = createSessionCookieOptions({ maxAge: expiresIn });
     res.cookie('session', sessionCookie, options);
 };
 
@@ -109,11 +123,7 @@ router.post('/session-login', async (req, res) => {
  * POST /api/auth/logout
  */
 router.post('/logout', (req, res) => {
-    res.clearCookie('session', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    });
+    clearSessionCookie(res);
     res.json({ success: true, message: "Logged out" });
 });
 
@@ -322,6 +332,45 @@ router.delete('/user/:uid', async (req, res) => {
     } catch (error) {
         logger.error('Failed to delete user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to delete user', details: error.message });
+    }
+});
+
+/**
+ * DELETE /api/auth/account
+ * Deletes the current authenticated user, including their Firestore document and auth record.
+ */
+router.delete('/account', requireAuth, async (req, res) => {
+    const uid = req.user.uid;
+    const firestore = getFirestore();
+    const auth = getAuth();
+
+    const userDocRef = firestore
+        .collection(WORKSPACE_COLLECTION)
+        .doc('global')
+        .collection(USER_SUBCOLLECTION)
+        .doc(uid);
+
+    try {
+        await userDocRef.delete();
+
+        try {
+            await auth.deleteUser(uid);
+        } catch (deleteError) {
+            if (deleteError.code !== 'auth/user-not-found') {
+                throw deleteError;
+            }
+            logger.warn('Account deletion: auth user already missing', { uid });
+        }
+
+        clearSessionCookie(res);
+
+        res.json({
+            success: true,
+            message: 'Account deleted successfully',
+        });
+    } catch (error) {
+        logger.error('Account deletion failed', { uid, error: error.message });
+        res.status(500).json({ error: 'Failed to delete account', details: error.message });
     }
 });
 

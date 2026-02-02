@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
+import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
-import { env } from '../utils/env';
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
 
@@ -114,6 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Load settings from Firestore
   useEffect(() => {
@@ -181,6 +182,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
       alert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!userKey) return;
+    const confirmDeletion = window.confirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?');
+    if (!confirmDeletion) return;
+
+    setIsDeletingAccount(true);
+    try {
+      await authService.deleteAccount();
+      loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
+      window.location.href = '/';
+    } catch (error: any) {
+      loggingService.error('Failed to delete account', error);
+      alert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.');
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -530,9 +549,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       <div>
                         <p className="text-sm font-bold text-error">Delete Account</p>
                         <p className="text-xs text-error/80 mt-1">Permanently remove all your data (Right to Erasure).</p>
+                        <p className="text-[10px] text-error/70 mt-2">
+                          Your workspace, profile, and settings will be erased and the session will end automatically.
+                        </p>
                       </div>
-                      <button className="px-4 py-2 rounded-full bg-error text-white text-sm font-medium hover:bg-error/90 shadow-sm">
-                        Delete My Data
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={isDeletingAccount || isLoading}
+                        className="px-5 py-2 rounded-full bg-error text-white text-sm font-semibold hover:bg-error/90 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isDeletingAccount ? (
+                          <>
+                            <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                            Eliminando...
+                          </>
+                        ) : (
+                          'Delete My Account'
+                        )}
                       </button>
                     </div>
                   </section>

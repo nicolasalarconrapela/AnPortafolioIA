@@ -140,6 +140,21 @@ class AuthService {
       // Include console log or logging service
     }
   }
+
+  /**
+   * Delete the authenticated account, removing Firebase Auth + Firestore data
+   */
+  async deleteAccount(): Promise<void> {
+    const response = await fetch(`${BASE_URL}/account`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || data.details || "Failed to delete account");
+    }
+  }
 }
 
 export const authService = new AuthService();
