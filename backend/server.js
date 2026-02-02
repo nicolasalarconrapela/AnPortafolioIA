@@ -166,12 +166,21 @@ app.use((req, res, next) => {
 // ------------------------------------------------------------
 // 3) CORS robusto
 // ------------------------------------------------------------
-const rawAllowedOrigins = [
+const parseCommaList = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const fallbackAllowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
+  "http://localhost:3000"
+];
+
+const rawAllowedOrigins = [
+  ...parseCommaList(process.env.ALLOWED_ORIGINS),
   config.EXTERNAL_URL,
-  "https://anportafolioia.onrender.com",
-  "https://anportafolioia-egy8.onrender.com",
+  ...fallbackAllowedOrigins,
 ]
   .filter(Boolean)
   .map((s) => String(s).trim())
