@@ -1,4 +1,3 @@
-
 // ============================================================
 // Unified Logging Types (Frontend + Backend)
 // ============================================================
@@ -29,7 +28,14 @@ export interface UnifiedLogEntry {
 // View & UI Types
 // ============================================================
 
-export type ViewState = 'landing' | 'auth-candidate' | 'auth-candidate-register' | 'candidate-onboarding' | 'candidate-dashboard' | 'design-system';
+export type ViewState =
+  | "landing"
+  | "auth-candidate"
+  | "auth-candidate-register"
+  | "candidate-onboarding"
+  | "candidate-dashboard"
+  | "design-system"
+  | "cv-analysis";
 
 export interface FloatingNodeProps {
   title: string;
@@ -38,8 +44,8 @@ export interface FloatingNodeProps {
   icon: string;
   position: string;
   delay: string;
-  align?: 'left' | 'right';
-  type: 'cyan' | 'indigo';
+  align?: "left" | "right";
+  type: "cyan" | "indigo";
   tags?: string[];
 }
 

@@ -7,14 +7,16 @@ import { OnboardingView } from './components/OnboardingView';
 import { CandidateDashboard } from './components/CandidateDashboard';
 import { DesignSystemView } from './components/DesignSystemView';
 import { PrivacyPolicyView } from './components/legal/PrivacyPolicyView';
-import { ViewState } from './types';
+import BrainRoot from './components/brain/BrainRoot';
+import { ViewState, UserProfile } from './types';
 import { ConsentProvider, useConsent } from './components/consent/ConsentContext';
 import { ConsentUI } from './components/consent/ConsentUI';
 import { LogViewer } from './components/debug/LogViewer';
 import { env } from './utils/env';
 import { loggingService } from './utils/loggingService';
-import { getWorkspaceByUserFromFirestore } from './services/firestoreWorkspaces';
+import { getWorkspaceByUserFromFirestore, getPublicProfile } from './services/firestoreWorkspaces';
 import { authService } from './services/authService';
+
 
 // Extend ViewState locally if needed or assume it's updated in types.ts
 // For now, we cast strings if types aren't updated yet to avoid breaking compile
@@ -25,13 +27,14 @@ const AppContent: React.FC = () => {
   const [view, setView] = useState<ExtendedViewState>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
 
   const { openModal } = useConsent();
 
   // Route Protection Effect
   useEffect(() => {
-    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system'];
+    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system', 'cv-analysis'];
 
     // If trying to access a protected view without authentication
     if (protectedViews.includes(view)) {
@@ -41,52 +44,85 @@ const AppContent: React.FC = () => {
     }
   }, [view, isAuthenticated, isSessionChecking]);
 
-  // Session Restoration Effect: Verify Session & Check Onboarding
+  // Session Restoration Effect: Verify Session & Check Onboarding & Check URL Params
   useEffect(() => {
-      const verifyAndRestore = async () => {
-        setIsSessionChecking(true);
-        try {
-          // 1. Verify Backend Session (HttpOnly Cookie)
-          const user = await authService.verifySession();
+    const verifyAndRestore = async () => {
+      setIsSessionChecking(true);
+      try {
+        // 0. Check for URL Params (Public Profile View)
+        const params = new URLSearchParams(window.location.search);
+        // "token" or "share" param used for secure public profile access
+        const publicToken = params.get('token') || params.get('share');
 
-          if (user && user.uid) {
-             setCurrentUserId(user.uid);
-             setIsAuthenticated(true);
-
-             // 2. Logic to decide if we stay on landing or go to dashboard
-             // Only if we are currently on landing or auth page do we Auto-Redirect.
-             if (view === 'landing' || view.startsWith('auth-')) {
-                // Check Onboarding
-                try {
-                    const ws = await getWorkspaceByUserFromFirestore(user.uid);
-                    if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
-                       setView('candidate-onboarding');
-                    } else {
-                       setView('candidate-dashboard');
-                    }
-                } catch {
-                    // Fallback to dashboard if workspace fetch fails but auth is good
-                    setView('candidate-dashboard');
-                }
-             }
-          }
-        } catch (e) {
-             console.warn("Session verification failed or no session.", e);
-             setIsAuthenticated(false);
-             setCurrentUserId("");
-             // If we were on a protected route, route protection effect will kick in
-        } finally {
+        if (publicToken) {
+          const publicProfileData = await getPublicProfile(publicToken);
+          if (publicProfileData && publicProfileData.profile) {
+            setUserProfile(publicProfileData.profile);
+            // We don't set CurrentUserId/IsAuthenticated, so we are in "Public View Mode"
             setIsSessionChecking(false);
+            return;
+          }
         }
-      };
 
-      verifyAndRestore();
+        // 1. Verify Backend Session (HttpOnly Cookie)
+        const user = await authService.verifySession();
+
+        if (user && user.uid) {
+          setCurrentUserId(user.uid);
+          setIsAuthenticated(true);
+
+          // 2. Fetch User Profile & Workspace
+          try {
+            const ws = await getWorkspaceByUserFromFirestore(user.uid);
+            if (ws && ws.profile) {
+              setUserProfile(ws.profile);
+            }
+
+            // 3. Logic to decide if we stay on landing or go to dashboard
+            // Only if we are currently on AUTH page do we Auto-Redirect.
+            // We ALLOW staying on 'landing' to show the user profile there.
+            if (view.startsWith('auth-')) {
+              if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
+                setView('candidate-onboarding');
+              } else {
+                setView('candidate-dashboard');
+              }
+            }
+          } catch (e) {
+            console.warn("Workspace fetch failed", e);
+            // Fallback to dashboard if workspace fetch fails but auth is good
+            if (view.startsWith('auth-')) {
+              setView('candidate-dashboard');
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Session verification failed or no session.", e);
+        setIsAuthenticated(false);
+        setCurrentUserId("");
+        setUserProfile(null);
+        // If we were on a protected route, route protection effect will kick in
+      } finally {
+        setIsSessionChecking(false);
+      }
+    };
+
+    verifyAndRestore();
   }, []); // Run once on mount
 
   // Handle Log In Success
-  const handleLoginSuccess = (user: any) => {
-     setCurrentUserId(user.uid);
-     setIsAuthenticated(true);
+  const handleLoginSuccess = async (user: any) => {
+    setCurrentUserId(user.uid);
+    setIsAuthenticated(true);
+    // Try to fetch profile aggressively
+    try {
+      const ws = await getWorkspaceByUserFromFirestore(user.uid);
+      if (ws && ws.profile) {
+        setUserProfile(ws.profile);
+      }
+    } catch (e) {
+      console.error("Failed to fetch profile on login success", e);
+    }
   };
 
   // Handle navigation from AuthView
@@ -100,12 +136,13 @@ const AppContent: React.FC = () => {
     // Ideally await authService.logout();
     setCurrentUserId("");
     setIsAuthenticated(false);
+    setUserProfile(null);
     setView('landing');
   };
 
   if (isSessionChecking) {
-      // Simple Loading State
-      return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+    // Simple Loading State
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
   }
 
   return (
@@ -114,7 +151,10 @@ const AppContent: React.FC = () => {
       <ConsentUI />
 
       {view === 'landing' && (
-        <LandingView onNavigate={(nextView) => setView(nextView)} />
+        <LandingView
+          onNavigate={(nextView) => setView(nextView)}
+          userProfile={userProfile}
+        />
       )}
 
       {view === 'design-system' && (
@@ -153,7 +193,12 @@ const AppContent: React.FC = () => {
         <CandidateDashboard
           userId={currentUserId}
           onLogout={handleLogout}
+          onNavigate={(v) => setView(v as ViewState)}
         />
+      )}
+
+      {view === 'cv-analysis' && (
+        <BrainRoot />
       )}
 
       {/* Footer Links (Privacy & Settings) */}

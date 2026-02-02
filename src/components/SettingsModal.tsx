@@ -3,8 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
+import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
-import { env } from '../utils/env';
+import { APP_VERSION } from '../utils/appVersion';
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
 
@@ -66,7 +67,7 @@ interface SettingsModalProps {
   userKey: string;
 }
 
-type SettingsTab = 'general' | 'account' | 'notifications' | 'privacy';
+type SettingsTab = 'general' | 'account' | 'notifications' | 'privacy' | 'ai';
 type ThemeMode = 'system' | 'light' | 'dark';
 
 interface UserSettings {
@@ -76,6 +77,11 @@ interface UserSettings {
     jobAlerts: boolean;
     applicationUpdates: boolean;
   };
+  ai: {
+    enabled: boolean;
+    autoAnalyze: boolean;
+    creativityLevel: 'low' | 'medium' | 'high';
+  };
 }
 
 interface UserProfile {
@@ -84,6 +90,7 @@ interface UserProfile {
   firstName?: string;
   lastName?: string;
   avatarUrl?: string;
+  shareToken?: string;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }) => {
@@ -98,6 +105,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     notifications: {
       jobAlerts: true,
       applicationUpdates: true
+    },
+    ai: {
+      enabled: true,
+      autoAnalyze: true,
+      creativityLevel: 'medium'
     }
   });
 
@@ -107,6 +119,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     email: '',
     firstName: '',
     lastName: '',
+    shareToken: '',
     avatarUrl: ''
   });
 
@@ -114,6 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Load settings from Firestore
   useEffect(() => {
@@ -147,7 +161,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
               email: data.profile.email || data.email || '',
               firstName: data.profile.firstName || nameParts[0] || '',
               lastName: data.profile.lastName || nameParts.slice(1).join(' ') || '',
-              avatarUrl: data.profile.avatarUrl || ''
+              avatarUrl: data.profile.avatarUrl || '',
+              shareToken: data.shareToken || ''
             });
           }
         }
@@ -184,6 +199,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!userKey) return;
+    const confirmDeletion = window.confirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?');
+    if (!confirmDeletion) return;
+
+    setIsDeletingAccount(true);
+    try {
+      await authService.deleteAccount();
+      loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
+      window.location.href = '/';
+    } catch (error: any) {
+      loggingService.error('Failed to delete account', error);
+      alert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   // Save settings to Firestore
   const handleSaveChanges = async () => {
     if (!userKey || !hasChanges) return;
@@ -194,7 +227,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
         settings: {
           theme: settings.theme,
           language: settings.language,
-          notifications: settings.notifications
+          notifications: settings.notifications,
+          ai: settings.ai
         },
         profile: {
           fullName: `${profile.firstName} ${profile.lastName}`.trim() || profile.fullName,
@@ -240,9 +274,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     setHasChanges(true);
   };
 
+  // Handle AI settings change
+  const handleAiChange = (field: keyof UserSettings['ai'], value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      ai: {
+        ...prev.ai,
+        [field]: value
+      }
+    }));
+    setHasChanges(true);
+  };
+
+  const handleGenerateToken = async () => {
+    setIsSaving(true);
+    try {
+      const token = await authService.generateShareToken();
+      setProfile(prev => ({ ...prev, shareToken: token }));
+      loggingService.info('Public token generated successfully');
+    } catch (error) {
+      loggingService.error('Failed to generate token', error);
+      alert('Could not generate public link. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const tabs: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'general', label: 'General', icon: 'tune' },
     { id: 'account', label: 'Account', icon: 'person' },
+    { id: 'ai', label: 'AI Config', icon: 'smart_toy' },
     { id: 'notifications', label: 'Notifications', icon: 'notifications' },
     { id: 'privacy', label: 'Privacy & Data', icon: 'security' }, // Updated label
   ];
@@ -293,7 +354,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
           </nav>
 
           <div className="hidden md:block mt-6 pt-6 border-t border-outline-variant/30 px-2">
-            <p className="text-xs text-outline font-medium">AnPortafolioIA v0.5.0</p>
+            <p className="text-xs text-outline font-medium">AnPortafolioIA v{APP_VERSION}</p>
             <p className="text-[10px] text-outline/70 mt-1">GDPR Compliant Build</p>
           </div>
         </aside>
@@ -408,6 +469,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </button>
                     </div>
                   </div>
+
+                  {/* Public Profile Link */}
+                  <section>
+                    <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Public Profile</h4>
+                    <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30">
+                      <p className="text-sm text-outline mb-3">Share your profile safely using this public link.</p>
+
+                      {!profile.shareToken ? (
+                        <div className="flex flex-col items-start gap-2">
+                           <button
+                             onClick={handleGenerateToken}
+                             disabled={isSaving}
+                             className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                           >
+                             {isSaving ? (
+                               <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                             ) : (
+                               <span className="material-symbols-outlined text-[18px]">link</span>
+                             )}
+                             Generate Public Link
+                           </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={`${window.location.origin}/?token=${profile.shareToken}`}
+                            className="flex-1 bg-surface-variant rounded-lg px-3 py-2 text-sm font-mono text-on-surface-variant border border-outline-variant/50 focus:outline-none"
+                            onClick={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/?token=${profile.shareToken}`);
+                            }}
+                            className="p-2 hover:bg-primary-container rounded-lg text-primary transition-colors"
+                            title="Copy Link"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">content_copy</span>
+                          </button>
+                          <a
+                            href={`${window.location.origin}/?token=${profile.shareToken}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-primary-container rounded-lg text-primary transition-colors"
+                            title="Open Link"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </section>
                   <section>
                     <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Personal Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -433,6 +546,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </div>
                     </div>
                   </section>
+                </div>
+              )}
+
+              {activeTab === 'ai' && (
+                <div className="space-y-6 animate-fade-in">
+                  <h4 className="text-sm font-bold text-primary uppercase tracking-wider">AI Configuration</h4>
+                  <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
+
+                    {/* Enable AI */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Enable AI Features</p>
+                        <p className="text-sm text-outline">Allow AI to analyze and improve your profile</p>
+                      </div>
+                      <button
+                        onClick={() => handleAiChange('enabled', !settings.ai.enabled)}
+                        disabled={isLoading}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${settings.ai.enabled
+                          ? 'bg-secondary-container'
+                          : 'bg-surface-variant border border-outline-variant'
+                          }`}
+                      >
+                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.enabled ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    {/* Auto Analysis */}
+                    <div className="flex items-center justify-between">
+                       <div>
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Auto Analysis</p>
+                        <p className="text-sm text-outline">Automatically check for improvements on save</p>
+                      </div>
+                      <button
+                        onClick={() => handleAiChange('autoAnalyze', !settings.ai.autoAnalyze)}
+                        disabled={isLoading || !settings.ai.enabled}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${settings.ai.autoAnalyze
+                          ? 'bg-secondary-container'
+                          : 'bg-surface-variant border border-outline-variant'
+                          } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.autoAnalyze ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    {/* Creativity Level */}
+                    <div>
+                      <p className="text-base font-medium text-[var(--md-sys-color-on-background)] mb-3">Creativity Level</p>
+                      <div className="flex bg-surface-variant rounded-full p-1 max-w-sm">
+                          {(['low', 'medium', 'high'] as const).map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => handleAiChange('creativityLevel', level)}
+                              disabled={isLoading || !settings.ai.enabled}
+                              className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all ${settings.ai.creativityLevel === level
+                                ? 'bg-[var(--md-sys-color-background)] shadow-sm font-bold text-[var(--md-sys-color-on-background)]'
+                                : 'text-outline hover:text-primary'
+                                } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
               )}
 
@@ -530,9 +708,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       <div>
                         <p className="text-sm font-bold text-error">Delete Account</p>
                         <p className="text-xs text-error/80 mt-1">Permanently remove all your data (Right to Erasure).</p>
+                        <p className="text-[10px] text-error/70 mt-2">
+                          Your workspace, profile, and settings will be erased and the session will end automatically.
+                        </p>
                       </div>
-                      <button className="px-4 py-2 rounded-full bg-error text-white text-sm font-medium hover:bg-error/90 shadow-sm">
-                        Delete My Data
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={isDeletingAccount || isLoading}
+                        className="px-5 py-2 rounded-full bg-error text-white text-sm font-semibold hover:bg-error/90 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isDeletingAccount ? (
+                          <>
+                            <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                            Eliminando...
+                          </>
+                        ) : (
+                          'Delete My Account'
+                        )}
                       </button>
                     </div>
                   </section>

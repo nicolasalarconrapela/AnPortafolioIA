@@ -140,6 +140,39 @@ class AuthService {
       // Include console log or logging service
     }
   }
+
+  /**
+   * Delete the authenticated account, removing Firebase Auth + Firestore data
+   */
+  async deleteAccount(): Promise<void> {
+    const response = await fetch(`${BASE_URL}/account`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || data.details || "Failed to delete account");
+    }
+  }
+
+  /**
+   * Generates or retrieves the public share token for the current user.
+   */
+  async generateShareToken(): Promise<string> {
+    const response = await fetch(`${BASE_URL}/generate-share-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate share token");
+    }
+
+    const data = await response.json();
+    return data.shareToken;
+  }
 }
 
 export const authService = new AuthService();

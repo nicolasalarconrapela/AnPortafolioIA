@@ -31,7 +31,9 @@ function isDevelopmentEnvironment(): boolean {
 const SHOULD_ENCRYPT = !isDevelopmentEnvironment();
 
 function forceLogout() {
-  loggingService.warn("FirestoreWorkspaces: 401/404 encountered. Forcing logout.");
+  loggingService.warn(
+    "FirestoreWorkspaces: 401/404 encountered. Forcing logout."
+  );
   // localStorage.removeItem("anportafolio_user_id"); // Removed: We rely on Session Cookie only
   window.location.href = "/";
 }
@@ -290,13 +292,17 @@ export async function getWorkspaceByUserFromFirestore(
     // Force no-store to ensure we always get the full document (200) on initial load,
     // avoiding 304s which this function isn't equipped to handle (no local cache).
     const response = await fetch(url, {
-      credentials: 'include',
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' }
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
     });
 
     // Handle Auth Errors (401), Forbidden (403), or Not Found (404)
-    if (response.status === 401 || response.status === 403 || response.status === 404) {
+    if (
+      response.status === 401 ||
+      response.status === 403 ||
+      response.status === 404
+    ) {
       forceLogout();
       return null;
     }
@@ -433,7 +439,11 @@ export function listenWorkspaceByUser(
       }
 
       // Handle Auth Errors
-      if (response.status === 401 || response.status === 403 || response.status === 404) {
+      if (
+        response.status === 401 ||
+        response.status === 403 ||
+        response.status === 404
+      ) {
         forceLogout();
         isActive = false;
         return;
@@ -590,7 +600,11 @@ export async function deleteWorkspaceForUser(
       credentials: "include",
     });
 
-    if (response.status === 401 || response.status === 403 || response.status === 404) {
+    if (
+      response.status === 401 ||
+      response.status === 403 ||
+      response.status === 404
+    ) {
       forceLogout();
       return;
     }
@@ -802,8 +816,6 @@ export async function getWorkspaceChildDocument(
         userKey,
         encryptedUserKey: docKey,
         collection: collectionName,
-        childCollection: sanitizedChildCollection,
-        childDocumentId,
       }
     );
 
@@ -811,18 +823,46 @@ export async function getWorkspaceChildDocument(
   } catch (error) {
     const msg = getErrorMessage(error);
     loggingService.error(
-      `FirestoreWorkspaces: error al leer documento hijo del workspace (Backend). ${msg}`,
-      {
-        userKey,
-        encryptedUserKey: docKey,
-        collection: collectionName,
-        childCollection: sanitizedChildCollection,
-        childDocumentId,
-        error,
-      }
+      `FirestoreWorkspaces: error al leer documento hijo (Backend). ${msg}`,
+      { error }
     );
-
     throw error;
+  }
+}
+
+export async function getPublicProfile(
+  shareToken: string,
+  collectionOverride?: string
+): Promise<any | null> {
+  const collectionName = resolveCollectionName(collectionOverride);
+  // Use the new public route which accepts shareToken
+  const url = `${BACKEND_URL}/api/public/profile/${encodeURIComponent(
+    shareToken
+  )}?collectionOverride=${encodeURIComponent(collectionName)}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      // distinct from other calls: NO credentials needed for public info
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // Returns { profile: ... }
+  } catch (error) {
+    loggingService.error("FirestoreWorkspaces: error fetching public profile", {
+      error,
+      shareToken,
+    });
+    return null;
   }
 }
 

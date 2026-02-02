@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AITrainingView } from './AITrainingView';
 import { parseFileContent, extractFilesFromZip } from '../utils/fileParser';
 import { loggingService } from '../utils/loggingService';
 import { upsertWorkspaceForUser } from '../services/firestoreWorkspaces';
@@ -23,13 +22,6 @@ const STEPS_CONFIG = [
     title: 'Import Data',
     desc: 'Upload CV, Portfolio, etc.',
     color: 'primary'
-  },
-  {
-    id: 'ai',
-    icon: 'smart_toy',
-    title: 'Configure AI',
-    desc: 'Personalize your assistant.',
-    color: 'secondary'
   }
 ];
 
@@ -46,7 +38,7 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
 const sanitizeFileNameUI = (name: string) => name.replace(/[^\w\s.\-\(\)]/gi, '_');
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onExit, userId }) => {
-  const [selectedItems] = useState<string[]>(['import', 'ai']);
+  const [selectedItems] = useState<string[]>(['import']);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -372,19 +364,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                   <button
                     type="button"
                     className="w-full sm:w-auto px-4 py-2 rounded-full bg-primary text-white text-sm font-medium shadow"
-                    onClick={handleNext}
+                    onClick={handleOnboardingComplete}
                   >
-                    Continue
+                    Finish Setup
                   </button>
                 </div>
               </div>
             )
-          )}
-
-          {currentStep?.id === 'ai' && (
-            <div className="bg-[var(--md-sys-color-background)] rounded-[28px] p-4 md:p-8 shadow-sm border border-outline-variant/30 h-full overflow-auto">
-              <AITrainingView onBack={handleBack} onComplete={handleOnboardingComplete} />
-            </div>
           )}
         </div>
       </div>

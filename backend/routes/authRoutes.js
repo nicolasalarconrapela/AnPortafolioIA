@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAuth } from '../firebaseAdmin.js';
+import { getAuth, getFirestore } from '../firebaseAdmin.js';
 import { logger } from '../logger.js';
 import { syncUserToFirestore } from '../services/userService.js';
 // Using global fetch (Node 18+)
@@ -7,6 +7,25 @@ import { config } from '../config.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = express.Router();
+
+const SESSION_COOKIE_BASE_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+};
+
+const createSessionCookieOptions = (overrides = {}) => ({
+    ...SESSION_COOKIE_BASE_OPTIONS,
+    ...overrides
+});
+
+const clearSessionCookie = (res) => {
+    res.clearCookie('session', createSessionCookieOptions());
+};
+
+const WORKSPACE_ENV_SUFFIX = process.env.WORKSPACE_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'development');
+const WORKSPACE_COLLECTION = `workspace-${WORKSPACE_ENV_SUFFIX}`;
+const USER_SUBCOLLECTION = `users-${WORKSPACE_ENV_SUFFIX}`;
 
 /**
  * GET /api/auth/verify
@@ -34,6 +53,69 @@ router.get('/verify', requireAuth, async (req, res) => {
 // Use the API Key from config (requires configuring FIREBASE_API_KEY in backend .env)
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
+const FIREBASE_AUTH_ERROR_TRANSLATIONS = {
+    EMAIL_NOT_FOUND: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "No encontramos una cuenta con ese correo."
+    },
+    INVALID_PASSWORD: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "Correo o contraseña incorrectos."
+    },
+    INVALID_LOGIN_CREDENTIALS: {
+        code: "INVALID_LOGIN_CREDENTIALS",
+        message: "Correo o contraseña incorrectos."
+    },
+    USER_DISABLED: {
+        code: "ACCOUNT_DISABLED",
+        message: "Esta cuenta ha sido deshabilitada. Contacta al soporte si crees que fue un error."
+    },
+    TOO_MANY_ATTEMPTS_TRY_LATER: {
+        code: "TOO_MANY_ATTEMPTS",
+        message: "Demasiados intentos fallidos. Intenta de nuevo más tarde."
+    },
+    EMAIL_EXISTS: {
+        code: "EMAIL_ALREADY_EXISTS",
+        message: "Ya existe una cuenta registrada con ese correo."
+    },
+    INVALID_EMAIL: {
+        code: "INVALID_EMAIL",
+        message: "Por favor ingresa un correo con formato válido."
+    },
+    OPERATION_NOT_ALLOWED: {
+        code: "OPERATION_NOT_ALLOWED",
+        message: "Este método de autenticación no está habilitado para este proyecto."
+    },
+    WEAK_PASSWORD: {
+        code: "WEAK_PASSWORD",
+        message: "La contraseña debe tener al menos 6 caracteres."
+    }
+};
+
+const translateFirebaseAuthError = (firebaseCode = "UNKNOWN_FIREBASE_ERROR") => {
+    const translation = FIREBASE_AUTH_ERROR_TRANSLATIONS[firebaseCode];
+    if (translation) {
+        return {
+            code: translation.code,
+            message: translation.message,
+            firebaseCode
+        };
+    }
+
+    return {
+        code: firebaseCode,
+        message: `Error de autenticación: ${firebaseCode}`,
+        firebaseCode
+    };
+};
+
+const sendFirebaseAuthError = (res, status, error, fallbackMessage) => {
+    res.status(status).json({
+        code: error?.code || "FIREBASE_AUTH_ERROR",
+        error: error?.message || fallbackMessage || "Error de autenticación",
+    });
+};
+
 // Helper to call Firebase REST API
 const callFirebaseREST = async (endpoint, body) => {
     if (!FIREBASE_API_KEY) throw new Error("FIREBASE_API_KEY is not configured in backend.");
@@ -45,7 +127,12 @@ const callFirebaseREST = async (endpoint, body) => {
     });
     const data = await response.json();
     if (!response.ok) {
-        throw new Error(data.error?.message || "Firebase REST API Error");
+        const firebaseCode = data.error?.message || "UNKNOWN_FIREBASE_ERROR";
+        const translated = translateFirebaseAuthError(firebaseCode);
+        const error = new Error(translated.message);
+        error.code = translated.code;
+        error.firebaseCode = translated.firebaseCode;
+        throw error;
     }
     return data;
 };
@@ -79,12 +166,7 @@ const setSessionCookie = async (res, idToken) => {
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
     const auth = getAuth();
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-    const options = {
-        maxAge: expiresIn,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    };
+    const options = createSessionCookieOptions({ maxAge: expiresIn });
     res.cookie('session', sessionCookie, options);
 };
 
@@ -97,6 +179,21 @@ router.post('/session-login', async (req, res) => {
     if (!idToken) return res.status(400).json({ error: "idToken is required" });
 
     try {
+        // 1. Verify token to get user details for sync
+        const auth = getAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        const { uid, email, picture, name, firebase } = decodedToken;
+
+        // 2. Sync to Firestore (Users collection)
+        // This ensures Google logins are recorded same as Email/Pass
+        await syncUserToFirestore(uid, {
+            email,
+            displayName: name,
+            photoURL: picture,
+            provider: firebase?.sign_in_provider || 'google',
+            lastLogin: new Date().toISOString()
+        });
+
         await setSessionCookie(res, idToken);
         res.json({ success: true, message: "Session created" });
     } catch (error) {
@@ -109,11 +206,7 @@ router.post('/session-login', async (req, res) => {
  * POST /api/auth/logout
  */
 router.post('/logout', (req, res) => {
-    res.clearCookie('session', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
-    });
+    clearSessionCookie(res);
     res.json({ success: true, message: "Logged out" });
 });
 
@@ -145,8 +238,12 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Login failed", { error: error.message });
-        res.status(401).json({ error: error.message });
+        logger.error("Login failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 401, error, "Correo o contraseña inválidos");
     }
 });
 
@@ -181,8 +278,12 @@ router.post('/register', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Registration failed", { error: error.message });
-        res.status(400).json({ error: error.message });
+        logger.error("Registration failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 400, error, "No se pudo crear la cuenta");
     }
 });
 
@@ -212,8 +313,12 @@ router.post('/guest', async (req, res) => {
             }
         });
     } catch (error) {
-        logger.error("Guest login failed", { error: error.message });
-        res.status(500).json({ error: error.message });
+        logger.error("Guest login failed", {
+            error: error.message,
+            firebaseCode: error.firebaseCode,
+            code: error.code,
+        });
+        return sendFirebaseAuthError(res, 500, error, "No pudimos crear una sesión de invitado");
     }
 });
 
@@ -305,6 +410,32 @@ router.put('/user/:uid', async (req, res) => {
 });
 
 /**
+ * POST /api/auth/generate-share-token
+ * Generates or ensures a share token exists for the current user.
+ */
+router.post('/generate-share-token', requireAuth, async (req, res) => {
+    try {
+        const { uid } = req.user;
+        const { email, photoURL, displayName } = req.userRecord;
+
+        // Sync allows us to ensure the token exists (logic is inside syncUserToFirestore)
+        const userData = await syncUserToFirestore(uid, {
+            email,
+            picture: photoURL,
+            name: displayName
+        });
+
+        res.json({
+            success: true,
+            shareToken: userData.shareToken
+        });
+    } catch (error) {
+        logger.error('Failed to generate share token', { uid: req.user?.uid, error: error.message });
+        res.status(500).json({ error: 'Failed to generate token' });
+    }
+});
+
+/**
  * DELETE /api/auth/user/:uid
  * Elimina un usuario
  */
@@ -322,6 +453,45 @@ router.delete('/user/:uid', async (req, res) => {
     } catch (error) {
         logger.error('Failed to delete user', { uid, error: error.message });
         res.status(400).json({ error: 'Failed to delete user', details: error.message });
+    }
+});
+
+/**
+ * DELETE /api/auth/account
+ * Deletes the current authenticated user, including their Firestore document and auth record.
+ */
+router.delete('/account', requireAuth, async (req, res) => {
+    const uid = req.user.uid;
+    const firestore = getFirestore();
+    const auth = getAuth();
+
+    const userDocRef = firestore
+        .collection(WORKSPACE_COLLECTION)
+        .doc('global')
+        .collection(USER_SUBCOLLECTION)
+        .doc(uid);
+
+    try {
+        await userDocRef.delete();
+
+        try {
+            await auth.deleteUser(uid);
+        } catch (deleteError) {
+            if (deleteError.code !== 'auth/user-not-found') {
+                throw deleteError;
+            }
+            logger.warn('Account deletion: auth user already missing', { uid });
+        }
+
+        clearSessionCookie(res);
+
+        res.json({
+            success: true,
+            message: 'Account deleted successfully',
+        });
+    } catch (error) {
+        logger.error('Account deletion failed', { uid, error: error.message });
+        res.status(500).json({ error: 'Failed to delete account', details: error.message });
     }
 });
 

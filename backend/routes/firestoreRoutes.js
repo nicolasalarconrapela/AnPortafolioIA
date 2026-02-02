@@ -45,7 +45,28 @@ router.get('/workspaces/:userKey', async (req, res) => {
         const docRef = getUserDocRef(firestore, collectionName, targetUid);
         const docSnap = await docRef.get();
 
+        if (docSnap.exists) {
+            // Check if we need to backfill shareToken
+            const data = docSnap.data();
+            if (!data.shareToken) {
+                 const globalUserRef = firestore.collection(process.env.NODE_ENV === 'production' ? 'users' : 'users_dev').doc(targetUid);
+                 const globalUserSnap = await globalUserRef.get();
+                 if (globalUserSnap.exists && globalUserSnap.data().shareToken) {
+                     const token = globalUserSnap.data().shareToken;
+                     await docRef.set({ shareToken: token }, { merge: true });
+                     // We don't mutate docSnap.data() in place easily for return,
+                     // but the client will get it on next poll or we could refetch.
+                     // For now, let's rely on the client refreshing or the next poll.
+                 }
+            }
+        }
+
         if (!docSnap.exists) {
+            // Check for shareToken in global user record to sync it down
+            const globalUserRef = firestore.collection(process.env.NODE_ENV === 'production' ? 'users' : 'users_dev').doc(targetUid);
+            const globalUserSnap = await globalUserRef.get();
+            const shareToken = globalUserSnap.exists ? globalUserSnap.data().shareToken : null;
+
             // Auto-create workspace for the user with default data
             const defaultWorkspaceId = `ws-${Date.now()}`;
             const initialData = {
@@ -53,6 +74,7 @@ router.get('/workspaces/:userKey', async (req, res) => {
                 email: req.user.email || null,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                shareToken: shareToken || null, // Sync shareToken
                 workspaces: [
                     {
                         id: defaultWorkspaceId,

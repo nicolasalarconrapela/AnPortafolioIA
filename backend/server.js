@@ -16,6 +16,7 @@ import cookieParser from "cookie-parser";
 import { initializeFirebaseAdmin } from "./firebaseAdmin.js";
 import firestoreRoutes from "./routes/firestoreRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 
@@ -166,12 +167,21 @@ app.use((req, res, next) => {
 // ------------------------------------------------------------
 // 3) CORS robusto
 // ------------------------------------------------------------
-const rawAllowedOrigins = [
+const parseCommaList = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const fallbackAllowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
+  "http://localhost:3000"
+];
+
+const rawAllowedOrigins = [
+  ...parseCommaList(process.env.ALLOWED_ORIGINS),
   config.EXTERNAL_URL,
-  "https://anportafolioia.onrender.com",
-  "https://anportafolioia-egy8.onrender.com",
+  ...fallbackAllowedOrigins,
 ]
   .filter(Boolean)
   .map((s) => String(s).trim())
@@ -293,6 +303,7 @@ app.get("/healthz", (req, res) => {
 
 app.use("/api/firestore", firestoreRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes);
 app.use("/api/test", testRoutes);
 
 // ------------------------------------------------------------// 8.1) SSE Endpoint for Log Streaming (optional auth in dev)
@@ -300,7 +311,7 @@ app.use("/api/test", testRoutes);
 
 // Rate limiting for SSE connections
 const sseConnectionsPerUser = new Map();
-const MAX_SSE_CONNECTIONS_PER_USER = 3;
+const MAX_SSE_CONNECTIONS_PER_USER = 10; // Increased to prevent dev issues
 
 // Optional auth middleware - allows unauthenticated in dev mode
 const optionalAuthForDev = async (req, res, next) => {
@@ -431,12 +442,5 @@ app.use((err, req, res, _next) => {
 // ------------------------------------------------------------
 // 11) Listen
 // ------------------------------------------------------------
-const port = Number(config.PORT) || 3001;
-
-app.listen(port, () => {
-  logger.info("backend_listening", {
-    port,
-    nodeEnv: process.env.NODE_ENV,
-    externalUrl: config.EXTERNAL_URL,
-  });
-});
+const port = process.env.PORT || 3001;
+app.listen(port, () => console.log("Listening on", port));

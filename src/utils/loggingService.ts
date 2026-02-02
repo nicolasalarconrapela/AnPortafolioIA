@@ -1,18 +1,23 @@
-import type { UnifiedLogEntry, LogLevel, LogSource } from '../types';
-import { env } from './env';
+import type { UnifiedLogEntry, LogLevel, LogSource } from "../types";
+import { env } from "./env";
 
 type LogListener = (log: UnifiedLogEntry | null) => void;
 
 // Re-export types for backwards compatibility
-export type { UnifiedLogEntry as LogEntry } from '../types';
+export type { UnifiedLogEntry as LogEntry } from "../types";
 
 // Sensitive keys regex for redaction
-const SENSITIVE_KEYS = /token|password|secret|auth|key|cookie|authorization|credential/i;
+const SENSITIVE_KEYS =
+  /token|password|secret|auth|key|cookie|authorization|credential/i;
 
 /**
  * SSE Connection States
  */
-export type SSEConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+export type SSEConnectionState =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "reconnecting";
 
 /**
  * Circular buffer with FIFO eviction - O(1) operations
@@ -91,7 +96,7 @@ class LoggingService {
 
   // SSE connection state
   private eventSource: EventSource | null = null;
-  private sseState: SSEConnectionState = 'disconnected';
+  private sseState: SSEConnectionState = "disconnected";
   private sseStateListeners = new Set<(state: SSEConnectionState) => void>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -102,17 +107,19 @@ class LoggingService {
    */
   private extractCaller(): { file: string; line: number } | null {
     const err = new Error();
-    const stack = err.stack || '';
-    const lines = stack.split('\n');
+    const stack = err.stack || "";
+    const lines = stack.split("\n");
 
     // Skip Error line and internal methods, find first external caller
     for (let i = 3; i < lines.length; i++) {
       const line = lines[i];
-      if (line.includes('loggingService')) continue;
+      if (line.includes("loggingService")) continue;
 
       // Match patterns like "at Component (file.tsx:10:5)" or "at file.tsx:10:5"
       // Also handle webpack/vite transformed paths
-      const match = line.match(/at\s+(?:.*?\s+\()?(?:.*?\/)?([^\/\s]+?):(\d+):\d+\)?/);
+      const match = line.match(
+        /at\s+(?:.*?\s+\()?(?:.*?\/)?([^\/\s]+?):(\d+):\d+\)?/
+      );
       if (match) {
         return { file: match[1], line: parseInt(match[2], 10) };
       }
@@ -134,15 +141,18 @@ class LoggingService {
       };
     }
 
-    if (typeof data === 'object') {
+    if (typeof data === "object") {
       try {
         const copy: any = Array.isArray(data) ? [] : {};
         for (const key in data) {
           if (data[key] instanceof Error) {
             copy[key] = this.serializeData(data[key]);
-          } else if (SENSITIVE_KEYS.test(key) && typeof data[key] === 'string') {
-            copy[key] = '[REDACTED]';
-          } else if (typeof data[key] === 'object' && data[key] !== null) {
+          } else if (
+            SENSITIVE_KEYS.test(key) &&
+            typeof data[key] === "string"
+          ) {
+            copy[key] = "[REDACTED]";
+          } else if (typeof data[key] === "object" && data[key] !== null) {
             copy[key] = this.serializeData(data[key]);
           } else {
             copy[key] = data[key];
@@ -160,14 +170,18 @@ class LoggingService {
   /**
    * Create a unified log entry
    */
-  private createEntry(level: LogLevel, message: string, data?: any): UnifiedLogEntry {
+  private createEntry(
+    level: LogLevel,
+    message: string,
+    data?: any
+  ): UnifiedLogEntry {
     const caller = this.extractCaller();
     return {
       level,
       message,
       data: this.serializeData(data),
       timestamp: new Date().toISOString(),
-      source: 'frontend' as LogSource,
+      source: "frontend" as LogSource,
       file: caller?.file,
       line: caller?.line,
     };
@@ -187,28 +201,28 @@ class LoggingService {
   // =========================================================
 
   log(message: string, data?: any): void {
-    this.addLog('LOG', message, data);
+    this.addLog("LOG", message, data);
   }
 
   info(message: string, data?: any): void {
-    this.addLog('INFO', message, data);
+    this.addLog("INFO", message, data);
   }
 
   warn(message: string, data?: any): void {
-    this.addLog('WARN', message, data);
+    this.addLog("WARN", message, data);
   }
 
   error(message: string, data?: any): void {
-    this.addLog('ERROR', message, data);
+    this.addLog("ERROR", message, data);
     console.error(`[LoggingService] ${message}`, data);
   }
 
   debug(message: string, data?: any): void {
-    this.addLog('DEBUG', message, data);
+    this.addLog("DEBUG", message, data);
   }
 
   trace(message: string, data?: any): void {
-    this.addLog('TRACE', message, data);
+    this.addLog("TRACE", message, data);
   }
 
   // =========================================================
@@ -218,7 +232,7 @@ class LoggingService {
   clearLogs(): void {
     this.buffer.clear();
     this.listeners.forEach((listener) => listener(null));
-    this.log('Logs cleared by user.');
+    this.log("Logs cleared by user.");
   }
 
   getLogs(): UnifiedLogEntry[] {
@@ -262,16 +276,16 @@ class LoggingService {
    */
   connectToBackendStream(): void {
     if (this.eventSource) {
-      this.info('SSE: Already connected or connecting');
+      this.info("SSE: Already connected or connecting");
       return;
     }
 
-    this.setSSEState('connecting');
+    this.setSSEState("connecting");
 
-    const baseUrl = env.BACKEND_URL.replace(/\/$/, '');
+    const baseUrl = env.BACKEND_URL.replace(/\/$/, "");
     const url = `${baseUrl}/api/logs/stream`;
 
-    this.info('SSE: Connecting to backend log stream', { url });
+    this.info("SSE: Connecting to backend log stream", { url });
 
     const connectStartTime = Date.now();
 
@@ -280,13 +294,13 @@ class LoggingService {
       this.eventSource = new EventSource(url, { withCredentials: true });
 
       this.eventSource.onopen = () => {
-        this.setSSEState('connected');
+        this.setSSEState("connected");
         this.reconnectAttempts = 0;
-        this.info('SSE: Connected to backend log stream');
+        this.info("SSE: Connected to backend log stream");
       };
 
       // Handle initial payload
-      this.eventSource.addEventListener('init', (event: MessageEvent) => {
+      this.eventSource.addEventListener("init", (event: MessageEvent) => {
         try {
           const payload = JSON.parse(event.data);
           if (payload.logs && Array.isArray(payload.logs)) {
@@ -294,10 +308,12 @@ class LoggingService {
             this.asyncQueue.enqueue(async () => {
               this.mergeBackendLogs(payload.logs);
             });
-            this.info('SSE: Received initial logs', { count: payload.logs.length });
+            this.info("SSE: Received initial logs", {
+              count: payload.logs.length,
+            });
           }
         } catch (e) {
-          this.error('SSE: Failed to parse init payload', { error: e });
+          this.error("SSE: Failed to parse init payload", { error: e });
         }
       });
 
@@ -305,7 +321,7 @@ class LoggingService {
       this.eventSource.onmessage = (event: MessageEvent) => {
         try {
           const entry: UnifiedLogEntry = JSON.parse(event.data);
-          if (entry.source === 'backend') {
+          if (entry.source === "backend") {
             this.buffer.push(entry);
             this.listeners.forEach((listener) => listener(entry));
           }
@@ -320,16 +336,17 @@ class LoggingService {
         const timeSinceConnect = Date.now() - connectStartTime;
         if (timeSinceConnect < 1000 && this.reconnectAttempts === 0) {
           // Immediate failure on first attempt likely means auth issue
-          this.warn('SSE: Connection failed immediately - likely auth required. Not retrying.');
+          this.warn(
+            "SSE: Connection failed immediately - likely auth required. Not retrying."
+          );
           this.disconnectBackendStream();
-          this.setSSEState('disconnected');
+          this.setSSEState("disconnected");
           return;
         }
         this.handleSSEError();
       };
-
     } catch (e) {
-      this.error('SSE: Failed to create EventSource', { error: e });
+      this.error("SSE: Failed to create EventSource", { error: e });
       this.handleSSEError();
     }
   }
@@ -341,8 +358,10 @@ class LoggingService {
     const currentLogs = this.buffer.toArray();
 
     // Combine and sort by timestamp
-    const allLogs = [...currentLogs, ...backendLogs]
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const allLogs = [...currentLogs, ...backendLogs].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
     // Take only the last 500 (buffer max size)
     const trimmedLogs = allLogs.slice(-500);
@@ -362,14 +381,14 @@ class LoggingService {
     this.disconnectBackendStream();
 
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.setSSEState('reconnecting');
+      this.setSSEState("reconnecting");
 
       const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
       const jitter = Math.random() * 1000;
 
-      this.warn('SSE: Connection error, reconnecting...', {
+      this.warn("SSE: Connection error, reconnecting...", {
         attempt: this.reconnectAttempts + 1,
-        delayMs: delay + jitter
+        delayMs: delay + jitter,
       });
 
       this.reconnectTimeout = window.setTimeout(() => {
@@ -378,8 +397,8 @@ class LoggingService {
         this.connectToBackendStream();
       }, delay + jitter);
     } else {
-      this.setSSEState('disconnected');
-      this.error('SSE: Max reconnect attempts reached, giving up');
+      this.setSSEState("disconnected");
+      this.error("SSE: Max reconnect attempts reached, giving up");
     }
   }
 
@@ -397,7 +416,7 @@ class LoggingService {
       this.eventSource = null;
     }
 
-    this.setSSEState('disconnected');
+    this.setSSEState("disconnected");
   }
 
   /**
