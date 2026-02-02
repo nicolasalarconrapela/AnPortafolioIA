@@ -402,6 +402,9 @@ function App() {
   const [profile, setProfile] = useState<CVProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   
+  // Drag State
+  const [isDragging, setIsDragging] = useState(false);
+  
   // Chat state for Donna
   const [donnaChat, setDonnaChat] = useState<ChatMessage[]>([]);
   const [donnaInput, setDonnaInput] = useState("");
@@ -433,10 +436,8 @@ function App() {
       setJaniceOpen(true);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  // --- LOGIC: PROCESS FILE ---
+  const processFile = async (file: File) => {
     setError(null);
 
     // --- JSON IMPORT (ENHANCED) ---
@@ -473,15 +474,11 @@ function App() {
                 }
             } catch (err) {
                 // If JSON parse fails, and it was a text file, maybe it's a raw text CV?
-                // For now, if it fails to parse as JSON, we treat it as an error or could fallback to text analysis if we wanted.
-                // Assuming "Permitir subir jsons" implies valid JSON files.
                 console.error(err);
                 if (file.name.endsWith('.json')) {
                     setError("El archivo JSON no es válido o no pudo ser analizado.");
                     setAppState(AppState.ERROR);
                 } else {
-                     // If it was a text/plain file that failed JSON parse, it might be an image/pdf flow that got misrouted or just invalid.
-                     // But strictly for JSON upload feature, we stop here.
                      setError("El archivo no es un JSON válido.");
                      setAppState(AppState.ERROR);
                 }
@@ -500,7 +497,6 @@ function App() {
             const files = zip.files;
 
             // 1. Check for Internal JSON Backup First (Highest Priority)
-            // Look for any file ending in .json that might be our backup
             const jsonFile = Object.values(files).find((f: any) => !f.dir && f.name.endsWith('.json'));
             if (jsonFile) {
                 const jsonText = await (jsonFile as any).async('text');
@@ -517,8 +513,7 @@ function App() {
                 }
             }
 
-            // 2. Check for LinkedIn Export CSVs (Positions.csv is the key signature)
-            // Typical files: Positions.csv, Education.csv, Skills.csv, Profile.csv, etc.
+            // 2. Check for LinkedIn Export CSVs
             if (files['Positions.csv'] || files['Profile.csv']) {
                 const newProfile: CVProfile = {
                     summary: '',
@@ -533,7 +528,7 @@ function App() {
                     hobbies: []
                 };
 
-                // --- Parse Profile.csv or Profile Summary.csv for Summary ---
+                // Parse Profile.csv
                 const profileSummaryFile = files['Profile Summary.csv'] || files['Profile.csv'];
                 if (profileSummaryFile) {
                     const text = await profileSummaryFile.async('text');
@@ -543,7 +538,7 @@ function App() {
                     }
                 }
 
-                // --- Parse Positions.csv for Experience ---
+                // Parse Positions.csv
                 if (files['Positions.csv']) {
                     const text = await files['Positions.csv'].async('text');
                     const data = parseCSV(text);
@@ -555,7 +550,7 @@ function App() {
                     }));
                 }
 
-                // --- Parse Education.csv ---
+                // Parse Education.csv
                 if (files['Education.csv']) {
                     const text = await files['Education.csv'].async('text');
                     const data = parseCSV(text);
@@ -566,14 +561,14 @@ function App() {
                     }));
                 }
 
-                // --- Parse Skills.csv ---
+                // Parse Skills.csv
                 if (files['Skills.csv']) {
                     const text = await files['Skills.csv'].async('text');
                     const data = parseCSV(text);
                     newProfile.skills = data.map(row => row['Name']).filter(Boolean);
                 }
 
-                // --- Parse Projects.csv ---
+                // Parse Projects.csv
                 if (files['Projects.csv']) {
                     const text = await files['Projects.csv'].async('text');
                     const data = parseCSV(text);
@@ -585,7 +580,7 @@ function App() {
                     }));
                 }
 
-                // --- Parse Languages.csv ---
+                // Parse Languages.csv
                 if (files['Languages.csv']) {
                     const text = await files['Languages.csv'].async('text');
                     const data = parseCSV(text);
@@ -647,6 +642,28 @@ function App() {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) processFile(file);
   };
 
   const handleExportJSON = () => {
@@ -815,10 +832,28 @@ function App() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <div className="relative w-full group">
-                            <div className="flex items-center justify-center gap-3 bg-red-900 group-hover:bg-red-800 text-red-100 font-bold py-3 px-4 md:py-4 md:px-6 transition-all transform group-hover:scale-[1.02] shadow-lg border border-red-950 rounded cursor-pointer">
-                                <Upload className="w-5 h-5"/> 
-                                <span>Entregar Documentación</span>
+                        <div 
+                            className="relative w-full group"
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            <div className={`flex flex-col items-center justify-center gap-2 py-8 px-6 transition-all transform border-2 border-dashed rounded-lg cursor-pointer ${
+                                isDragging 
+                                    ? 'bg-red-800 border-red-400 scale-[1.02] shadow-[0_0_20px_rgba(220,38,38,0.3)]' 
+                                    : 'bg-slate-800 border-slate-600 hover:bg-slate-750 hover:border-red-500/50'
+                            }`}>
+                                <div className={`p-4 rounded-full transition-all ${isDragging ? 'bg-red-600 animate-bounce' : 'bg-red-900 text-red-200'}`}>
+                                    <Upload className="w-8 h-8" />
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <p className="text-lg font-bold text-slate-200">
+                                        {isDragging ? '¡SUÉLTALO AHORA!' : 'Entregar Documentación'}
+                                    </p>
+                                    <p className="text-xs text-slate-400 font-mono">
+                                        Clic o arrastra PDF, JSON, ZIP
+                                    </p>
+                                </div>
                             </div>
                             <input 
                                 type="file" 
