@@ -179,6 +179,21 @@ router.post('/session-login', async (req, res) => {
     if (!idToken) return res.status(400).json({ error: "idToken is required" });
 
     try {
+        // 1. Verify token to get user details for sync
+        const auth = getAuth();
+        const decodedToken = await auth.verifyIdToken(idToken);
+        const { uid, email, picture, name, firebase } = decodedToken;
+
+        // 2. Sync to Firestore (Users collection)
+        // This ensures Google logins are recorded same as Email/Pass
+        await syncUserToFirestore(uid, {
+            email,
+            displayName: name,
+            photoURL: picture,
+            provider: firebase?.sign_in_provider || 'google',
+            lastLogin: new Date().toISOString()
+        });
+
         await setSessionCookie(res, idToken);
         res.json({ success: true, message: "Session created" });
     } catch (error) {
