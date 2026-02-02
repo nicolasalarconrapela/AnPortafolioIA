@@ -442,12 +442,5 @@ app.use((err, req, res, _next) => {
 // ------------------------------------------------------------
 // 11) Listen
 // ------------------------------------------------------------
-const port = Number(config.PORT) || 3001;
-
-app.listen(port, () => {
-  logger.info("backend_listening", {
-    port,
-    nodeEnv: process.env.NODE_ENV,
-    externalUrl: config.EXTERNAL_URL,
-  });
-});
+const port = process.env.PORT || 3001;
+app.listen(port, () => console.log("Listening on", port));
