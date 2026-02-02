@@ -1,0 +1,38 @@
+{
+  "app_name": "PortafolioIA",
+  "landing": {
+    "lets_start": "Comenzar"
+  },
+  "footer": {
+    "copyright": "© 2024 AnPortafolioIA. Todos los derechos reservados.",
+    "internal_design_system": "Sistema de Diseño Interno"
+  },
+  "auth": {
+    "sign_in": "Iniciar sesión",
+    "create_account": "Crear cuenta",
+    "subtitle_signin": "Accede a tu espacio de trabajo.",
+    "subtitle_signup": "Únete a la plataforma hoy.",
+    "hero_title": "Tu trabajo, presentado de forma sencilla.",
+    "hero_text": "La plataforma de portafolio que se enfoca en lo que importa: tú.",
+    "home": "Inicio",
+    "continue_google": "Continuar con Google",
+    "continue_anonymous": "Continuar como Anónimo",
+    "or": "O",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgot_password": "¿Olvidaste tu contraseña?",
+    "continue": "Continuar",
+    "sign_up_button": "Registrarse",
+    "new_here": "¿Eres nuevo aquí?",
+    "have_account": "¿Ya tienes una cuenta?",
+    "error": {
+      "email_required": "El correo es obligatorio",
+      "email_invalid": "Introduce un email válido",
+      "password_required": "La contraseña es obligatoria",
+      "password_min": "Mínimo 6 caracteres",
+      "auth_failed": "Error de autenticación",
+      "google_failed": "Falló el inicio de sesión con Google",
+      "guest_failed": "Falló el inicio de sesión como invitado"
+    }
+  }
+}

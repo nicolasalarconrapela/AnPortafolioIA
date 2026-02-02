@@ -1,0 +1,38 @@
+{
+  "app_name": "PortafolioIA",
+  "landing": {
+    "lets_start": "Let's Start"
+  },
+  "footer": {
+    "copyright": "© 2024 AnPortafolioIA. All rights reserved.",
+    "internal_design_system": "Internal Design System"
+  },
+  "auth": {
+    "sign_in": "Sign in",
+    "create_account": "Create account",
+    "subtitle_signin": "Access your portfolio workspace.",
+    "subtitle_signup": "Join the platform today.",
+    "hero_title": "Your work, simply showcased.",
+    "hero_text": "The portfolio platform that focuses on what matters: you.",
+    "home": "Home",
+    "continue_google": "Continue with Google",
+    "continue_anonymous": "Continue Anonymously",
+    "or": "Or",
+    "email": "Email",
+    "password": "Password",
+    "forgot_password": "Forgot password?",
+    "continue": "Continue",
+    "sign_up_button": "Sign Up",
+    "new_here": "New here?",
+    "have_account": "Have an account?",
+    "error": {
+      "email_required": "Email is required",
+      "email_invalid": "Enter a valid email",
+      "password_required": "Password is required",
+      "password_min": "Minimum 6 characters",
+      "auth_failed": "Authentication failed",
+      "google_failed": "Google Sign In Failed",
+      "guest_failed": "Guest Login Failed"
+    }
+  }
+}

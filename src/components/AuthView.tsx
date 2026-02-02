@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ViewState } from "../types";
 
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Icon } from "./ui/Icon";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 import { authService } from "../services/authService";
 import { loggingService } from "../utils/loggingService";
@@ -35,14 +37,16 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  const { t } = useTranslation();
+
   const copy = useMemo(
     () => ({
-      title: isLogin ? "Sign in" : "Create account",
-      subtitle: isLogin ? "Access your portfolio workspace." : "Join the platform today.",
-      heroTitle: "Your work, simply showcased.",
-      heroText: "The portfolio platform that focuses on what matters: you.",
+      title: isLogin ? t("auth.sign_in") : t("auth.create_account"),
+      subtitle: isLogin ? t("auth.subtitle_signin") : t("auth.subtitle_signup"),
+      heroTitle: t("auth.hero_title"),
+      heroText: t("auth.hero_text"),
     }),
-    [isLogin]
+    [isLogin, t]
   );
 
   const handleToggle = () => {
@@ -56,12 +60,12 @@ export const AuthView: React.FC<AuthViewProps> = ({
   // --- Validation Logic (HEAD) ---
   const validateField = (field: "email" | "password", value: string) => {
     if (field === "email") {
-      if (!value.trim()) return "El correo es obligatorio";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Introduce un email válido";
+      if (!value.trim()) return t("auth.error.email_required");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t("auth.error.email_invalid");
     }
     if (field === "password") {
-      if (!value) return "La contraseña es obligatoria";
-      if (!isLogin && value.length < 6) return "Mínimo 6 caracteres";
+      if (!value) return t("auth.error.password_required");
+      if (!isLogin && value.length < 6) return t("auth.error.password_min");
     }
     return undefined;
   };
@@ -112,7 +116,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       onAuthSuccess(user);
     } catch (err: any) {
       loggingService.error("Google Sign In Failed", { error: err });
-      setGeneralError(err?.message || "Google Sign In Failed");
+      setGeneralError(err?.message || t("auth.error.google_failed"));
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +131,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
       onAuthSuccess(user);
     } catch (err: any) {
       loggingService.error("Guest Login Failed", { error: err });
-      setGeneralError(err?.message || "Guest Login Failed");
+      setGeneralError(err?.message || t("auth.error.guest_failed"));
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +165,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     } catch (err: any) {
       loggingService.error("Authentication failed", { error: err });
       // Tu backend/servicio suele devolver message, o { error: "..." }
-      setGeneralError(err?.message || err?.error || "Authentication failed");
+      setGeneralError(err?.message || err?.error || t("auth.error.auth_failed"));
     } finally {
       setIsLoading(false);
     }
@@ -187,7 +191,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           <div className="flex items-center gap-3 mb-8 opacity-80">
             <Icon name="diversity_3" className="text-primary text-3xl" />
             <span className="font-display font-medium text-xl tracking-tight text-[var(--md-sys-color-on-background)]">
-              PortafolioIA
+              {t("app_name")}
             </span>
           </div>
 
@@ -203,19 +207,22 @@ export const AuthView: React.FC<AuthViewProps> = ({
       <div className="w-full lg:w-1/2 flex flex-col relative">
         {/* Unified Top Header */}
         <div className="absolute top-0 left-0 w-full p-6 sm:p-8 flex items-center justify-between z-20">
-          <button
-            onClick={() => onNavigate("landing")}
-            className="text-sm text-outline hover:text-primary flex items-center gap-2 transition-colors px-2 py-1 rounded-md hover:bg-surface-variant/50"
-            type="button"
-          >
-            <Icon name="arrow_back" size={18} />
-            <span className="font-medium">Home</span>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => onNavigate("landing")}
+              className="text-sm text-outline hover:text-primary flex items-center gap-2 transition-colors px-2 py-1 rounded-md hover:bg-surface-variant/50"
+              type="button"
+            >
+              <Icon name="arrow_back" size={18} />
+              <span className="font-medium">{t("auth.home")}</span>
+            </button>
+            <LanguageSwitcher />
+          </div>
 
           <div className="lg:hidden flex items-center gap-2 opacity-90">
             <Icon name="diversity_3" className="text-primary text-xl" />
             <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">
-              PortafolioIA
+              {t("app_name")}
             </span>
           </div>
         </div>
@@ -255,7 +262,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   aria-hidden="true"
                 />
                 <span className="font-normal text-[var(--md-sys-color-on-background)]">
-                  Continue with Google
+                  {t("auth.continue_google")}
                 </span>
               </Button>
 
@@ -272,7 +279,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   <Icon name="no_accounts" size={20} />
                 </div>
                 <span className="font-normal text-[var(--md-sys-color-on-background)]">
-                  Continue Anonymously
+                  {t("auth.continue_anonymous")}
                 </span>
               </Button>
             </div>
@@ -282,7 +289,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 <div className="w-full border-t border-outline-variant/30"></div>
               </div>
               <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-medium">
-                <span className="bg-[var(--md-sys-color-background)] px-2 text-outline/50">Or</span>
+                <span className="bg-[var(--md-sys-color-background)] px-2 text-outline/50">{t("auth.or")}</span>
               </div>
             </div>
 
@@ -293,7 +300,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 type="text"
                 inputMode="email"
                 autoComplete="email"
-                label="Email"
+                label={t("auth.email")}
                 value={email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 onBlur={handleBlur}
@@ -305,7 +312,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 id="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete={isLogin ? "current-password" : "new-password"}
-                label="Password"
+                label={t("auth.password")}
                 value={password}
                 onChange={(e) => handleChange("password", e.target.value)}
                 onBlur={handleBlur}
@@ -325,26 +332,26 @@ export const AuthView: React.FC<AuthViewProps> = ({
                     tabIndex={0}
                     disabled={isLoading}
                   >
-                    Forgot password?
+                    {t("auth.forgot_password")}
                   </Button>
                 </div>
               )}
 
               <Button type="submit" variant="filled" fullWidth loading={isLoading} className="mt-2 h-12">
-                {isLogin ? "Continue" : "Sign Up"}
+                {isLogin ? t("auth.continue") : t("auth.sign_up_button")}
               </Button>
             </form>
 
             <div className="mt-8 text-center">
               <p className="text-sm text-outline">
-                {isLogin ? "New here?" : "Have an account?"}
+                {isLogin ? t("auth.new_here") : t("auth.have_account")}
                 <button
                   onClick={handleToggle}
                   className="ml-2 text-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
                   type="button"
                   disabled={isLoading}
                 >
-                  {isLogin ? "Create account" : "Sign in"}
+                  {isLogin ? t("auth.create_account") : t("auth.sign_in")}
                 </button>
               </p>
             </div>

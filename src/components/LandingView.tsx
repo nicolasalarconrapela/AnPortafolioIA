@@ -1,15 +1,19 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AvatarScanner } from './AvatarScanner';
 import { ViewState } from '../types';
 import { Button } from './ui/Button';
 import { Icon } from './ui/Icon';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface LandingViewProps {
   onNavigate: (view: ViewState) => void;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col min-h-screen text-[var(--md-sys-color-on-background)]">
       
@@ -17,17 +21,18 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       <header className="sticky top-0 z-50 bg-[var(--md-sys-color-background)]/90 backdrop-blur-sm border-b border-outline-variant/20 px-4 py-3 md:px-8 flex items-center justify-between transition-colors">
         <div className="flex items-center gap-2">
           <Icon name="diversity_3" className="text-primary text-2xl md:text-3xl" />
-          <span className="font-display font-medium text-lg md:text-xl tracking-tight">PortafolioIA</span>
+          <span className="font-display font-medium text-lg md:text-xl tracking-tight">{t('app_name')}</span>
         </div>
         
         <div className="flex items-center gap-2 md:gap-3">
+          <LanguageSwitcher />
           <Button 
             variant="filled" 
             size="sm" 
             className="h-9 px-4 text-xs md:h-10 md:px-5 md:text-sm"
             onClick={() => onNavigate('auth-candidate-register')}
           >
-            Let's Start
+            {t('landing.lets_start')}
           </Button>
 
           <button 
@@ -58,9 +63,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
       </main>
 
       <footer className="py-6 text-center text-outline text-sm">
-        <p>© 2024 AnPortafolioIA. All rights reserved.</p>
+        <p>{t('footer.copyright')}</p>
         <button onClick={() => onNavigate('design-system')} className="mt-2 text-xs hover:text-primary opacity-50 hover:opacity-100 transition-opacity">
-            Internal Design System
+            {t('footer.internal_design_system')}
         </button>
       </footer>
     </div>
