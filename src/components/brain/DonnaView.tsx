@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { ChevronLeft, Bot, Send, Calendar, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe, MessageSquare, MapPin, X, Mail, Linkedin, User } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
 import { CVProfile, ChatMessage } from '../../types_brain';
@@ -37,6 +37,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
     setIsOffline,
     suggestedQuestions
 }) => {
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -52,61 +53,63 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 });
 
                 return (
-                    <div className="space-y-10 p-6 md:p-8 animate-fade-in">
+                    <div className="space-y-12 animate-fade-in">
                         {groups.map((group, groupIdx) => (
-                            <div key={groupIdx} className="flex gap-6 relative group">
-                                {/* Vertical Timeline Line */}
-                                {groupIdx !== groups.length - 1 && (
-                                    <div className="absolute left-6 top-14 bottom-[-40px] w-[2px] bg-outline-variant/30 hidden md:block group-hover:bg-primary/20 transition-colors"></div>
-                                )}
-
-                                <div className="flex flex-col items-center shrink-0 z-10">
-                                    <CompanyLogo name={group.company} logoUrl={group.logo} className="w-12 h-12 bg-surface ring-4 ring-[var(--md-sys-color-background)] rounded-xl shadow-sm" />
-                                </div>
-
-                                <div className="flex-1">
-                                    <div className="mb-5">
-                                        <h3 className="text-primary font-bold text-lg leading-tight">{group.company}</h3>
+                            <div key={groupIdx} className="relative pl-0 md:pl-8 group border-l-2 border-slate-100 md:border-none ml-4 md:ml-0">
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    <div className="hidden md:flex flex-col items-center shrink-0 w-16">
+                                        <CompanyLogo name={group.company} logoUrl={group.logo} className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 p-1 object-contain" />
                                     </div>
 
-                                    <div className="space-y-8">
-                                        {group.roles.map((role, roleIdx) => (
-                                            <div key={roleIdx} className="relative pl-0 md:pl-2">
-                                                {/* Role Connector Dot */}
-                                                {group.roles.length > 1 && (
-                                                    <div className="absolute -left-[32px] top-2.5 w-2 h-2 rounded-full bg-outline-variant border-2 border-[var(--md-sys-color-background)] md:block hidden"></div>
-                                                )}
-
-                                                <h4 className="text-[var(--md-sys-color-on-background)] font-bold text-base mb-1">{role.role}</h4>
-                                                <div className="flex items-center gap-2 text-xs font-bold text-outline mb-3 uppercase tracking-wider bg-surface-variant/30 inline-block px-2 py-1 rounded-md">
-                                                    <Calendar className="w-3 h-3 text-outline" />
-                                                    <span>{role.startDate || 'Inicio'}</span>
-                                                    <span className="text-outline/50">─</span>
-                                                    <span className={role.current ? "text-tertiary font-extrabold" : ""}>
-                                                        {role.current ? 'Actualidad' : (role.endDate || 'Fin')}
-                                                    </span>
-                                                </div>
-                                                <div className="text-sm text-[var(--md-sys-color-on-background)]/80 leading-relaxed">
-                                                    <MarkdownView content={role.description} />
-                                                </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-6 md:mb-4">
+                                            <div className="md:hidden">
+                                                <CompanyLogo name={group.company} logoUrl={group.logo} className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100" />
                                             </div>
-                                        ))}
+                                            <h3 className="text-xl font-bold text-slate-900">{group.company}</h3>
+                                        </div>
+
+                                        <div className="space-y-8">
+                                            {group.roles.map((role, roleIdx) => (
+                                                <div key={roleIdx} className="relative bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                                    <div className="flex flex-wrap justify-between items-start gap-4 mb-4">
+                                                        <div>
+                                                            <h4 className="font-bold text-lg text-slate-800">{role.role}</h4>
+                                                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">
+                                                                <Calendar className="w-3.5 h-3.5" />
+                                                                <span>{role.startDate || 'Start'}</span>
+                                                                <span>—</span>
+                                                                <span className={role.current ? "text-green-600 bg-green-50 px-2 py-0.5 rounded-full" : ""}>
+                                                                    {role.current ? 'Present' : (role.endDate || 'End')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-slate-600 leading-relaxed text-sm">
+                                                        <MarkdownView content={role.description} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         ))}
+                        {profile.experience.length === 0 && (
+                            <div className="text-center py-12 text-slate-400 italic">No experience listed.</div>
+                        )}
                     </div>
                 );
             case 'education':
                 return (
-                    <div className="space-y-4 p-6 md:p-8 animate-fade-in">
+                    <div className="grid grid-cols-1 gap-4 animate-fade-in">
                         {profile.education?.map((edu, i) => (
-                            <div key={i} className="bg-surface border border-outline-variant/30 p-6 rounded-[20px] flex items-center gap-6 shadow-sm hover:shadow-elevation-1 transition-shadow">
-                                <CompanyLogo name={edu.institution} className="w-16 h-16 rounded-xl" />
+                            <div key={i} className="bg-white border border-slate-100 p-6 rounded-2xl flex items-center gap-5 shadow-sm hover:shadow-md transition-shadow">
+                                <CompanyLogo name={edu.institution} className="w-14 h-14 rounded-xl shrink-0" />
                                 <div>
-                                    <h4 className="font-bold text-[var(--md-sys-color-on-background)] text-lg">{edu.title}</h4>
-                                    <p className="text-base text-primary font-medium">{edu.institution}</p>
-                                    <p className="text-sm text-outline mt-1 font-mono">{edu.period}</p>
+                                    <h4 className="font-bold text-slate-900 text-lg">{edu.title}</h4>
+                                    <p className="text-slate-500 font-medium">{edu.institution}</p>
+                                    <p className="text-xs text-slate-400 mt-1 font-mono">{edu.period}</p>
                                 </div>
                             </div>
                         ))}
@@ -114,40 +117,45 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 );
             case 'projects':
                 return (
-                    <div className="grid grid-cols-1 gap-6 p-6 md:p-8 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
                         {profile.projects?.map((proj, i) => (
-                            <div key={i} className="bg-surface border border-outline-variant/30 rounded-[24px] overflow-hidden shadow-sm hover:shadow-elevation-2 transition-all">
-                                {proj.images && proj.images.length > 0 && (
-                                    <div className="h-56 overflow-x-auto flex snap-x snap-mandatory no-scrollbar bg-surface-variant/20">
-                                        {proj.images.map((img, idx) => (
-                                            <img key={idx} src={img} alt={`${proj.name} screenshot`} className="w-full h-full object-cover shrink-0 snap-center" />
-                                        ))}
+                            <div key={i} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+                                {proj.images && proj.images.length > 0 ? (
+                                    <div className="h-48 overflow-hidden bg-slate-100 relative group">
+                                        <img src={proj.images[0]} alt={proj.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                                    </div>
+                                ) : (
+                                    <div className="h-24 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-100 relative">
+                                        <div className="absolute bottom-4 left-6 p-2 bg-white rounded-lg shadow-sm">
+                                            <Code className="w-6 h-6 text-slate-400" />
+                                        </div>
                                     </div>
                                 )}
-                                <div className="p-6">
+                                
+                                <div className="p-6 flex-1 flex flex-col">
                                     <div className="flex justify-between items-start mb-3">
-                                        <h4 className="font-bold text-[var(--md-sys-color-on-background)] text-xl">{proj.name}</h4>
+                                        <h4 className="font-bold text-slate-900 text-xl leading-tight">{proj.name}</h4>
                                         {proj.link && (
-                                            <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors">
-                                                <Send className="w-5 h-5" />
+                                            <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors -mr-2 -mt-2">
+                                                <Send className="w-4 h-4" />
                                             </a>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs text-outline mb-4 bg-surface-variant/30 w-fit px-2 py-1 rounded-md">
-                                        {(proj.startDate || proj.endDate) && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar className="w-3 h-3" />
-                                                <span className="uppercase tracking-wide">{proj.startDate || ''} {proj.startDate && proj.endDate ? '-' : ''} {proj.endDate || ''}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-[var(--md-sys-color-on-background)]/80 mb-6 leading-relaxed">{proj.description}</p>
-                                    <div className="flex flex-wrap gap-2 pt-4 border-t border-outline-variant/20">
-                                        {(proj.technologies || '').split(',').map((tech, t) => (
-                                            <span key={t} className="text-[10px] font-bold bg-secondary-container text-secondary-onContainer px-3 py-1 rounded-full uppercase tracking-wider">
-                                                {tech.trim()}
-                                            </span>
-                                        ))}
+                                    
+                                    <p className="text-sm text-slate-600 mb-6 leading-relaxed line-clamp-3">{proj.description}</p>
+                                    
+                                    <div className="mt-auto pt-4 border-t border-slate-100">
+                                        <div className="flex flex-wrap gap-2">
+                                            {(proj.technologies || '').split(',').slice(0, 4).map((tech, t) => (
+                                                <span key={t} className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                                    {tech.trim()}
+                                                </span>
+                                            ))}
+                                            {(proj.technologies || '').split(',').length > 4 && (
+                                                <span className="text-[10px] font-bold text-slate-400 px-1 py-1">+{(proj.technologies || '').split(',').length - 4}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -156,162 +164,339 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 );
             case 'skills':
                 return (
-                    <div className="p-6 md:p-8 animate-fade-in">
-                        <h4 className="text-xs font-bold text-outline uppercase tracking-wider mb-6">Competencias & Stack</h4>
-                        <div className="flex flex-wrap gap-3 mb-8">
+                    <div className="animate-fade-in bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Competencies & Tech Stack</h4>
+                        <div className="flex flex-wrap gap-3">
                             {profile.skills?.map((s, i) => (
-                                <span key={i} className="px-4 py-2 bg-surface text-[var(--md-sys-color-on-background)] text-sm font-medium rounded-xl border border-outline-variant/50 shadow-sm hover:border-primary hover:text-primary transition-colors cursor-default">
+                                <span key={i} className="px-4 py-2 bg-slate-50 text-slate-700 text-sm font-medium rounded-xl border border-slate-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors cursor-default">
                                     {s}
                                 </span>
                             ))}
                         </div>
+                        
+                        {profile.techStack && (
+                            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <h5 className="text-sm font-bold text-slate-900 mb-4">Languages</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile.techStack.languages.map((l, i) => (
+                                            <span key={i} className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">{l}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-bold text-slate-900 mb-4">Frameworks</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile.techStack.frameworks.map((f, i) => (
+                                            <span key={i} className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded">{f}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
         }
     };
 
     return (
-        <div className="h-screen flex flex-col md:flex-row overflow-hidden bg-[var(--md-sys-color-background)] font-sans text-[var(--md-sys-color-on-background)]">
+        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24">
             
-            {/* Chat Column */}
-            <div className="w-full md:w-[420px] bg-surface border-r border-outline-variant/20 flex flex-col shrink-0 z-20 shadow-xl md:shadow-none">
-                <div className="p-4 border-b border-outline-variant/20 flex items-center justify-between bg-surface/80 backdrop-blur-md sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                        <button onClick={onBack} className="p-2 text-outline hover:text-primary hover:bg-surface-variant rounded-full transition-colors">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md transition-colors ${isOffline ? 'bg-outline' : 'bg-primary'}`}>
-                            <Bot className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-[var(--md-sys-color-on-background)] text-sm">Donna AI</h3>
-                            <div className="flex items-center gap-1.5">
-                                <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-outline-variant' : 'bg-green-500 animate-pulse'}`}></span>
-                                <span className="text-[10px] text-outline font-medium uppercase tracking-wide">{isOffline ? 'Offline Mode' : 'Online'}</span>
-                            </div>
-                        </div>
+            {/* Top Navigation */}
+            <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 md:px-8 py-3 flex items-center justify-between transition-all duration-300">
+                <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors group">
+                    <div className="p-1.5 rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors">
+                        <ChevronLeft size={16} />
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-2 cursor-pointer relative group" title="Toggle AI Mode">
-                            <input type="checkbox" checked={isOffline} onChange={(e) => setIsOffline(e.target.checked)} className="sr-only peer" />
-                            <div className="w-10 h-6 bg-surface-variant border border-outline rounded-full peer peer-focus:ring-2 peer-focus:ring-primary peer-checked:bg-primary-container peer-checked:border-primary transition-all"></div>
-                            <span className="absolute left-1 top-1 bg-outline w-4 h-4 rounded-full transition-all peer-checked:translate-x-4 peer-checked:bg-primary"></span>
-                        </label>
-                    </div>
+                    <span className="hidden sm:inline">Back to Editor</span>
+                </button>
+                
+                <div className="flex items-center gap-3">
+                     <Button variant="outline" className="hidden sm:flex h-9 text-xs border-slate-200 hover:bg-slate-50 text-slate-600" onClick={() => window.print()}>
+                        <Download size={14} className="mr-2"/> Download PDF
+                     </Button>
+                     <Button className="h-9 text-xs bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 border-none">
+                        Contact Candidate
+                     </Button>
                 </div>
+            </nav>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin bg-surface-variant/20">
-                    {chatHistory.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
-                            <div className={`max-w-[85%] rounded-[20px] px-5 py-3.5 text-sm shadow-sm ${
-                                msg.role === 'user' 
-                                    ? 'bg-primary text-white rounded-tr-sm' 
-                                    : 'bg-surface text-[var(--md-sys-color-on-background)] border border-outline-variant/30 rounded-tl-sm'
-                            }`}>
-                                <MarkdownView content={msg.text} />
-                                <div className={`text-[10px] mt-1.5 text-right font-medium opacity-70`}>
-                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    
+                    {/* Left Column: Profile Content (8 cols) */}
+                    <div className="lg:col-span-8 space-y-10">
+                        
+                        {/* Above the Fold: Header Card */}
+                        <div className="bg-white rounded-[32px] p-8 md:p-10 border border-slate-200/60 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+                            {/* Decorative background blur */}
+                            <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+                            
+                            <div className="relative z-10">
+                                <div className="flex flex-col gap-6">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider rounded-full border border-green-100">
+                                                <span className="relative flex h-2 w-2">
+                                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                                </span>
+                                                Available for hire
+                                            </span>
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider rounded-full border border-slate-100">
+                                                <MapPin size={12} /> Remote / Hybrid
+                                            </span>
+                                        </div>
+                                        
+                                        <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-[1.1] mb-6 tracking-tight">
+                                            {profile.experience[0]?.role || "Senior Technical Professional"}
+                                        </h1>
+                                        
+                                        <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl font-light">
+                                            {profile.summary || "Experienced professional ready to deliver impact and drive innovation in forward-thinking teams."}
+                                        </p>
+                                    </div>
+
+                                    {/* Social Proof: Logos */}
+                                    {profile.experience.length > 0 && (
+                                        <div className="pt-8 mt-4 border-t border-slate-100">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Previously at</p>
+                                            <div className="flex flex-wrap gap-3 opacity-80 hover:opacity-100 transition-opacity">
+                                                {Array.from(new Set(profile.experience.map(e => e.company))).slice(0, 4).map((company, i) => (
+                                                    <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                                                        <CompanyLogo name={company} className="w-5 h-5 rounded-md" />
+                                                        <span className="text-sm font-semibold text-slate-700">{company}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                    ))}
-                    {loading && (
-                        <div className="flex justify-start animate-fade-in">
-                            <div className="bg-surface border border-outline-variant/30 rounded-[20px] rounded-tl-sm p-4 flex space-x-1.5 shadow-sm">
-                                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce delay-75"></div>
-                                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce delay-150"></div>
+
+                        {/* Sticky Tabs Navigation */}
+                        <div className="sticky top-[69px] z-30 bg-[#F8FAFC]/90 backdrop-blur-md py-4 -mx-4 px-4 md:mx-0 md:px-0">
+                            <div className="flex overflow-x-auto gap-2 no-scrollbar p-1">
+                                {['experience', 'education', 'projects', 'skills'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab as any)}
+                                        className={`
+                                            px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border
+                                            ${activeTab === tab 
+                                                ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/10 scale-105' 
+                                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50'
+                                            }
+                                        `}
+                                    >
+                                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Dynamic Content */}
+                        <div className="min-h-[500px]">
+                            {renderContent()}
+                        </div>
+                    </div>
+
+                    {/* Right Column: Hiring Panel (Sticky) */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="sticky top-24 space-y-6">
+                            
+                            {/* Hiring Widget */}
+                            <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-bl-[100px] -mr-10 -mt-10 pointer-events-none"></div>
+                                
+                                <div className="relative z-10">
+                                    <h3 className="font-display font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
+                                        Candidate Snapshot
+                                    </h3>
+                                    
+                                    <div className="space-y-4 mb-8">
+                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Briefcase size={18}/></div>
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Experience</p>
+                                                    <p className="text-sm font-bold text-slate-900">{profile.experience.length} Roles</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Code size={18}/></div>
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Core Tech</p>
+                                                    <p className="text-sm font-bold text-slate-900 truncate w-40">
+                                                        {profile.techStack?.languages?.slice(0,2).join(', ') || "Full Stack"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Globe size={18}/></div>
+                                                <div>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Languages</p>
+                                                    <p className="text-sm font-bold text-slate-900">
+                                                        {profile.languages?.[0]?.language || "English"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Button className="w-full h-12 text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all border-none">
+                                            Schedule Interview
+                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
+                                                <Mail size={18} />
+                                            </Button>
+                                            <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
+                                                <Linkedin size={18} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Assistant Teaser */}
+                            {!isChatOpen && (
+                                <div 
+                                    onClick={() => setIsChatOpen(true)}
+                                    className="bg-slate-900 text-white p-5 rounded-2xl shadow-xl shadow-slate-900/10 cursor-pointer hover:bg-slate-800 transition-all group flex items-center justify-between transform hover:-translate-y-1"
+                                >
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                            <p className="font-bold text-sm">Donna AI is Online</p>
+                                        </div>
+                                        <p className="text-xs text-slate-400">Ask anything about this candidate.</p>
+                                    </div>
+                                    <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-colors">
+                                        <MessageSquare size={20} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Floating Chat Interface */}
+            {isChatOpen && (
+                <div className="fixed bottom-6 right-6 z-50 w-[400px] h-[600px] max-h-[80vh] bg-white rounded-[24px] shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-fade-scale-up">
+                    {/* Chat Header */}
+                    <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md ${isOffline ? 'bg-slate-400' : 'bg-indigo-600'}`}>
+                                <Bot className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-900 text-sm">Donna AI</h3>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-slate-300' : 'bg-green-500'}`}></span>
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">{isOffline ? 'Offline' : 'Online'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => setIsOffline(!isOffline)}
+                                className={`text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors`}
+                            >
+                                {isOffline ? 'GO ONLINE' : 'GO OFFLINE'}
+                            </button>
+                            <button onClick={() => setIsChatOpen(false)} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Chat Body */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-thin">
+                        {chatHistory.map((msg) => (
+                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                                    msg.role === 'user' 
+                                        ? 'bg-slate-900 text-white rounded-br-sm' 
+                                        : 'bg-white text-slate-800 border border-slate-200 rounded-bl-sm'
+                                }`}>
+                                    <MarkdownView content={msg.text} />
+                                    <div className={`text-[10px] mt-1 text-right font-medium ${msg.role === 'user' ? 'text-slate-400' : 'text-slate-300'}`}>
+                                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {loading && (
+                            <div className="flex justify-start">
+                                <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm p-4 flex space-x-1.5 shadow-sm">
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75"></div>
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150"></div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={chatEndRef} />
+                    </div>
+
+                    {/* Chat Suggestions (Offline/Empty) */}
+                    {(isOffline || chatHistory.length < 2) && (
+                        <div className="px-4 py-2 bg-white border-t border-slate-100">
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                {suggestedQuestions.map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => onSend(undefined, q)}
+                                        className="whitespace-nowrap px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg text-xs font-medium border border-transparent hover:border-indigo-100 transition-all"
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     )}
-                    <div ref={chatEndRef} />
-                </div>
 
-                {isOffline && (
-                    <div className="px-4 py-3 bg-surface border-t border-outline-variant/10">
-                        <p className="text-[10px] text-outline uppercase tracking-wider mb-2 font-bold">Sugerencias:</p>
-                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                            {suggestedQuestions.map((q, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => onSend(undefined, q)}
-                                    className="whitespace-nowrap px-3 py-1.5 bg-surface-variant hover:bg-surface-variant/80 text-[var(--md-sys-color-on-background)] rounded-lg text-xs font-medium border border-transparent hover:border-primary transition-all"
-                                >
-                                    {q}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="p-4 bg-surface border-t border-outline-variant/20">
-                    <form onSubmit={onSend} className="relative flex items-center gap-2">
-                        <input 
-                            className="w-full bg-surface-variant/30 border border-outline-variant/50 rounded-full py-3.5 pl-5 pr-12 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-[var(--md-sys-color-on-background)] placeholder-outline" 
-                            placeholder={isOffline ? "Pregunta sobre el perfil..." : "Escribe a Donna..."} 
-                            value={input} 
-                            onChange={(e) => setInput(e.target.value)} 
-                        />
-                        <button 
-                            type="submit" 
-                            disabled={!input.trim() || loading} 
-                            className={`absolute right-2 p-2 rounded-full text-white transition-all disabled:opacity-50 disabled:scale-90 ${isOffline ? 'bg-outline' : 'bg-primary shadow-lg shadow-primary/30 hover:scale-105 active:scale-95'}`}
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            {/* Profile Content Column */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden bg-[var(--md-sys-color-background)] relative">
-                
-                {/* Profile Header */}
-                <div className="bg-surface/50 backdrop-blur-md border-b border-outline-variant/20 p-6 md:p-8 shrink-0 z-10">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h1 className="text-3xl md:text-4xl font-display font-medium text-[var(--md-sys-color-on-background)] mb-2">
-                                    {profile.experience[0]?.role || "Candidato"}.
-                                </h1>
-                                <p className="text-outline text-base max-w-2xl leading-relaxed line-clamp-2 md:line-clamp-none">
-                                    {profile.summary}
-                                </p>
-                            </div>
-                            <Button variant="outline" className="hidden md:flex gap-2" onClick={() => window.print()}>
-                                <Download size={16} /> PDF
-                            </Button>
-                        </div>
-
-                        {/* Navigation Tabs (Chips) */}
-                        <div className="flex gap-2 overflow-x-auto mt-8 no-scrollbar pb-1">
-                            {['experience', 'education', 'projects', 'skills'].map((tab) => (
-                                <button 
-                                    key={tab} 
-                                    onClick={() => setActiveTab(tab as any)} 
-                                    className={`
-                                        px-5 py-2.5 rounded-full text-sm font-medium transition-all border whitespace-nowrap
-                                        ${activeTab === tab 
-                                            ? 'bg-secondary-container text-secondary-onContainer border-secondary-container shadow-sm' 
-                                            : 'bg-surface text-outline border-outline-variant hover:bg-surface-variant hover:text-[var(--md-sys-color-on-background)]'
-                                        }
-                                    `}
-                                >
-                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                                </button>
-                            ))}
-                        </div>
+                    {/* Chat Input */}
+                    <div className="p-4 bg-white border-t border-slate-100">
+                        <form onSubmit={onSend} className="relative flex items-center gap-2">
+                            <input 
+                                className="w-full bg-slate-50 border border-slate-200 rounded-full py-3 pl-4 pr-12 text-sm outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-slate-900 placeholder-slate-400" 
+                                placeholder={isOffline ? "Ask about experience..." : "Ask Donna..."} 
+                                value={input} 
+                                onChange={(e) => setInput(e.target.value)} 
+                            />
+                            <button 
+                                type="submit" 
+                                disabled={!input.trim() || loading} 
+                                className={`absolute right-2 p-1.5 rounded-full text-white transition-all disabled:opacity-50 disabled:scale-90 ${isOffline ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                            >
+                                <Send className="w-4 h-4" />
+                            </button>
+                        </form>
                     </div>
                 </div>
-
-                {/* Profile Scrollable Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar bg-[var(--md-sys-color-background)]">
-                    <div className="max-w-4xl mx-auto min-h-full pb-20">
-                        {renderContent()}
-                    </div>
-                </div>
-            </div>
+            )}
+            
+            {/* Floating Action Button (FAB) */}
+            {!isChatOpen && (
+                <button 
+                    onClick={() => setIsChatOpen(true)}
+                    className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center hover:scale-110 hover:-translate-y-1 transition-all active:scale-95 group border-2 border-white/10"
+                >
+                    <Bot className="w-7 h-7 group-hover:animate-pulse" />
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></span>
+                </button>
+            )}
         </div>
     );
 };
