@@ -16,6 +16,7 @@ import cookieParser from "cookie-parser";
 import { initializeFirebaseAdmin } from "./firebaseAdmin.js";
 import firestoreRoutes from "./routes/firestoreRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
 import testRoutes from "./routes/testRoutes.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 
@@ -302,6 +303,7 @@ app.get("/healthz", (req, res) => {
 
 app.use("/api/firestore", firestoreRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes);
 app.use("/api/test", testRoutes);
 
 // ------------------------------------------------------------// 8.1) SSE Endpoint for Log Streaming (optional auth in dev)
@@ -309,7 +311,7 @@ app.use("/api/test", testRoutes);
 
 // Rate limiting for SSE connections
 const sseConnectionsPerUser = new Map();
-const MAX_SSE_CONNECTIONS_PER_USER = 3;
+const MAX_SSE_CONNECTIONS_PER_USER = 10; // Increased to prevent dev issues
 
 // Optional auth middleware - allows unauthenticated in dev mode
 const optionalAuthForDev = async (req, res, next) => {

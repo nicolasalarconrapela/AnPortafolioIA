@@ -85,6 +85,7 @@ interface UserProfile {
   firstName?: string;
   lastName?: string;
   avatarUrl?: string;
+  shareToken?: string;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }) => {
@@ -108,6 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     email: '',
     firstName: '',
     lastName: '',
+    shareToken: '',
     avatarUrl: ''
   });
 
@@ -149,7 +151,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
               email: data.profile.email || data.email || '',
               firstName: data.profile.firstName || nameParts[0] || '',
               lastName: data.profile.lastName || nameParts.slice(1).join(' ') || '',
-              avatarUrl: data.profile.avatarUrl || ''
+              avatarUrl: data.profile.avatarUrl || '',
+              shareToken: data.shareToken || ''
             });
           }
         }
@@ -258,6 +261,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
   const handleProfileChange = (field: keyof UserProfile, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
+  };
+
+  const handleGenerateToken = async () => {
+    setIsSaving(true);
+    try {
+      const token = await authService.generateShareToken();
+      setProfile(prev => ({ ...prev, shareToken: token }));
+      loggingService.info('Public token generated successfully');
+    } catch (error) {
+      loggingService.error('Failed to generate token', error);
+      alert('Could not generate public link. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const tabs: { id: SettingsTab; label: string; icon: string }[] = [
@@ -428,6 +445,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </button>
                     </div>
                   </div>
+
+                  {/* Public Profile Link */}
+                  <section>
+                    <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Public Profile</h4>
+                    <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30">
+                      <p className="text-sm text-outline mb-3">Share your profile safely using this public link.</p>
+
+                      {!profile.shareToken ? (
+                        <div className="flex flex-col items-start gap-2">
+                           <button
+                             onClick={handleGenerateToken}
+                             disabled={isSaving}
+                             className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                           >
+                             {isSaving ? (
+                               <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                             ) : (
+                               <span className="material-symbols-outlined text-[18px]">link</span>
+                             )}
+                             Generate Public Link
+                           </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={`${window.location.origin}/?token=${profile.shareToken}`}
+                            className="flex-1 bg-surface-variant rounded-lg px-3 py-2 text-sm font-mono text-on-surface-variant border border-outline-variant/50 focus:outline-none"
+                            onClick={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/?token=${profile.shareToken}`);
+                            }}
+                            className="p-2 hover:bg-primary-container rounded-lg text-primary transition-colors"
+                            title="Copy Link"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">content_copy</span>
+                          </button>
+                          <a
+                            href={`${window.location.origin}/?token=${profile.shareToken}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-primary-container rounded-lg text-primary transition-colors"
+                            title="Open Link"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </section>
                   <section>
                     <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Personal Information</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

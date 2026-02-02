@@ -410,6 +410,32 @@ router.put('/user/:uid', async (req, res) => {
 });
 
 /**
+ * POST /api/auth/generate-share-token
+ * Generates or ensures a share token exists for the current user.
+ */
+router.post('/generate-share-token', requireAuth, async (req, res) => {
+    try {
+        const { uid } = req.user;
+        const { email, photoURL, displayName } = req.userRecord;
+
+        // Sync allows us to ensure the token exists (logic is inside syncUserToFirestore)
+        const userData = await syncUserToFirestore(uid, {
+            email,
+            picture: photoURL,
+            name: displayName
+        });
+
+        res.json({
+            success: true,
+            shareToken: userData.shareToken
+        });
+    } catch (error) {
+        logger.error('Failed to generate share token', { uid: req.user?.uid, error: error.message });
+        res.status(500).json({ error: 'Failed to generate token' });
+    }
+});
+
+/**
  * DELETE /api/auth/user/:uid
  * Elimina un usuario
  */
