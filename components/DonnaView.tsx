@@ -39,26 +39,56 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
     const renderContent = () => {
         switch (activeTab) {
             case 'experience':
+                const groups: { company: string, logo?: string, roles: any[] }[] = [];
+                profile.experience?.forEach(exp => {
+                    const lastGroup = groups[groups.length - 1];
+                    if (lastGroup && lastGroup.company === exp.company) {
+                        lastGroup.roles.push(exp);
+                    } else {
+                        groups.push({ company: exp.company, logo: exp.logo, roles: [exp] });
+                    }
+                });
+
                 return (
-                    <div className="space-y-8 p-6">
-                        {profile.experience?.map((role, roleIdx) => (
-                            <div key={roleIdx} className="flex gap-4">
-                                <div className="flex flex-col items-center shrink-0">
-                                    <CompanyLogo name={role.company} className="w-12 h-12 bg-white" />
+                    <div className="space-y-12 p-6">
+                        {groups.map((group, groupIdx) => (
+                            <div key={groupIdx} className="flex gap-6 relative">
+                                {/* Vertical Timeline Line */}
+                                {groupIdx !== groups.length - 1 && (
+                                    <div className="absolute left-6 top-14 bottom-[-48px] w-0.5 bg-slate-100 hidden md:block"></div>
+                                )}
+
+                                <div className="flex flex-col items-center shrink-0 z-10">
+                                    <CompanyLogo name={group.company} logoUrl={group.logo} className="w-12 h-12 bg-white ring-4 ring-slate-50" />
                                 </div>
-                                <div className="flex-1 pb-8 border-b border-slate-100 last:border-0">
-                                    <h3 className="text-lg font-bold text-slate-900">{role.role}</h3>
-                                    <p className="text-blue-600 font-medium mb-1">{role.company}</p>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">
-                                        <Calendar className="w-3 h-3 text-slate-300" />
-                                        <span>{role.startDate || 'Inicio'}</span>
-                                        <span className="text-slate-200">─</span>
-                                        <span className={role.current ? "text-green-600 font-extrabold" : ""}>
-                                            {role.current ? 'Actualidad' : (role.endDate || 'Fin')}
-                                        </span>
+
+                                <div className="flex-1">
+                                    <div className="mb-4">
+                                        <h3 className="text-blue-600 font-bold text-lg leading-tight">{group.company}</h3>
                                     </div>
-                                    <div className="text-sm text-slate-600">
-                                        <MarkdownView content={role.description} />
+
+                                    <div className="space-y-8">
+                                        {group.roles.map((role, roleIdx) => (
+                                            <div key={roleIdx} className="relative">
+                                                {/* Role Connector Dot */}
+                                                {group.roles.length > 1 && (
+                                                    <div className="absolute -left-[31px] top-2.5 w-2 h-2 rounded-full bg-blue-200 border-2 border-white md:block hidden"></div>
+                                                )}
+
+                                                <h4 className="text-slate-900 font-bold text-base mb-1">{role.role}</h4>
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wider">
+                                                    <Calendar className="w-3 h-3 text-slate-300" />
+                                                    <span>{role.startDate || 'Inicio'}</span>
+                                                    <span className="text-slate-200">─</span>
+                                                    <span className={role.current ? "text-green-600 font-extrabold" : ""}>
+                                                        {role.current ? 'Actualidad' : (role.endDate || 'Fin')}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-slate-600 leading-relaxed">
+                                                    <MarkdownView content={role.description} />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
