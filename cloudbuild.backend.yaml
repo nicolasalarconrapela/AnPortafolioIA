@@ -1,0 +1,42 @@
+steps:
+  - name: gcr.io/cloud-builders/npm
+    args:
+      - ci
+    dir: backend
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --pull
+      - -t
+      - gcr.io/$PROJECT_ID/an-portafolio-ia-backend:$SHORT_SHA
+      - .
+    dir: backend
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/an-portafolio-ia-backend:$SHORT_SHA
+    dir: backend
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_CLOUD_RUN_SERVICE}
+      - --image
+      - gcr.io/$PROJECT_ID/an-portafolio-ia-backend:$SHORT_SHA
+      - --region
+      - ${_CLOUD_RUN_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - NODE_ENV=production
+timeout: 1200s
+images:
+  - gcr.io/$PROJECT_ID/an-portafolio-ia-backend:$SHORT_SHA
+substitutions:
+  _CLOUD_RUN_SERVICE: an-portafolio-ia-backend
+  _CLOUD_RUN_REGION: us-central1
