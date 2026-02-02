@@ -501,9 +501,9 @@ function App() {
 
             // 1. Check for Internal JSON Backup First (Highest Priority)
             // Look for any file ending in .json that might be our backup
-            const jsonFile = Object.values(files).find(f => !f.dir && f.name.endsWith('.json'));
+            const jsonFile = Object.values(files).find((f: any) => !f.dir && f.name.endsWith('.json'));
             if (jsonFile) {
-                const jsonText = await jsonFile.async('text');
+                const jsonText = await (jsonFile as any).async('text');
                 try {
                     const json = JSON.parse(jsonText);
                      if (Array.isArray(json.experience) && Array.isArray(json.skills)) {
