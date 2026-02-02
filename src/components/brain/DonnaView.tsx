@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronLeft, Bot, Send, Calendar } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
-import { CVProfile, ChatMessage } from '../types';
+import { CVProfile, ChatMessage } from '../../types_brain';
 
 interface DonnaViewProps {
     profile: CVProfile;

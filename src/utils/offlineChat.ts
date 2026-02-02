@@ -1,4 +1,4 @@
-import { CVProfile } from "../types";
+import { CVProfile } from "../types_brain";
 
 export const getOfflineResponse = (
   query: string,

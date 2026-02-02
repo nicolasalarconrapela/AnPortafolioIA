@@ -1,6 +1,6 @@
 {
   "name": "an-portafolio-ia-backend",
-  "version": "0.11.01-beta",
+  "version": "0.12.00-beta",
   "description": "Backend server for An Portafolio IA with Firebase integration.",
   "main": "server.js",
   "type": "module",

@@ -12,7 +12,7 @@ import { SectionHeader } from './SectionHeader';
 import { EmptyState } from './EmptyState';
 import { GretchenModal } from './GretchenModal';
 import { JaniceModal } from './JaniceModal';
-import { CVProfile } from '../types';
+import { CVProfile } from '../../types_brain';
 
 interface GooglitoWizardProps {
     currentStep: number;

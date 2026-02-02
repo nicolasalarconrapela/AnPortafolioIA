@@ -1,30 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createGeminiService, GeminiService } from './services/geminiService';
-import { AppState, CVProfile } from './types';
-import { useFileProcessing } from './hooks/useFileProcessing';
-import { useDonna } from './hooks/useDonna';
-import { cleanProfile } from './utils/profileUtils';
-import { RotenmeirView } from './components/RotenmeirView';
-import { GooglitoWizard } from './components/GooglitoWizard';
-import { DonnaView } from './components/DonnaView';
+import { createGeminiService, GeminiService } from '../../services/geminiService';
+import { AppState, CVProfile } from '../../types_brain';
+import { useFileProcessing } from '../../hooks/useFileProcessing';
+import { useDonna } from '../../hooks/useDonna';
+import { cleanProfile } from '../../utils/profileUtils';
+import { RotenmeirView } from './RotenmeirView';
+import { GooglitoWizard } from './GooglitoWizard';
+import { DonnaView } from './DonnaView';
 
 function App() {
-  const [appState, setAppState] = useState<AppState>(AppState.IDLE);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [profile, setProfile] = useState<CVProfile | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  
+    const [appState, setAppState] = useState<AppState>(AppState.IDLE);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [profile, setProfile] = useState<CVProfile | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
     // Rotenmeir state
     const [isDragging, setIsDragging] = useState(false);
     const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
     const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
 
-  const geminiServiceRef = useRef<GeminiService | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+    const geminiServiceRef = useRef<GeminiService | null>(null);
+    const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    geminiServiceRef.current = createGeminiService();
-  }, []);
+    useEffect(() => {
+        geminiServiceRef.current = createGeminiService();
+    }, []);
 
     const { processFile } = useFileProcessing(geminiServiceRef, setProfile, setAppState, setError, setCurrentStep);
     const { chat, setChat, input, setInput, loading: donnaLoading, activeTab: donnaActiveTab, setActiveTab: setDonnaActiveTab, handleSend: handleDonnaSend, isOffline, setIsOffline, suggestedQuestions } = useDonna(geminiServiceRef, profile);
@@ -45,18 +45,18 @@ function App() {
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) processFile(file);
-  };
+    };
 
-  const handleExportJSON = () => {
-      if (!profile) return;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", "perfil_rotenmeir.json");
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
-  };
+    const handleExportJSON = () => {
+        if (!profile) return;
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(profile, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "perfil_rotenmeir.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    };
 
     const onFinishWizard = async () => {
         if (profile) {
@@ -119,8 +119,8 @@ function App() {
                     suggestedQuestions={suggestedQuestions}
                 />
             )}
-    </>
-  );
+        </>
+    );
 }
 
 export default App;

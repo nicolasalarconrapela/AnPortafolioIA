@@ -2,7 +2,7 @@ import { MutableRefObject } from "react";
 import JSZip from "jszip";
 import { parseCSV } from "../utils/csvParser";
 import { GeminiService } from "../services/geminiService";
-import { AppState, CVProfile } from "../types";
+import { AppState, CVProfile } from "../types_brain";
 
 export const useFileProcessing = (
   geminiServiceRef: MutableRefObject<GeminiService | null>,

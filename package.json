@@ -1,7 +1,7 @@
 {
   "name": "anportafolioia",
   "private": true,
-  "version": "0.11.01-beta",
+  "version": "0.12.00-beta",
   "type": "module",
   "scripts": {
     "dev": "tsc && vite dev",
@@ -13,8 +13,10 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@google/genai": "^1.39.0",
     "firebase": "^12.8.0",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.563.0",
     "mammoth": "^1.6.0",
     "papaparse": "^5.4.1",
     "pdfjs-dist": "^5.4.530",

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
-import { createGeminiService } from '../services/geminiService';
+import { createGeminiService } from '../../services/geminiService';
 
 export const JaniceModal = ({ 
     isOpen, 

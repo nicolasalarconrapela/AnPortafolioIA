@@ -1,6 +1,6 @@
 import { useState, MutableRefObject, FormEvent } from "react";
 import { GeminiService } from "../services/geminiService";
-import { ChatMessage, CVProfile } from "../types";
+import { ChatMessage, CVProfile } from "../types_brain";
 import { getOfflineResponse, PREDEFINED_QUESTIONS } from "../utils/offlineChat";
 
 export const useDonna = (

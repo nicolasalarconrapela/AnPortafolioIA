@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, CheckCircle2, X, Wrench, Sparkles } from 'lucide-react';
-import { createGretchenService, GretchenService } from '../services/gretchenService';
-import { createGeminiService, GeminiService } from '../services/geminiService';
+import { createGretchenService, GretchenService } from '../../services/gretchenService';
+import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { MarkdownView } from './MarkdownView';
 import { Button } from './Button';
 

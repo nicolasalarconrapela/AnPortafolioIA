@@ -1,4 +1,4 @@
-import { CVProfile } from "../types";
+import { CVProfile } from "../types_brain";
 
 export const cleanProfile = (p: CVProfile): CVProfile => {
   const isDirty = (s: string) => {

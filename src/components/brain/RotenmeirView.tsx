@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Upload, FileArchive } from 'lucide-react';
-import { AppState } from '../types';
+import { AppState } from '../../types_brain';
 
 interface RotenmeirViewProps {
     appState: AppState;

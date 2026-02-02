@@ -1,5 +1,5 @@
 import { GoogleGenAI, Chat, Part, Content, Type, Schema } from "@google/genai";
-import { CVProfile } from "../types";
+import { CVProfile } from "../types_brain";
 
 export class GeminiService {
   private ai: GoogleGenAI | null = null;
