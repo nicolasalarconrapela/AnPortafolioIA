@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import {
     CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
     Terminal, Code, Heart, Award, Globe, BookOpen, User, FileText,
     Sparkles, X, Plus, ArrowRight, ShieldAlert,
-    Link, Image, Calendar, Trash2, Upload
+    Link, Image, Calendar, Trash2, Upload, LayoutGrid
 } from 'lucide-react';
 import { Button } from './Button';
 import { CompanyLogo } from './CompanyLogo';
@@ -35,8 +36,20 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     const [janiceData, setJaniceData] = useState<{ text: string, context: string, callback: (t: string) => void } | null>(null);
     const [gretchenOpen, setGretchenOpen] = useState(false);
     const [techInputs, setTechInputs] = useState<Record<string, string>>({ languages: '', frameworks: '', ides: '', tools: '' });
+    
+    // Scroll handling for nav
+    const navRef = useRef<HTMLDivElement>(null);
 
-    // Constants extracted
+    // Scroll active step into view
+    useEffect(() => {
+        if (navRef.current) {
+            const activeBtn = navRef.current.children[currentStep] as HTMLElement;
+            if (activeBtn) {
+                activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [currentStep]);
+
     const techSuggestions: Record<string, string[]> = {
         languages: ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'PHP', 'Swift', 'Go', 'Ruby', 'Rust', 'C++', 'HTML', 'CSS', 'SQL'],
         frameworks: ['React', 'Angular', 'Vue', 'Next.js', 'Node.js', 'Spring Boot', '.NET', 'Laravel', 'Django', 'Flask', 'Express'],
@@ -49,21 +62,21 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         ides: 'Entornos (IDEs)',
         tools: 'Herramientas / Cloud'
     };
+    
     const steps = [
         null,
-        { id: 'exp', title: 'Experiencia', icon: <Briefcase />, desc: 'Define tu trayectoria profesional.', ai: 'Googlito Experto' },
-        { id: 'skills', title: 'Skills Generales', icon: <Star />, desc: 'Tus superpoderes y habilidades blandas.', ai: 'Googlito Talento' },
-        { id: 'tech', title: 'Stack Tecnológico', icon: <Terminal />, desc: 'Lenguajes, Frameworks y Herramientas.', ai: 'Googlito Tech' },
-        { id: 'projects', title: 'Proyectos', icon: <Code />, desc: 'Lo que has construido.', ai: 'Googlito Maker' },
-        { id: 'vol', title: 'Voluntariado', icon: <Heart />, desc: 'Tu impacto social.', ai: 'Googlito Social' },
-        { id: 'awards', title: 'Reconocimientos', icon: <Award />, desc: 'Premios y certificaciones.', ai: 'Googlito Fame' },
-        { id: 'lang', title: 'Idiomas', icon: <Globe />, desc: '¿Qué lenguas dominas?', ai: 'Googlito Lingua' },
-        { id: 'hobbies', title: 'Hobbies', icon: <BookOpen />, desc: '¿Qué te apasiona?', ai: 'Googlito Life' },
-        { id: 'summary', title: 'Perfil Profesional', icon: <User />, desc: 'Descripción del Candidato.', ai: 'Googlito Bio' },
-        { id: 'review', title: 'Revisión Final', icon: <FileText />, desc: 'Verifica todos los datos.', ai: 'Googlito Auditor' },
+        { id: 'exp', title: 'Experiencia', icon: <Briefcase size={18} />, desc: 'Define tu trayectoria profesional.', ai: 'Googlito Experto' },
+        { id: 'skills', title: 'Skills', icon: <Star size={18} />, desc: 'Tus superpoderes y habilidades blandas.', ai: 'Googlito Talento' },
+        { id: 'tech', title: 'Stack Tech', icon: <Terminal size={18} />, desc: 'Lenguajes, Frameworks y Herramientas.', ai: 'Googlito Tech' },
+        { id: 'projects', title: 'Proyectos', icon: <Code size={18} />, desc: 'Lo que has construido.', ai: 'Googlito Maker' },
+        { id: 'vol', title: 'Voluntariado', icon: <Heart size={18} />, desc: 'Tu impacto social.', ai: 'Googlito Social' },
+        { id: 'awards', title: 'Logros', icon: <Award size={18} />, desc: 'Premios y certificaciones.', ai: 'Googlito Fame' },
+        { id: 'lang', title: 'Idiomas', icon: <Globe size={18} />, desc: '¿Qué lenguas dominas?', ai: 'Googlito Lingua' },
+        { id: 'hobbies', title: 'Hobbies', icon: <BookOpen size={18} />, desc: '¿Qué te apasiona?', ai: 'Googlito Life' },
+        { id: 'summary', title: 'Perfil', icon: <User size={18} />, desc: 'Descripción del Candidato.', ai: 'Googlito Bio' },
+        { id: 'review', title: 'Revisión', icon: <FileText size={18} />, desc: 'Verifica todos los datos.', ai: 'Googlito Auditor' },
     ];
 
-    // Helpers
     const openJanice = (text: string, context: string, callback: (t: string) => void) => {
         setJaniceData({ text, context, callback });
         setJaniceOpen(true);
@@ -102,18 +115,25 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         setProfile({ ...profile, techStack: newStack });
     };
 
-    // Render logic
+    // --- RENDER SUCCESS ---
     if (currentStep === 0) {
         return (
-            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 md:p-6 text-white font-serif">
-                <div className="max-w-lg w-full bg-slate-800 p-6 md:p-8 border border-slate-700 shadow-2xl relative text-center animate-fade-in-up rounded-sm">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-green-600"></div>
-                    <CheckCircle2 className="w-12 h-12 md:w-16 md:h-16 text-green-500 mx-auto mb-6" />
-                    <h2 className="text-xl md:text-2xl font-bold mb-2">Análisis Completado</h2>
-                    <p className="text-slate-400 mb-8 leading-relaxed text-sm md:text-base">"La extracción ha sido satisfactoria. Puede descargar el registro JSON antes de proceder con el equipo de Googlitos."</p>
-                    <div className="flex flex-col gap-4">
-                        <button onClick={onExportJSON} className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 border border-slate-600 font-sans rounded"><FileJson className="w-5 h-5" />Descargar JSON de Datos</button>
-                        <button onClick={() => setCurrentStep(1)} className="w-full flex items-center justify-center gap-2 bg-green-700 hover:bg-green-600 text-white py-3 px-4 transition-colors font-bold font-sans shadow-lg rounded">Proceder a Googlitos<ChevronRight className="w-5 h-5" /></button>
+            <div className="min-h-screen bg-[var(--md-sys-color-background)] flex flex-col items-center justify-center p-6 text-[var(--md-sys-color-on-background)]">
+                <div className="max-w-lg w-full bg-surface-variant/30 p-8 md:p-12 rounded-[32px] border border-outline-variant shadow-elevation-1 text-center animate-fade-in-up">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-700 mb-6">
+                        <CheckCircle2 className="w-10 h-10" />
+                    </div>
+                    <h2 className="text-2xl font-display font-medium mb-3">Extracción Exitosa</h2>
+                    <p className="text-outline mb-10 leading-relaxed">
+                        Señorita Rotenmeir ha estructurado tus datos. Ahora, el equipo de Googlitos te ayudará a pulir cada sección.
+                    </p>
+                    <div className="flex flex-col gap-3">
+                        <Button onClick={() => setCurrentStep(1)} variant="primary" className="w-full h-12 text-base">
+                            Proceder a Edición <ChevronRight className="w-5 h-5 ml-1" />
+                        </Button>
+                        <Button onClick={onExportJSON} variant="ghost" className="w-full h-12 text-sm text-outline hover:text-primary">
+                            <FileJson className="w-4 h-4 mr-2" /> Descargar Raw JSON
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -123,142 +143,170 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     const step = steps[currentStep];
     if (!step) return null;
 
+    // --- RENDER WIZARD ---
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-[var(--md-sys-color-background)] flex flex-col text-[var(--md-sys-color-on-background)]">
             <JaniceModal isOpen={janiceOpen} onClose={() => setJaniceOpen(false)} initialText={janiceData?.text || ''} context={janiceData?.context || ''} onApply={janiceData?.callback || (() => { })} />
             <GretchenModal isOpen={gretchenOpen} onClose={() => setGretchenOpen(false)} sectionName={step.title} sectionData={getSectionDataForGretchen(currentStep)} onApplyFix={handleGretchenFix} />
-            <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
-                <div className="flex items-center space-x-2"><div className="flex space-x-1"><div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div><div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div></div><span className="font-bold text-slate-700 ml-2">Googlito System</span></div>
-                <div className="flex items-center gap-2"><span className="hidden md:flex text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-100 items-center gap-1"><Sparkles className="w-3 h-3" /> Janice is Online</span><div className="text-xs md:text-sm font-medium text-slate-400">Paso {currentStep} / {steps.length - 1}</div></div>
+            
+            {/* Top Bar Navigation */}
+            <header className="bg-[var(--md-sys-color-background)] border-b border-outline-variant/30 sticky top-0 z-30 backdrop-blur-md bg-opacity-90">
+                <div className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-primary-onContainer">
+                            <LayoutGrid size={20} />
+                        </div>
+                        <span className="font-display font-medium text-lg hidden md:block">Googlito System</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="hidden md:flex text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100 items-center gap-1.5">
+                            <Sparkles className="w-3 h-3" /> Janice Online
+                        </span>
+                    </div>
+                </div>
+                
+                {/* Horizontal Scrollable Tabs */}
+                <div ref={navRef} className="flex overflow-x-auto no-scrollbar px-4 pb-0 gap-2 border-b border-transparent">
+                    {steps.slice(1).map((s, idx) => {
+                        const stepIndex = idx + 1;
+                        const isActive = stepIndex === currentStep;
+                        const isPast = stepIndex < currentStep;
+                        return (
+                            <button
+                                key={s.id}
+                                onClick={() => setCurrentStep(stepIndex)}
+                                className={`
+                                    flex items-center gap-2 px-4 py-3 border-b-2 transition-all whitespace-nowrap text-sm font-medium
+                                    ${isActive 
+                                        ? 'border-primary text-primary' 
+                                        : 'border-transparent text-outline hover:text-[var(--md-sys-color-on-background)] hover:bg-surface-variant/30 rounded-t-lg'
+                                    }
+                                `}
+                            >
+                                <span className={isActive ? 'text-primary' : isPast ? 'text-green-600' : 'text-outline opacity-70'}>
+                                    {isPast ? <CheckCircle2 size={16} /> : s.icon}
+                                </span>
+                                {s.title}
+                            </button>
+                        );
+                    })}
+                </div>
             </header>
-            <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 lg:p-10 animate-fade-in pb-20">
-                <SectionHeader title={step.title} description={step.desc} icon={step.icon} aiName={step.ai} onGretchenClick={() => setGretchenOpen(true)} />
-                <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-xl border border-slate-100 space-y-6 md:space-y-8">
+
+            {/* Main Content */}
+            <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-8 animate-fade-in pb-24">
+                <SectionHeader 
+                    title={step.title} 
+                    description={step.desc} 
+                    icon={step.icon} 
+                    aiName={step.ai} 
+                    onGretchenClick={() => setGretchenOpen(true)} 
+                />
+
+                <div className="space-y-6">
                     {currentStep === 1 && (
-                        <div className="space-y-6 md:space-y-8">
+                        <div className="space-y-6">
                             {profile.experience.map((exp, idx) => (
-                                <div key={idx} className="p-4 md:p-6 bg-slate-50 rounded-xl border border-slate-200 relative group hover:border-blue-300 transition-colors">
-                                    <div className="flex flex-col md:flex-row justify-between items-start mb-4 gap-3">
-                                        <div className="flex items-start gap-4 w-full md:mr-4">
-                                            <div className="relative group shrink-0">
-                                                <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-12 h-12 bg-white" />
-                                                <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                    <label className="cursor-pointer text-white hover:text-blue-300 transition-colors p-1" title="Subir logo">
-                                                        <Upload className="w-4 h-4" />
-                                                        <input
-                                                            type="file"
-                                                            className="hidden"
-                                                            accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0];
-                                                                if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        const newExp = [...profile.experience];
-                                                                        newExp[idx].logo = reader.result as string;
-                                                                        setProfile({ ...profile, experience: newExp });
-                                                                    };
-                                                                    reader.readAsDataURL(file);
-                                                                }
-                                                            }}
-                                                        />
-                                                    </label>
-                                                    <div className="relative group/url">
-                                                        <button className="text-white hover:text-blue-300 transition-colors p-1" title="Enlace URL">
-                                                            <Link className="w-4 h-4" />
-                                                        </button>
-                                                        <div className="absolute left-0 top-full mt-2 w-64 bg-white p-2 rounded shadow-xl border border-slate-100 hidden group-hover/url:block z-50">
-                                                            <p className="text-[10px] text-slate-400 mb-1">URL directa del logotipo:</p>
-                                                            <input
-                                                                className="w-full text-xs border border-slate-200 rounded px-2 py-1 text-slate-700"
-                                                                placeholder="https://..."
-                                                                value={exp.logo || ''}
-                                                                onChange={(e) => {
-                                                                    const newExp = [...profile.experience];
-                                                                    newExp[idx].logo = e.target.value;
-                                                                    setProfile({ ...profile, experience: newExp });
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="w-full">
-                                                <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 p-0" value={exp.role} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Cargo / Rol" />
-                                                <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0" value={exp.company} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Empresa" />
+                                <div key={idx} className="bg-surface-variant/20 rounded-[24px] p-6 border border-outline-variant/40 hover:border-outline-variant transition-colors group relative">
+                                    {/* Header Inputs */}
+                                    <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                        <div className="shrink-0 pt-1">
+                                            <div className="relative group/logo w-14 h-14 bg-surface rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-outline-variant/30">
+                                                <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-10 h-10 object-contain" />
+                                                <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer text-white">
+                                                    <Upload size={16} />
+                                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            const reader = new FileReader();
+                                                            reader.onloadend = () => {
+                                                                const newExp = [...profile.experience];
+                                                                newExp[idx].logo = reader.result as string;
+                                                                setProfile({ ...profile, experience: newExp });
+                                                            };
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }} />
+                                                </label>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
-                                            <div className="flex items-center gap-1.5">
-                                                <input
-                                                    className="w-24 text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-500 focus:border-blue-300 outline-none"
-                                                    value={exp.startDate || ''}
-                                                    onChange={(e) => {
-                                                        const newExp = [...profile.experience];
-                                                        newExp[idx].startDate = e.target.value;
-                                                        newExp[idx].period = `${e.target.value} - ${newExp[idx].current ? 'Present' : (newExp[idx].endDate || '')}`;
-                                                        setProfile({ ...profile, experience: newExp });
-                                                    }}
-                                                    placeholder="Inicio (MM/YYYY)"
-                                                />
-                                                <span className="text-slate-300 text-xs">─</span>
-                                                {exp.current ? (
-                                                    <div className="w-24 text-center text-[10px] font-bold text-green-600 bg-green-50 py-1.5 rounded border border-green-100 uppercase tracking-tight">Actualidad</div>
-                                                ) : (
-                                                    <input
-                                                        className="w-24 text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-500 focus:border-blue-300 outline-none"
-                                                        value={exp.endDate || ''}
-                                                        onChange={(e) => {
-                                                            const newExp = [...profile.experience];
-                                                            newExp[idx].endDate = e.target.value;
-                                                            newExp[idx].period = `${newExp[idx].startDate || ''} - ${e.target.value}`;
-                                                            setProfile({ ...profile, experience: newExp });
-                                                        }}
-                                                        placeholder="Fin (MM/YYYY)"
-                                                    />
-                                                )}
-                                            </div>
-                                            <label className="flex items-center gap-2 cursor-pointer select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    className="w-3 h-3 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                                    checked={exp.current || false}
-                                                    onChange={(e) => {
-                                                        const newExp = [...profile.experience];
-                                                        newExp[idx].current = e.target.checked;
-                                                        newExp[idx].period = `${newExp[idx].startDate || ''} - ${e.target.checked ? 'Present' : (newExp[idx].endDate || '')}`;
-                                                        setProfile({ ...profile, experience: newExp });
-                                                    }}
-                                                />
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actualmente aquí</span>
-                                            </label>
+                                        
+                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <input 
+                                                className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-lg font-bold text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
+                                                value={exp.role} 
+                                                onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                                placeholder="Cargo / Rol" 
+                                            />
+                                            <input 
+                                                className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-base text-primary font-medium placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
+                                                value={exp.company} 
+                                                onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                                placeholder="Empresa" 
+                                            />
                                         </div>
                                     </div>
-                                    <div className="relative">
-                                        <textarea className="w-full text-sm text-slate-600 bg-white border border-slate-200 rounded-lg p-3 h-28 outline-none resize-none" value={exp.description} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].description = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Logros y responsabilidades..." />
-                                        <button onClick={() => openJanice(exp.description, `Experiencia como ${exp.role}`, (txt) => { const newExp = [...profile.experience]; newExp[idx].description = txt; setProfile({ ...profile, experience: newExp }); })} className="absolute bottom-2 right-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md flex items-center gap-1"><Sparkles className="w-3 h-3" /> Janice</button>
+
+                                    {/* Dates */}
+                                    <div className="flex flex-wrap items-center gap-3 mb-4 pl-0 md:pl-[4.5rem]">
+                                        <div className="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
+                                            <Calendar size={14} className="text-outline" />
+                                            <input className="w-20 text-sm bg-transparent outline-none text-center" value={exp.startDate || ''} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].startDate = e.target.value; newExp[idx].period = `${e.target.value} - ${newExp[idx].current ? 'Present' : (newExp[idx].endDate || '')}`; setProfile({ ...profile, experience: newExp }); }} placeholder="Inicio" />
+                                            <span className="text-outline">-</span>
+                                            {exp.current ? (
+                                                <span className="text-sm font-bold text-green-600 px-2">Presente</span>
+                                            ) : (
+                                                <input className="w-20 text-sm bg-transparent outline-none text-center" value={exp.endDate || ''} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].endDate = e.target.value; newExp[idx].period = `${newExp[idx].startDate || ''} - ${e.target.value}`; setProfile({ ...profile, experience: newExp }); }} placeholder="Fin" />
+                                            )}
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-outline hover:text-primary transition-colors">
+                                            <input type="checkbox" className="accent-primary w-4 h-4 rounded" checked={exp.current || false} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].current = e.target.checked; newExp[idx].period = `${newExp[idx].startDate || ''} - ${e.target.checked ? 'Present' : (newExp[idx].endDate || '')}`; setProfile({ ...profile, experience: newExp }); }} />
+                                            Trabajo actual
+                                        </label>
                                     </div>
-                                    <button onClick={() => setProfile({ ...profile, experience: profile.experience.filter((_, i) => i !== idx) })} className="absolute top-2 right-2 text-slate-300 hover:text-red-500 p-1"><X className="w-4 h-4" /></button>
+
+                                    {/* Description */}
+                                    <div className="relative pl-0 md:pl-[4.5rem]">
+                                        <textarea 
+                                            className="w-full bg-surface border border-outline-variant rounded-xl p-4 text-sm leading-relaxed text-[var(--md-sys-color-on-background)] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all h-32" 
+                                            value={exp.description} 
+                                            onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].description = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                            placeholder="Describe tus logros y responsabilidades..." 
+                                        />
+                                        <button 
+                                            onClick={() => openJanice(exp.description, `Experiencia: ${exp.role}`, (txt) => { const newExp = [...profile.experience]; newExp[idx].description = txt; setProfile({ ...profile, experience: newExp }); })} 
+                                            className="absolute bottom-3 right-3 text-xs bg-tertiary-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:opacity-90 transition-opacity font-medium shadow-sm"
+                                        >
+                                            <Sparkles size={12} /> Janice
+                                        </button>
+                                    </div>
+
+                                    <button onClick={() => setProfile({ ...profile, experience: profile.experience.filter((_, i) => i !== idx) })} className="absolute top-4 right-4 p-2 text-outline hover:text-error hover:bg-error/10 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                                        <X size={18} />
+                                    </button>
                                 </div>
                             ))}
                             {profile.experience.length === 0 && <EmptyState text="No se detectó experiencia." />}
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, experience: [...profile.experience, { company: '', role: 'Nuevo Rol', period: '', description: '' }] })}>+ Añadir Experiencia</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, experience: [...profile.experience, { company: '', role: 'Nuevo Rol', period: '', description: '' }] })} icon={<Plus size={16} />}>Añadir Experiencia</Button>
                         </div>
                     )}
 
                     {currentStep === 2 && (
-                        <div className="space-y-6">
-                            <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                                <p className="text-sm text-blue-800 mb-2">💡 Tip: Mezcla habilidades técnicas y blandas.</p>
-                                <div className="flex flex-wrap gap-3">
-                                    {profile.skills.map((skill, idx) => (
-                                        <div key={idx} className="flex items-center bg-white text-slate-700 pl-3 pr-2 py-1.5 rounded-full text-sm border border-slate-200">
-                                            <input className="bg-transparent border-none focus:ring-0 text-slate-700 min-w-[60px] p-0 text-sm" value={skill} onChange={(e) => { const newS = [...profile.skills]; newS[idx] = e.target.value; setProfile({ ...profile, skills: newS }); }} />
-                                            <button onClick={() => setProfile({ ...profile, skills: profile.skills.filter((_, i) => i !== idx) })} className="ml-2 text-slate-400 hover:text-red-500"><X className="w-3 h-3" /></button>
-                                        </div>
-                                    ))}
-                                    <button onClick={() => setProfile({ ...profile, skills: [...profile.skills, "Nueva habilidad"] })} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm hover:bg-blue-200">+ Añadir</button>
-                                </div>
+                        <div className="bg-surface-variant/20 p-6 rounded-[24px] border border-outline-variant/40">
+                            <div className="mb-6 bg-secondary-container/30 p-4 rounded-xl text-sm text-secondary-onContainer border border-secondary-container/50 flex items-start gap-3">
+                                <Star className="shrink-0 mt-0.5" size={16}/>
+                                <p>Añade una mezcla de habilidades técnicas (Hard Skills) y blandas (Soft Skills) para un perfil equilibrado.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {profile.skills.map((skill, idx) => (
+                                    <div key={idx} className="flex items-center bg-surface pl-4 pr-2 py-2 rounded-full text-sm border border-outline-variant shadow-sm hover:border-primary transition-colors group">
+                                        <input className="bg-transparent border-none focus:ring-0 text-[var(--md-sys-color-on-background)] min-w-[80px] p-0 text-sm outline-none" value={skill} onChange={(e) => { const newS = [...profile.skills]; newS[idx] = e.target.value; setProfile({ ...profile, skills: newS }); }} />
+                                        <button onClick={() => setProfile({ ...profile, skills: profile.skills.filter((_, i) => i !== idx) })} className="ml-2 p-1 text-outline hover:text-error rounded-full"><X size={14} /></button>
+                                    </div>
+                                ))}
+                                <button onClick={() => setProfile({ ...profile, skills: [...profile.skills, "Nueva habilidad"] })} className="px-4 py-2 rounded-full border border-dashed border-outline text-outline hover:text-primary hover:border-primary text-sm flex items-center gap-2 transition-all">
+                                    <Plus size={16} /> Añadir
+                                </button>
                             </div>
                         </div>
                     )}
@@ -266,53 +314,56 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                     {currentStep === 3 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {['languages', 'frameworks', 'ides', 'tools'].map((cat) => (
-                                <div key={cat} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-full">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{techLabels[cat]}</h3>
-                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{(profile.techStack as any)[cat].length}</span>
+                                <div key={cat} className="bg-surface p-6 rounded-[24px] border border-outline-variant/40 shadow-sm flex flex-col h-full hover:shadow-elevation-1 transition-shadow">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-sm font-bold text-primary uppercase tracking-wider">{techLabels[cat]}</h3>
+                                        <span className="text-xs font-bold text-secondary-onContainer bg-secondary-container px-2.5 py-1 rounded-full">{ (profile.techStack as any)[cat].length }</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 mb-4 min-h-[40px]">
+                                    
+                                    <div className="flex flex-wrap gap-2 mb-6 min-h-[40px]">
                                         {(profile.techStack as any)[cat]?.map((item: string, idx: number) => (
-                                            <span key={idx} className="group bg-blue-50 text-blue-700 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-blue-100 flex items-center gap-2 hover:bg-blue-100 transition-colors shadow-sm">
-                                                <TechIcon name={item} className="w-3.5 h-3.5" />
+                                            <span key={idx} className="group bg-surface-variant/50 text-[var(--md-sys-color-on-background)] px-3 py-1.5 rounded-lg text-xs font-medium border border-outline-variant flex items-center gap-2 hover:bg-surface-variant transition-colors">
+                                                <TechIcon name={item} className="w-4 h-4 opacity-70" />
                                                 {item}
-                                                <button onClick={() => handleRemoveTech(cat, idx)} className="text-blue-300 hover:text-red-500 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                                <button onClick={() => handleRemoveTech(cat, idx)} className="text-outline hover:text-error transition-colors ml-1"><X size={14} /></button>
                                             </span>
                                         ))}
                                         {((profile.techStack as any)[cat] || []).length === 0 && (
-                                            <span className="text-xs text-slate-400 italic">Sin elementos aún</span>
+                                            <span className="text-xs text-outline italic">Lista vacía</span>
                                         )}
                                     </div>
-                                    <div className="border-t border-slate-100 pt-4 mb-4">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Sugerencias rápidas:</p>
+
+                                    <div className="mt-auto">
+                                        <div className="relative mb-4">
+                                            <input
+                                                type="text"
+                                                className="w-full pl-4 pr-10 py-2.5 bg-surface-variant/30 border border-outline-variant rounded-xl text-sm focus:bg-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                                placeholder="Añadir..."
+                                                value={techInputs[cat]}
+                                                onChange={(e) => setTechInputs({ ...techInputs, [cat]: e.target.value })}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddTech(cat, techInputs[cat])}
+                                            />
+                                            <button
+                                                onClick={() => handleAddTech(cat, techInputs[cat])}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-outline hover:text-primary transition-colors rounded-full hover:bg-surface-variant"
+                                            >
+                                                <ArrowRight size={16} />
+                                            </button>
+                                        </div>
+
+                                        <p className="text-[10px] font-bold text-outline uppercase mb-2 ml-1">Sugerencias:</p>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {techSuggestions[cat].filter(s => !((profile.techStack as any)[cat] || []).includes(s)).map(sugg => (
+                                            {techSuggestions[cat].filter(s => !((profile.techStack as any)[cat] || []).includes(s)).slice(0, 6).map(sugg => (
                                                 <button
                                                     key={sugg}
                                                     onClick={() => handleAddTech(cat, sugg)}
-                                                    className="text-[10px] px-2 py-1 bg-slate-50 text-slate-500 rounded border border-slate-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-1"
+                                                    className="text-[10px] px-2 py-1 bg-surface-variant/30 text-outline rounded-md border border-transparent hover:border-outline-variant hover:text-primary transition-all flex items-center gap-1"
                                                 >
-                                                    <Plus className="w-2.5 h-2.5" />
+                                                    <Plus size={10} />
                                                     {sugg}
                                                 </button>
                                             ))}
                                         </div>
-                                    </div>
-                                    <div className="mt-auto relative">
-                                        <input
-                                            type="text"
-                                            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all"
-                                            placeholder="Escribe y presiona Enter..."
-                                            value={techInputs[cat]}
-                                            onChange={(e) => setTechInputs({ ...techInputs, [cat]: e.target.value })}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTech(cat, techInputs[cat])}
-                                        />
-                                        <button
-                                            onClick={() => handleAddTech(cat, techInputs[cat])}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-blue-600 transition-colors"
-                                        >
-                                            <ArrowRight className="w-4 h-4" />
-                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -322,91 +373,101 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                     {currentStep === 4 && (
                         <div className="space-y-6">
                             {profile.projects.map((proj, idx) => (
-                                <div key={idx} className="p-4 md:p-6 bg-indigo-50/30 rounded-xl border border-indigo-100 relative shadow-sm">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-indigo-900 pr-8 p-0" value={proj.name} onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Nombre del Proyecto" />
-                                        <button onClick={() => setProfile({ ...profile, projects: profile.projects.filter((_, i) => i !== idx) })} className="text-indigo-200 hover:text-red-500 p-1"><X className="w-5 h-5" /></button>
-                                    </div>
-
-                                    <div className="flex flex-col md:flex-row gap-4 mb-4">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-indigo-300" />
-                                            <input className="w-24 text-xs bg-white border border-indigo-100 rounded px-2 py-1 text-slate-500 focus:border-indigo-300 outline-none" placeholder="Inicio" value={proj.startDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].startDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
-                                            <span className="text-indigo-200">-</span>
-                                            <input className="w-24 text-xs bg-white border border-indigo-100 rounded px-2 py-1 text-slate-500 focus:border-indigo-300 outline-none" placeholder="Fin" value={proj.endDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].endDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                                <div key={idx} className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 shadow-sm relative group">
+                                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+                                        <div className="w-full">
+                                            <input 
+                                                className="w-full text-lg font-bold text-primary bg-transparent border-b border-transparent hover:border-outline-variant focus:border-primary p-0 outline-none transition-colors" 
+                                                value={proj.name} 
+                                                onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }} 
+                                                placeholder="Nombre del Proyecto" 
+                                            />
                                         </div>
-                                        <div className="flex items-center gap-2 flex-1">
-                                            <Link className="w-4 h-4 text-indigo-300" />
-                                            <input className="flex-1 text-xs bg-white border border-indigo-100 rounded px-2 py-1 text-blue-500 focus:border-indigo-300 outline-none" placeholder="https://..." value={proj.link || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].link = e.target.value; setProfile({ ...profile, projects: newP }); }} />
-                                        </div>
-                                    </div>
-
-                                    <div className="relative mb-3">
-                                        <textarea className="w-full text-sm text-slate-600 bg-white border border-indigo-100 rounded-lg p-3 h-24 outline-none resize-none focus:ring-2 focus:ring-indigo-50 transition-all" value={proj.description} onChange={(e) => { const newP = [...profile.projects]; newP[idx].description = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="¿Qué construiste y cómo?" />
-                                        <button onClick={() => openJanice(proj.description, `Proyecto: ${proj.name}`, (txt) => { const newP = [...profile.projects]; newP[idx].description = txt; setProfile({ ...profile, projects: newP }); })} className="absolute bottom-2 right-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md flex items-center gap-1 hover:bg-purple-200 transition-colors"><Sparkles className="w-3 h-3" /> Janice</button>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <TechIcon name="code" className="w-4 h-4 text-indigo-300" />
-                                            <input className="w-full text-xs text-indigo-600 bg-white/50 border border-indigo-100 rounded px-2 py-1 focus:bg-white transition-colors" value={proj.technologies} onChange={(e) => { const newP = [...profile.projects]; newP[idx].technologies = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Tecnologías usadas (React, Node, AWS...)" />
-                                        </div>
-
-                                        <div className="flex items-start gap-2">
-                                            <Image className="w-4 h-4 text-indigo-300 mt-1" />
-                                            <div className="flex-1">
-                                                <div className="flex flex-wrap gap-2 mb-2">
-                                                    {(proj.images || []).map((img, imgIdx) => (
-                                                        <div key={imgIdx} className="relative group w-16 h-12 bg-indigo-50 rounded border border-indigo-100 overflow-hidden">
-                                                            <img src={img} alt="" className="w-full h-full object-cover" />
-                                                            <button onClick={() => { const newP = [...profile.projects]; newP[idx].images = (newP[idx].images || []).filter((_, i) => i !== imgIdx); setProfile({ ...profile, projects: newP }); }} className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white"><X className="w-4 h-4" /></button>
-                                                        </div>
-                                                    ))}
-                                                    <button
-                                                        onClick={() => { const url = prompt("URL de la imagen:"); if (url) { const newP = [...profile.projects]; newP[idx].images = [...(newP[idx].images || []), url]; setProfile({ ...profile, projects: newP }); } }}
-                                                        className="w-16 h-12 bg-white border border-dashed border-indigo-200 rounded flex items-center justify-center text-indigo-300 hover:text-indigo-500 hover:border-indigo-400 transition-colors"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
-                                                </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex items-center gap-2 bg-surface-variant/30 px-3 py-1.5 rounded-lg border border-outline-variant/30">
+                                                <Calendar size={14} className="text-outline" />
+                                                <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Inicio" value={proj.startDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].startDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                                                <span className="text-outline">-</span>
+                                                <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Fin" value={proj.endDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].endDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Link size={14} className="text-outline" />
+                                        <input className="flex-1 text-sm text-blue-600 bg-transparent border-none outline-none hover:underline placeholder-outline/50" placeholder="https://..." value={proj.link || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].link = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                                    </div>
+
+                                    <div className="relative mb-4">
+                                        <textarea className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant/30 rounded-xl p-4 h-28 outline-none resize-none focus:border-primary transition-all" value={proj.description} onChange={(e) => { const newP = [...profile.projects]; newP[idx].description = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="¿Qué construiste y cómo?" />
+                                        <button onClick={() => openJanice(proj.description, `Proyecto: ${proj.name}`, (txt) => { const newP = [...profile.projects]; newP[idx].description = txt; setProfile({ ...profile, projects: newP }); })} className="absolute bottom-3 right-3 text-xs bg-tertiary-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1 hover:opacity-90 shadow-sm"><Sparkles size={12} /> Janice</button>
+                                    </div>
+
+                                    <div className="space-y-3 pt-3 border-t border-outline-variant/20">
+                                        <div className="flex items-center gap-3">
+                                            <Code size={16} className="text-outline" />
+                                            <input className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-transparent border-none outline-none placeholder-outline/50" value={proj.technologies} onChange={(e) => { const newP = [...profile.projects]; newP[idx].technologies = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Stack (React, Node, AWS...)" />
+                                        </div>
+                                        
+                                        <div className="flex items-start gap-3">
+                                            <Image size={16} className="text-outline mt-1.5" />
+                                            <div className="flex-1 flex flex-wrap gap-2">
+                                                {(proj.images || []).map((img, imgIdx) => (
+                                                    <div key={imgIdx} className="relative group/img w-20 h-14 bg-surface-variant rounded-lg border border-outline-variant overflow-hidden">
+                                                        <img src={img} alt="" className="w-full h-full object-cover" />
+                                                        <button onClick={() => { const newP = [...profile.projects]; newP[idx].images = (newP[idx].images || []).filter((_, i) => i !== imgIdx); setProfile({ ...profile, projects: newP }); }} className="absolute inset-0 bg-black/50 hidden group-hover/img:flex items-center justify-center text-white"><X size={16} /></button>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={() => { const url = prompt("URL de la imagen:"); if (url) { const newP = [...profile.projects]; newP[idx].images = [...(newP[idx].images || []), url]; setProfile({ ...profile, projects: newP }); } }}
+                                                    className="w-20 h-14 bg-surface-variant/30 border border-dashed border-outline-variant rounded-lg flex items-center justify-center text-outline hover:text-primary hover:border-primary transition-colors"
+                                                >
+                                                    <Plus size={20} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button onClick={() => setProfile({ ...profile, projects: profile.projects.filter((_, i) => i !== idx) })} className="absolute top-4 right-4 p-2 text-outline hover:text-error hover:bg-error/10 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                                        <X size={18} />
+                                    </button>
                                 </div>
                             ))}
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, projects: [...profile.projects, { name: 'Nuevo Proyecto', description: '', technologies: '' }] })}>+ Añadir Proyecto</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, projects: [...profile.projects, { name: 'Nuevo Proyecto', description: '', technologies: '' }] })} icon={<Plus size={16} />}>Añadir Proyecto</Button>
                         </div>
                     )}
 
                     {currentStep === 5 && (
                         <div className="space-y-6">
                             {profile.volunteering.map((vol, idx) => (
-                                <div key={idx} className="p-4 md:p-6 bg-teal-50/30 rounded-xl border border-teal-100 relative shadow-sm">
+                                <div key={idx} className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 shadow-sm relative group">
                                     <div className="flex justify-between items-center mb-4">
-                                        <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-teal-900 pr-8 p-0" value={vol.role} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].role = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Título del Voluntariado" />
-                                        <button onClick={() => setProfile({ ...profile, volunteering: profile.volunteering.filter((_, i) => i !== idx) })} className="text-teal-200 hover:text-red-500 p-1"><X className="w-5 h-5" /></button>
+                                        <input className="block w-full font-bold text-lg text-[var(--md-sys-color-on-background)] bg-transparent border-none p-0 outline-none" value={vol.role} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].role = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Título del Voluntariado" />
+                                        <button onClick={() => setProfile({ ...profile, volunteering: profile.volunteering.filter((_, i) => i !== idx) })} className="text-outline hover:text-error p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X size={18} /></button>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                        <input className="text-sm bg-white border border-teal-100 rounded px-3 py-2 text-slate-600 focus:border-teal-300 outline-none" value={vol.company} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].company = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Organización" />
-                                        <input className="text-sm bg-white border border-teal-100 rounded px-3 py-2 text-slate-600 focus:border-teal-300 outline-none" value={vol.period} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].period = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Periodo" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <input className="text-sm bg-surface-variant/30 border border-outline-variant rounded-lg px-4 py-2.5 text-[var(--md-sys-color-on-background)] focus:border-primary outline-none" value={vol.company} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].company = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Organización" />
+                                        <input className="text-sm bg-surface-variant/30 border border-outline-variant rounded-lg px-4 py-2.5 text-[var(--md-sys-color-on-background)] focus:border-primary outline-none" value={vol.period} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].period = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Periodo" />
                                     </div>
-                                    <textarea className="w-full text-sm text-slate-600 bg-white border border-teal-100 rounded-lg p-3 h-24 outline-none resize-none focus:ring-2 focus:ring-teal-50 transition-all" value={vol.description} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].description = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Descripción..." />
+                                    <textarea className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-surface-variant/30 border border-outline-variant rounded-xl p-4 h-24 outline-none resize-none focus:border-primary transition-all" value={vol.description} onChange={(e) => { const newV = [...profile.volunteering]; newV[idx].description = e.target.value; setProfile({ ...profile, volunteering: newV }); }} placeholder="Descripción..." />
                                 </div>
                             ))}
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, volunteering: [...profile.volunteering, { company: '', role: 'Nuevo Voluntariado', period: '', description: '' }] })}>+ Añadir Voluntariado</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, volunteering: [...profile.volunteering, { company: '', role: 'Nuevo Voluntariado', period: '', description: '' }] })} icon={<Plus size={16} />}>Añadir Voluntariado</Button>
                         </div>
                     )}
 
                     {currentStep === 6 && (
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {profile.awards.map((award, idx) => (
-                                <div key={idx} className="p-4 bg-yellow-50/50 rounded-lg border border-yellow-100 flex items-center gap-3 relative group">
-                                    <Award className="w-5 h-5 text-yellow-500 shrink-0" />
-                                    <input className="flex-1 bg-transparent border-none focus:ring-0 text-slate-700 font-medium p-0" value={award} onChange={(e) => { const newA = [...profile.awards]; newA[idx] = e.target.value; setProfile({ ...profile, awards: newA }); }} placeholder="Premio o reconocimiento..." />
-                                    <button onClick={() => setProfile({ ...profile, awards: profile.awards.filter((_, i) => i !== idx) })} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
+                                <div key={idx} className="p-4 bg-surface rounded-xl border border-outline-variant/40 flex items-center gap-4 relative group hover:border-yellow-400 transition-colors">
+                                    <div className="p-2 bg-yellow-100 text-yellow-700 rounded-lg">
+                                        <Award size={20} />
+                                    </div>
+                                    <input className="flex-1 bg-transparent border-none focus:ring-0 text-[var(--md-sys-color-on-background)] font-medium p-0 outline-none" value={award} onChange={(e) => { const newA = [...profile.awards]; newA[idx] = e.target.value; setProfile({ ...profile, awards: newA }); }} placeholder="Premio o reconocimiento..." />
+                                    <button onClick={() => setProfile({ ...profile, awards: profile.awards.filter((_, i) => i !== idx) })} className="text-outline hover:text-error p-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
                                 </div>
                             ))}
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, awards: [...profile.awards, ""] })}>+ Añadir Reconocimiento</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, awards: [...profile.awards, ""] })} icon={<Plus size={16} />}>Añadir Reconocimiento</Button>
                         </div>
                     )}
 
@@ -414,86 +475,96 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {profile.languages.map((lang, idx) => (
-                                    <div key={idx} className="p-4 bg-white rounded-lg border border-slate-200 flex flex-col gap-2 relative group shadow-sm">
-                                        <div className="flex justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Globe className="w-4 h-4 text-blue-400" />
-                                                <input className="font-bold text-slate-700 bg-transparent border-none focus:ring-0 p-0 text-sm w-32" value={lang.language} onChange={(e) => { const newL = [...profile.languages]; newL[idx].language = e.target.value; setProfile({ ...profile, languages: newL }); }} placeholder="Idioma" />
+                                    <div key={idx} className="p-5 bg-surface rounded-[20px] border border-outline-variant/40 flex flex-col gap-3 relative group shadow-sm">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
+                                                    <Globe size={18} />
+                                                </div>
+                                                <input className="font-bold text-[var(--md-sys-color-on-background)] bg-transparent border-none p-0 text-base outline-none w-32" value={lang.language} onChange={(e) => { const newL = [...profile.languages]; newL[idx].language = e.target.value; setProfile({ ...profile, languages: newL }); }} placeholder="Idioma" />
                                             </div>
-                                            <button onClick={() => setProfile({ ...profile, languages: profile.languages.filter((_, i) => i !== idx) })} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-4 h-4" /></button>
+                                            <button onClick={() => setProfile({ ...profile, languages: profile.languages.filter((_, i) => i !== idx) })} className="text-outline hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"><X size={16} /></button>
                                         </div>
-                                        <input className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 w-full" value={lang.level} onChange={(e) => { const newL = [...profile.languages]; newL[idx].level = e.target.value; setProfile({ ...profile, languages: newL }); }} placeholder="Nivel (Ej: Nativo, B2...)" />
+                                        <input className="text-sm text-outline bg-surface-variant/30 border border-outline-variant rounded-lg px-3 py-2 w-full outline-none focus:border-primary transition-colors" value={lang.level} onChange={(e) => { const newL = [...profile.languages]; newL[idx].level = e.target.value; setProfile({ ...profile, languages: newL }); }} placeholder="Nivel (Ej: Nativo, B2...)" />
                                     </div>
                                 ))}
                             </div>
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, languages: [...profile.languages, { language: '', level: '' }] })}>+ Añadir Idioma</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, languages: [...profile.languages, { language: '', level: '' }] })} icon={<Plus size={16} />}>Añadir Idioma</Button>
                         </div>
                     )}
 
                     {currentStep === 8 && (
                         <div className="space-y-6">
-                            <div className="bg-pink-50/50 p-4 rounded-lg border border-pink-100 mb-4">
-                                <p className="text-sm text-pink-800">🎯 Intenta incluir pasatiempos que demuestren habilidades transferibles (ej: Ajedrez - Estrategia).</p>
+                            <div className="bg-secondary-container/20 p-4 rounded-xl border border-secondary-container/40 mb-4 flex items-center gap-3">
+                                <Heart className="text-secondary-onContainer" size={18} />
+                                <p className="text-sm text-secondary-onContainer">🎯 Tip: Incluye pasatiempos que demuestren habilidades transferibles (ej: Ajedrez - Estrategia).</p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {profile.hobbies.map((hobby, idx) => (
-                                    <div key={idx} className="flex items-center bg-white text-slate-700 pl-3 pr-2 py-2 rounded-lg text-sm border border-slate-200 shadow-sm relative group">
-                                        <Heart className="w-3.5 h-3.5 text-pink-400 mr-2" />
-                                        <input className="bg-transparent border-none focus:ring-0 text-slate-700 min-w-[100px] p-0 text-sm" value={hobby} onChange={(e) => { const newH = [...profile.hobbies]; newH[idx] = e.target.value; setProfile({ ...profile, hobbies: newH }); }} />
-                                        <button onClick={() => setProfile({ ...profile, hobbies: profile.hobbies.filter((_, i) => i !== idx) })} className="ml-2 text-slate-300 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                                    <div key={idx} className="flex items-center bg-surface pl-4 pr-2 py-2.5 rounded-xl text-sm border border-outline-variant shadow-sm relative group hover:border-primary transition-colors">
+                                        <input className="bg-transparent border-none text-[var(--md-sys-color-on-background)] min-w-[120px] p-0 text-sm outline-none" value={hobby} onChange={(e) => { const newH = [...profile.hobbies]; newH[idx] = e.target.value; setProfile({ ...profile, hobbies: newH }); }} />
+                                        <button onClick={() => setProfile({ ...profile, hobbies: profile.hobbies.filter((_, i) => i !== idx) })} className="ml-2 text-outline hover:text-error"><X size={14} /></button>
                                     </div>
                                 ))}
-                                <button onClick={() => setProfile({ ...profile, hobbies: [...profile.hobbies, "Nuevo Hobby"] })} className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-200 border border-transparent hover:border-slate-300 flex items-center gap-2 transition-all"><Plus className="w-4 h-4" /> Añadir</button>
+                                <button onClick={() => setProfile({ ...profile, hobbies: [...profile.hobbies, "Nuevo Hobby"] })} className="px-4 py-2.5 rounded-xl border border-dashed border-outline text-outline hover:text-primary hover:border-primary text-sm flex items-center gap-2 transition-all">
+                                    <Plus size={16} /> Añadir
+                                </button>
                             </div>
                         </div>
                     )}
 
                     {currentStep === 9 && (
                         <div className="space-y-6">
-                            <div className="p-6 bg-blue-50/50 rounded-xl border border-blue-100 relative">
-                                <h3 className="text-sm font-bold text-slate-500 uppercase mb-3">Resumen Ejecutivo</h3>
-                                <textarea className="w-full text-base text-slate-700 bg-white border border-slate-200 rounded-lg p-4 h-64 outline-none resize-none" value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })} placeholder="Resumen..." />
-                                <button onClick={() => openJanice(profile.summary, `Resumen Profesional`, (txt) => setProfile({ ...profile, summary: txt }))} className="absolute bottom-4 right-4 text-xs bg-purple-100 text-purple-700 px-3 py-2 rounded-md flex items-center gap-2"><Sparkles className="w-4 h-4" /> Janice: Mejorar Redacción</button>
+                            <div className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 relative shadow-sm">
+                                <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Resumen Ejecutivo</h3>
+                                <textarea className="w-full text-base leading-relaxed text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant rounded-xl p-6 h-64 outline-none resize-none focus:border-primary transition-all" value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })} placeholder="Escribe un resumen profesional..." />
+                                <button onClick={() => openJanice(profile.summary, `Resumen Profesional`, (txt) => setProfile({ ...profile, summary: txt }))} className="absolute bottom-5 right-5 text-xs bg-tertiary-container text-tertiary-onContainer px-4 py-2 rounded-full flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow font-medium"><Sparkles size={14} /> Janice: Mejorar Redacción</button>
                             </div>
                         </div>
                     )}
 
                     {currentStep === 10 && (
                         <div className="space-y-6">
-                            <div className="bg-slate-800 text-white p-4 rounded-lg flex items-center gap-3">
-                                <ShieldAlert className="w-6 h-6 text-yellow-400" /><div className="text-sm"><p className="font-bold">Revisión Final</p><p className="opacity-80">Puedes editar directamente en la vista previa.</p></div>
+                            <div className="bg-surface-variant text-[var(--md-sys-color-on-background)] p-5 rounded-[20px] flex items-center gap-4 border border-outline-variant/30">
+                                <div className="p-2 bg-[var(--md-sys-color-background)] rounded-lg shadow-sm">
+                                    <ShieldAlert className="w-6 h-6 text-primary" />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="font-bold text-base">Revisión Final</p>
+                                    <p className="opacity-80">Revisa los datos antes de pasar al modo asistente.</p>
+                                </div>
                             </div>
-                            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                                <div className="p-6 space-y-8 max-h-[600px] overflow-y-auto text-sm">
+                            <div className="bg-surface border border-outline-variant/40 rounded-[24px] overflow-hidden shadow-sm">
+                                <div className="p-8 space-y-10 max-h-[600px] overflow-y-auto custom-scrollbar text-sm">
                                     <section>
-                                        <h4 className="font-bold text-blue-600 mb-2 border-b border-blue-100 pb-1">Resumen</h4>
+                                        <h4 className="font-bold text-primary mb-3 border-b border-outline-variant pb-2 uppercase text-xs tracking-wider">Resumen</h4>
                                         <textarea
-                                            className="w-full min-h-[100px] text-slate-600 leading-relaxed bg-transparent border-none focus:ring-0 p-0 resize-none"
+                                            className="w-full min-h-[100px] text-[var(--md-sys-color-on-background)] leading-relaxed bg-transparent border-none p-0 resize-none outline-none"
                                             value={profile.summary}
                                             onChange={(e) => setProfile({ ...profile, summary: e.target.value })}
                                         />
                                     </section>
 
                                     <section>
-                                        <h4 className="font-bold text-blue-600 mb-4 border-b border-blue-100 pb-1">Experiencia</h4>
+                                        <h4 className="font-bold text-primary mb-6 border-b border-outline-variant pb-2 uppercase text-xs tracking-wider">Experiencia</h4>
                                         {profile.experience.map((e, i) => (
-                                            <div key={i} className="mb-6 pl-4 border-l-2 border-slate-100 relative group">
-                                                <div className="flex gap-2 mb-1">
-                                                    <input className="font-bold text-slate-800 bg-transparent border-none p-0 focus:ring-0 w-full" value={e.role} onChange={(evt) => { const n = [...profile.experience]; n[i].role = evt.target.value; setProfile({ ...profile, experience: n }) }} />
-                                                    <span className="text-slate-400">@</span>
-                                                    <input className="font-medium text-blue-600 bg-transparent border-none p-0 focus:ring-0 w-full" value={e.company} onChange={(evt) => { const n = [...profile.experience]; n[i].company = evt.target.value; setProfile({ ...profile, experience: n }) }} />
+                                            <div key={i} className="mb-8 pl-4 border-l-2 border-outline-variant relative group">
+                                                <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-1">
+                                                    <input className="font-bold text-lg text-[var(--md-sys-color-on-background)] bg-transparent border-none p-0 outline-none w-full sm:w-auto" value={e.role} onChange={(evt) => { const n = [...profile.experience]; n[i].role = evt.target.value; setProfile({ ...profile, experience: n }) }} />
+                                                    <span className="text-outline hidden sm:inline">@</span>
+                                                    <input className="font-medium text-primary bg-transparent border-none p-0 outline-none w-full sm:w-auto" value={e.company} onChange={(evt) => { const n = [...profile.experience]; n[i].company = evt.target.value; setProfile({ ...profile, experience: n }) }} />
                                                 </div>
-                                                <input className="text-xs text-slate-400 mb-2 bg-transparent border-none p-0 focus:ring-0 w-full block" value={e.period} onChange={(evt) => { const n = [...profile.experience]; n[i].period = evt.target.value; setProfile({ ...profile, experience: n }) }} />
-                                                <textarea className="w-full text-slate-600 bg-transparent border-none p-0 focus:ring-0 resize-none min-h-[60px]" value={e.description} onChange={(evt) => { const n = [...profile.experience]; n[i].description = evt.target.value; setProfile({ ...profile, experience: n }) }} />
+                                                <input className="text-xs font-bold text-outline mb-3 bg-transparent border-none p-0 outline-none w-full block uppercase tracking-wide" value={e.period} onChange={(evt) => { const n = [...profile.experience]; n[i].period = evt.target.value; setProfile({ ...profile, experience: n }) }} />
+                                                <textarea className="w-full text-[var(--md-sys-color-on-background)] bg-transparent border-none p-0 outline-none resize-none min-h-[60px] leading-relaxed" value={e.description} onChange={(evt) => { const n = [...profile.experience]; n[i].description = evt.target.value; setProfile({ ...profile, experience: n }) }} />
                                             </div>
                                         ))}
                                     </section>
 
                                     <section>
-                                        <h4 className="font-bold text-blue-600 mb-4 border-b border-blue-100 pb-1">Skills & Stack</h4>
+                                        <h4 className="font-bold text-primary mb-4 border-b border-outline-variant pb-2 uppercase text-xs tracking-wider">Skills & Stack</h4>
                                         <div className="flex flex-wrap gap-2">
                                             {profile.skills.map((s, i) => (
-                                                <input key={`sk-${i}`} className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs border-none focus:ring-0 w-auto" style={{ width: `${s.length + 2}ch` }} value={s} onChange={(e) => { const n = [...profile.skills]; n[i] = e.target.value; setProfile({ ...profile, skills: n }) }} />
+                                                <input key={`sk-${i}`} className="bg-surface-variant/50 text-[var(--md-sys-color-on-background)] px-3 py-1.5 rounded-lg text-xs font-medium border-none outline-none w-auto min-w-[60px] text-center" style={{ width: `${s.length + 2}ch` }} value={s} onChange={(e) => { const n = [...profile.skills]; n[i] = e.target.value; setProfile({ ...profile, skills: n }) }} />
                                             ))}
                                         </div>
                                     </section>
@@ -503,10 +574,20 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                     )}
                 </div>
             </main>
-            <footer className="bg-white border-t border-slate-200 p-4 sticky bottom-0 z-20 shadow-sm">
-                <div className="max-w-4xl mx-auto flex justify-between items-center w-full">
-                    <Button variant="ghost" onClick={() => { if (currentStep > 0) setCurrentStep(currentStep - 1); }} disabled={currentStep === 0}><ChevronLeft className="w-4 h-4 mr-1" /> Anterior</Button>
-                    <Button onClick={currentStep === 10 ? onFinish : () => setCurrentStep(currentStep + 1)} className="bg-slate-800 hover:bg-slate-900 text-white px-6 md:px-8">{currentStep === 10 ? <>Finalizar <ArrowRight className="w-4 h-4 ml-2" /></> : <>Siguiente <ChevronRight className="w-4 h-4 ml-2" /></>}</Button>
+
+            {/* Sticky Footer */}
+            <footer className="bg-[var(--md-sys-color-background)]/90 backdrop-blur-md border-t border-outline-variant/30 p-4 sticky bottom-0 z-30">
+                <div className="max-w-5xl mx-auto flex justify-between items-center w-full">
+                    <Button variant="ghost" onClick={() => { if (currentStep > 0) setCurrentStep(currentStep - 1); }} disabled={currentStep === 0} className="px-4">
+                        <ChevronLeft className="w-4 h-4 mr-2" /> Anterior
+                    </Button>
+                    <Button 
+                        onClick={currentStep === 10 ? onFinish : () => setCurrentStep(currentStep + 1)} 
+                        className="px-8 shadow-elevation-2"
+                        variant={currentStep === 10 ? 'primary' : 'secondary'}
+                    >
+                        {currentStep === 10 ? <>Finalizar <CheckCircle2 className="w-4 h-4 ml-2" /></> : <>Siguiente <ArrowRight className="w-4 h-4 ml-2" /></>}
+                    </Button>
                 </div>
             </footer>
         </div>

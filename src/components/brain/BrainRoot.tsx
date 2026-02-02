@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { AppState, CVProfile } from '../../types_brain';
@@ -80,7 +81,7 @@ function App() {
     };
 
     return (
-        <>
+        <div className="w-full min-h-screen bg-[var(--md-sys-color-background)] transition-colors duration-300">
             {(appState === AppState.IDLE || appState === AppState.ANALYZING || appState === AppState.ERROR) && (
                 <RotenmeirView
                     appState={appState}
@@ -119,7 +120,7 @@ function App() {
                     suggestedQuestions={suggestedQuestions}
                 />
             )}
-        </>
+        </div>
     );
 }
 

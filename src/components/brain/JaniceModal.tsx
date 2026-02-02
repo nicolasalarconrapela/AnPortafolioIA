@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
@@ -41,48 +42,62 @@ export const JaniceModal = ({
     };
     
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up border-2 border-purple-100 max-h-[90vh] flex flex-col">
-                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 flex justify-between items-center text-white shrink-0">
-                    <div className="flex items-center space-x-2">
-                        <Sparkles className="w-5 h-5 text-yellow-300" />
-                        <h3 className="font-bold text-lg">Hola, soy Janice</h3>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-elevation-3 w-full max-w-lg overflow-hidden border border-outline-variant/30 max-h-[90vh] flex flex-col animate-fade-scale">
+                <div className="bg-tertiary-container text-tertiary-onContainer p-6 flex justify-between items-center shrink-0">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-white/20 rounded-full">
+                            <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-display font-medium text-lg">Hola, soy Janice</h3>
+                            <p className="text-xs opacity-80">Asistente de Redacción IA</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="hover:bg-white/20 p-1 rounded-full transition"><X className="w-5 h-5"/></button>
+                    <button onClick={onClose} className="hover:bg-black/10 p-2 rounded-full transition-colors"><X className="w-5 h-5"/></button>
                 </div>
-                <div className="p-6 space-y-4 overflow-y-auto">
+                
+                <div className="p-6 space-y-6 overflow-y-auto">
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Texto Original</label>
-                        <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg max-h-32 overflow-y-auto italic border border-slate-100">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">Texto Original</label>
+                        <div className="text-sm text-[var(--md-sys-color-on-background)] bg-surface-variant/30 p-4 rounded-xl max-h-32 overflow-y-auto italic border border-outline-variant/50">
                             "{initialText || 'Vacío'}"
                         </div>
                     </div>
+                    
                     <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">¿Qué necesitas?</label>
-                        <div className="flex flex-col md:flex-row gap-2 mt-1">
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">¿Qué necesitas?</label>
+                        <div className="flex flex-col gap-3">
                             <input 
-                                className="flex-1 border border-purple-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                className="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all"
                                 value={instruction}
                                 onChange={(e) => setInstruction(e.target.value)}
-                                placeholder="Ej: Hazlo más ejecutivo..."
+                                placeholder="Ej: Hazlo más ejecutivo, corrige ortografía..."
                             />
-                            <Button onClick={handleAskJanice} disabled={isLoading || !initialText} className="!bg-purple-600 hover:!bg-purple-700 w-full md:w-auto">
-                                {isLoading ? 'Pensando...' : 'Mejorar'}
+                            <Button 
+                                onClick={handleAskJanice} 
+                                disabled={isLoading || !initialText} 
+                                className="w-full bg-tertiary text-white hover:bg-tertiary/90"
+                                icon={isLoading ? undefined : <Sparkles size={16} />}
+                            >
+                                {isLoading ? 'Pensando...' : 'Mejorar Texto'}
                             </Button>
                         </div>
                     </div>
+
                     {result && (
-                        <div className="animate-fade-in">
-                            <label className="text-xs font-bold text-green-600 uppercase flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3"/> Sugerencia de Janice
+                        <div className="animate-fade-in pt-4 border-t border-outline-variant/30">
+                            <label className="text-xs font-bold text-green-600 uppercase flex items-center gap-2 mb-2">
+                                <CheckCircle2 className="w-4 h-4"/> Sugerencia de Janice
                             </label>
                             <textarea 
-                                className="w-full mt-1 p-3 text-sm text-slate-800 bg-green-50 border border-green-200 rounded-lg focus:outline-none h-32"
+                                className="w-full p-4 text-sm text-[var(--md-sys-color-on-background)] bg-green-50/50 border border-green-200 rounded-xl focus:outline-none focus:border-green-400 h-32 resize-none"
                                 value={result}
                                 onChange={(e) => setResult(e.target.value)}
                             />
-                            <div className="mt-4 flex justify-end">
-                                <Button onClick={() => { onApply(result); onClose(); }} className="!bg-green-600 hover:!bg-green-700 w-full md:w-auto">
+                            <div className="mt-4 flex justify-end gap-3">
+                                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                                <Button onClick={() => { onApply(result); onClose(); }} className="bg-green-600 hover:bg-green-700 text-white">
                                     Aplicar Cambio
                                 </Button>
                             </div>

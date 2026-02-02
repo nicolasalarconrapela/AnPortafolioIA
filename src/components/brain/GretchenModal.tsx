@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, CheckCircle2, X, Wrench, Sparkles } from 'lucide-react';
 import { createGretchenService, GretchenService } from '../../services/gretchenService';
@@ -69,95 +70,109 @@ export const GretchenModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-all">
-            <div className="bg-[#fcfcfc] rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-fade-in-up border border-slate-300 flex flex-col max-h-[90vh]">
-                <div className={`p-4 md:p-5 flex justify-between items-center text-white border-b-4 transition-colors duration-500 ${step === 'FIXING' || step === 'REVIEW' ? 'bg-indigo-600 border-indigo-800' : 'bg-slate-800 border-red-700'}`}>
-                    <div className="flex items-center space-x-3 overflow-hidden">
-                        <div className={`p-2 rounded-full shrink-0 ${step === 'FIXING' || step === 'REVIEW' ? 'bg-indigo-800' : 'bg-red-800'}`}>
-                            {step === 'AUDITING' ? <ShieldAlert className="w-5 h-5 md:w-6 md:h-6 animate-pulse" /> : 
-                             step === 'FIXING' ? <Wrench className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> :
-                             <CheckCircle2 className="w-5 h-5 md:w-6 md:h-6" />}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all">
+            <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-elevation-3 w-full max-w-3xl overflow-hidden animate-fade-scale border border-outline-variant/30 flex flex-col max-h-[90vh]">
+                
+                {/* Header Dinámico */}
+                <div className={`p-6 flex justify-between items-center text-white transition-colors duration-500 shrink-0 ${step === 'FIXING' || step === 'REVIEW' ? 'bg-primary' : 'bg-error-container text-error-onContainer'}`}>
+                    <div className="flex items-center space-x-4 overflow-hidden">
+                        <div className={`p-3 rounded-full shrink-0 bg-white/20 backdrop-blur-sm`}>
+                            {step === 'AUDITING' ? <ShieldAlert className="w-6 h-6 animate-pulse" /> : 
+                             step === 'FIXING' ? <Wrench className="w-6 h-6 animate-spin" /> :
+                             <CheckCircle2 className="w-6 h-6" />}
                         </div>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-lg md:text-xl tracking-wide truncate">
+                            <h3 className="font-display font-medium text-xl tracking-tight truncate">
                                 {step === 'AUDITING' && "Gretchen: Auditando..."}
                                 {step === 'FIXING' && "Googlito: Corrigiendo..."}
                                 {step === 'REVIEW' && "Reporte Completado"}
                             </h3>
-                            <p className="text-xs text-white/70 uppercase tracking-widest truncate hidden md:block">
+                            <p className="text-xs opacity-80 uppercase tracking-widest truncate hidden md:block mt-1">
                                 {step === 'AUDITING' ? "Detectando incompetencias" : step === 'FIXING' ? "Resolviendo problemas detectados" : "Revisión Final"}
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full transition text-white shrink-0"><X className="w-5 h-5"/></button>
+                    <button onClick={onClose} className="hover:bg-black/10 p-2 rounded-full transition-colors shrink-0"><X className="w-6 h-6"/></button>
                 </div>
-                <div className="p-0 overflow-y-auto flex-1 bg-slate-50 relative">
+
+                {/* Body Scrollable */}
+                <div className="p-0 overflow-y-auto flex-1 bg-surface-variant/10 relative">
                     {step === 'AUDITING' && (
-                        <div className="flex flex-col items-center justify-center h-64 p-8 text-center space-y-6">
+                        <div className="flex flex-col items-center justify-center h-80 p-8 text-center space-y-6">
                             <div className="relative">
-                                <div className="w-20 h-20 border-4 border-slate-200 border-t-red-700 rounded-full animate-spin"></div>
+                                <div className="w-24 h-24 border-4 border-surface-variant border-t-error rounded-full animate-spin"></div>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-2xl">🧐</span>
+                                    <span className="text-3xl">🧐</span>
                                 </div>
                             </div>
-                            <p className="text-slate-600 font-serif text-lg italic animate-pulse">"Déjame ver qué desastre has hecho aquí..."</p>
+                            <p className="text-outline font-medium text-lg animate-pulse">"Déjame ver qué desastre has hecho aquí..."</p>
                         </div>
                     )}
+
                     {(step === 'FIXING' || (step === 'REVIEW' && auditResult)) && (
-                        <div className="p-4 md:p-8 border-b border-slate-200 bg-white">
-                             <div className="flex flex-col md:flex-row items-start gap-4">
-                                <div className="flex items-center gap-3 md:block">
-                                    <img src="https://ui-avatars.com/api/?name=Gretchen+Bodinski&background=334155&color=fff" className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-red-100 shadow-sm" alt="Gretchen"/>
-                                    <h4 className="font-bold text-red-700 text-sm uppercase tracking-wide md:hidden">Crítica de Gretchen</h4>
+                        <div className="p-6 md:p-8 border-b border-outline-variant/20 bg-[var(--md-sys-color-background)]">
+                             <div className="flex flex-col md:flex-row items-start gap-6">
+                                <div className="flex items-center gap-4 md:block text-center shrink-0">
+                                    <div className="w-14 h-14 rounded-full border-4 border-error/20 overflow-hidden mx-auto shadow-sm">
+                                        <img src="https://ui-avatars.com/api/?name=Gretchen+Bodinski&background=b3261e&color=fff" className="w-full h-full object-cover" alt="Gretchen"/>
+                                    </div>
+                                    <h4 className="font-bold text-error text-xs uppercase tracking-wide mt-2">Gretchen</h4>
                                 </div>
                                 <div className="flex-1 space-y-2 w-full">
-                                    <h4 className="font-bold text-red-700 text-sm uppercase tracking-wide mb-2 hidden md:block">Crítica de Gretchen</h4>
-                                    <div className="prose prose-sm prose-red max-w-none text-slate-700 bg-red-50 p-4 rounded-lg border border-red-100">
+                                    <div className="prose prose-sm prose-red max-w-none text-[var(--md-sys-color-on-background)] bg-error-container/10 p-6 rounded-2xl border border-error/20 leading-relaxed">
                                         <MarkdownView content={auditResult} />
                                     </div>
                                 </div>
                              </div>
                         </div>
                     )}
+
                     {step === 'FIXING' && (
-                         <div className="flex items-center gap-3 p-6 bg-indigo-50 animate-pulse border-t border-indigo-100">
-                            <Wrench className="w-5 h-5 text-indigo-600" />
-                            <span className="text-indigo-800 font-medium text-sm">El Googlito está reescribiendo la sección...</span>
+                         <div className="flex items-center justify-center gap-3 p-8 bg-primary-container/20 animate-pulse border-t border-outline-variant/20">
+                            <Wrench className="w-5 h-5 text-primary" />
+                            <span className="text-primary font-medium text-sm">El Googlito está reescribiendo la sección...</span>
                          </div>
                     )}
+
                     {step === 'REVIEW' && fixedData && (
-                        <div className="p-4 md:p-8 bg-indigo-50/50">
-                             <div className="flex flex-col md:flex-row items-start gap-4">
-                                <div className="hidden md:flex w-12 h-12 rounded-full bg-indigo-100 items-center justify-center border-2 border-indigo-200 shrink-0">
-                                    <Sparkles className="w-6 h-6 text-indigo-600" />
+                        <div className="p-6 md:p-8 bg-surface-variant/30">
+                             <div className="flex flex-col md:flex-row items-start gap-6">
+                                <div className="hidden md:flex w-14 h-14 rounded-full bg-primary-container items-center justify-center text-primary-onContainer shadow-sm shrink-0">
+                                    <Sparkles className="w-7 h-7" />
                                 </div>
                                 <div className="flex-1 w-full">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div className="md:hidden w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200">
-                                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="md:hidden w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary-onContainer">
+                                            <Sparkles className="w-5 h-5" />
                                         </div>
-                                        <h4 className="font-bold text-indigo-700 text-sm uppercase tracking-wide">Propuesta del Googlito</h4>
+                                        <h4 className="font-bold text-primary text-sm uppercase tracking-wide">Propuesta del Googlito</h4>
                                     </div>
-                                    <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm text-xs md:text-sm text-slate-600 font-mono overflow-x-auto max-h-60">
+                                    <div className="bg-[var(--md-sys-color-background)] p-6 rounded-2xl border border-outline-variant shadow-sm text-xs md:text-sm text-outline font-mono overflow-x-auto max-h-80">
                                         <pre>{JSON.stringify(fixedData, null, 2)}</pre>
                                     </div>
-                                    <p className="text-xs text-indigo-400 mt-2">* Estos cambios reemplazarán los datos actuales.</p>
+                                    <p className="text-xs text-primary mt-3 font-medium flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-sm">info</span>
+                                        Estos cambios reemplazarán los datos actuales.
+                                    </p>
                                 </div>
                              </div>
                         </div>
                     )}
                 </div>
+
+                {/* Footer */}
                 {step === 'REVIEW' && (
-                    <div className="p-4 bg-white border-t border-slate-200 flex flex-col-reverse md:flex-row justify-end gap-3">
+                    <div className="p-6 bg-[var(--md-sys-color-background)] border-t border-outline-variant/20 flex flex-col-reverse md:flex-row justify-end gap-4 shrink-0">
                         <Button variant="ghost" onClick={onClose} className="w-full md:w-auto">Cancelar</Button>
                         <Button 
-                            className="!bg-indigo-600 hover:!bg-indigo-700 w-full md:w-auto" 
+                            className="w-full md:w-auto shadow-elevation-1" 
+                            variant="primary"
                             onClick={() => {
                                 onApplyFix(fixedData);
                                 onClose();
                             }}
+                            icon={<CheckCircle2 className="w-4 h-4" />}
                         >
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
                             Aplicar Correcciones
                         </Button>
                     </div>
