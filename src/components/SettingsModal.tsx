@@ -5,6 +5,7 @@ import { useConsent } from './consent/ConsentContext';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
 import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
+import { APP_VERSION } from '../utils/appVersion';
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
 
@@ -312,7 +313,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
           </nav>
 
           <div className="hidden md:block mt-6 pt-6 border-t border-outline-variant/30 px-2">
-            <p className="text-xs text-outline font-medium">AnPortafolioIA v0.5.0</p>
+            <p className="text-xs text-outline font-medium">AnPortafolioIA v{APP_VERSION}</p>
             <p className="text-[10px] text-outline/70 mt-1">GDPR Compliant Build</p>
           </div>
         </aside>
