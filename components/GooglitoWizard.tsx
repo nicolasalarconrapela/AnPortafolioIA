@@ -3,7 +3,7 @@ import {
     CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
     Terminal, Code, Heart, Award, Globe, BookOpen, User, FileText,
     Sparkles, X, Plus, ArrowRight, ShieldAlert,
-    Link, Image, Calendar, Trash2
+    Link, Image, Calendar, Trash2, Upload
 } from 'lucide-react';
 import { Button } from './Button';
 import { CompanyLogo } from './CompanyLogo';
@@ -142,35 +142,35 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                         <div className="flex items-start gap-4 w-full md:mr-4">
                                             <div className="relative group shrink-0">
                                                 <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-12 h-12 bg-white" />
-                                                <div className="absolute top-0 right-0 -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                    <div className="relative">
+                                                <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <label className="cursor-pointer text-white hover:text-blue-300 transition-colors p-1" title="Subir logo">
+                                                        <Upload className="w-4 h-4" />
                                                         <input
-                                                            type="text"
-                                                            className="absolute opacity-0 w-8 h-8 cursor-pointer z-20"
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
                                                             onChange={(e) => {
-                                                                // Future implementation for file upload if needed, 
-                                                                // for now we use the text input below.
-                                                                // But let's allow a simple prompt for URL for now via a button
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const reader = new FileReader();
+                                                                    reader.onloadend = () => {
+                                                                        const newExp = [...profile.experience];
+                                                                        newExp[idx].logo = reader.result as string;
+                                                                        setProfile({ ...profile, experience: newExp });
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }
                                                             }}
                                                         />
-                                                    </div>
-                                                </div>
-                                                {/* Logo URL Input - shown on hover or always visible? Let's make it a small input below or accessible via a popover. 
-                                                    For simplicity in this layout, let's add a small input field next to the company name or toggle it.
-                                                    Actually, I'll add a small "Logo URL" input that appears when hovering the logo area or just always allow editing via a small icon.
-                                                    Better: Add a collapsible or just a small input line below the company name for "Logo URL".
-                                                 */}
-                                            </div>
-                                            <div className="w-full">
-                                                <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 p-0" value={exp.role} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Cargo / Rol" />
-                                                <div className="flex items-center gap-2">
-                                                    <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0" value={exp.company} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Empresa" />
-                                                    <div className="relative group/logo">
-                                                        <Image className="w-3 h-3 text-slate-300 hover:text-blue-500 cursor-pointer" />
-                                                        <div className="absolute left-0 bottom-full mb-2 w-64 bg-white p-2 rounded shadow-xl border border-slate-100 hidden group-hover/logo:block z-50">
-                                                            <p className="text-[10px] text-slate-400 mb-1">URL del Logo (opcional)</p>
+                                                    </label>
+                                                    <div className="relative group/url">
+                                                        <button className="text-white hover:text-blue-300 transition-colors p-1" title="Enlace URL">
+                                                            <Link className="w-4 h-4" />
+                                                        </button>
+                                                        <div className="absolute left-0 top-full mt-2 w-64 bg-white p-2 rounded shadow-xl border border-slate-100 hidden group-hover/url:block z-50">
+                                                            <p className="text-[10px] text-slate-400 mb-1">URL directa del logotipo:</p>
                                                             <input
-                                                                className="w-full text-xs border border-slate-200 rounded px-2 py-1"
+                                                                className="w-full text-xs border border-slate-200 rounded px-2 py-1 text-slate-700"
                                                                 placeholder="https://..."
                                                                 value={exp.logo || ''}
                                                                 onChange={(e) => {
@@ -182,6 +182,10 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div className="w-full">
+                                                <input className="block w-full font-bold text-lg bg-transparent border-none focus:ring-0 text-slate-900 p-0" value={exp.role} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Cargo / Rol" />
+                                                <input className="flex-1 text-sm bg-transparent border-none text-blue-600 font-medium p-0 focus:ring-0" value={exp.company} onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }} placeholder="Empresa" />
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-start md:items-end gap-2 shrink-0">

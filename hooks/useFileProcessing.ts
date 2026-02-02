@@ -143,7 +143,11 @@ export const useFileProcessing = (
             const data = parseCSV(text);
             if (data.length > 0)
               newProfile.summary =
-                data[0]["Summary"] || data[0]["Headline"] || "";
+                data[0]["Summary"] ||
+                data[0]["Headline"] ||
+                data[0]["About"] ||
+                data[0]["Perfil Profesional"] ||
+                "";
           }
           if (files["Positions.csv"]) {
             const text = await files["Positions.csv"].async("text");
@@ -208,6 +212,33 @@ export const useFileProcessing = (
               language: row["Name"] || "",
               level: row["Proficiency"] || "",
             }));
+          }
+          if (files["Volunteering.csv"]) {
+            const text = await files["Volunteering.csv"].async("text");
+            const data = parseCSV(text);
+            newProfile.volunteering = data.map((row) => ({
+              company:
+                row["Company Name"] ||
+                row["Organization"] ||
+                row["Company"] ||
+                "",
+              role: row["Title"] || row["Role"] || "",
+              period: `${row["Started On"] || ""} - ${
+                row["Finished On"] || "Present"
+              }`,
+              description: row["Description"] || "",
+            }));
+          }
+          if (files["Honors.csv"]) {
+            const text = await files["Honors.csv"].async("text");
+            const data = parseCSV(text);
+            newProfile.awards = data
+              .map((row) => {
+                const title = row["Title"] || "";
+                const issuer = row["Issuer"] || "";
+                return issuer ? `${title} (${issuer})` : title;
+              })
+              .filter(Boolean);
           }
           setProfile(newProfile);
           setAppState(AppState.WIZARD);

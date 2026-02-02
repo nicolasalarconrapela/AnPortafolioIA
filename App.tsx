@@ -59,10 +59,21 @@ function App() {
     };
 
     const onFinishWizard = async () => {
-        if (geminiServiceRef.current && profile) {
+        if (profile) {
             const cleanedProfile = cleanProfile(profile);
             setProfile(cleanedProfile);
-            await geminiServiceRef.current.initDonnaChat(cleanedProfile);
+
+            if (geminiServiceRef.current) {
+                try {
+                    await geminiServiceRef.current.initDonnaChat(cleanedProfile);
+                } catch (e) {
+                    console.warn("Could not init Gemini chat, enabling offline mode", e);
+                    setIsOffline(true);
+                }
+            } else {
+                setIsOffline(true);
+            }
+
             setChat([{ id: 'intro', role: 'model', text: `¡Hola! Soy Donna, tu asistente de reclutamiento. He analizado el perfil de **${cleanedProfile.experience[0]?.role || "Candidato"}** a fondo. ¿Qué te gustaría saber?`, timestamp: new Date() }]);
             setAppState(AppState.DONNA);
         }
