@@ -1,17 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 
 export class GretchenService {
-  private ai: GoogleGenAI;
-  private apiKey: string;
+  private ai: GoogleGenAI | null = null;
+  private apiKey: string = "";
   
   constructor() {
     const key = process.env.API_KEY;
     if (!key) {
-      throw new Error("API Key not found in environment variables");
+       console.warn("API Key not found for Gretchen. Services disabled.");
+    } else {
+      this.apiKey = key;
+      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
     }
-    this.apiKey = key;
-    this.ai = new GoogleGenAI({ apiKey: this.apiKey });
   }
+
+  private ensureAI() {
+      if (!this.ai) {
+          throw new Error("Gretchen Service not initialized. Missing API Key.");
+      }
+      return this.ai;
+  }
+
 
   /**
    * GRETCHEN BODINSKI
@@ -42,7 +51,7 @@ export class GretchenService {
       Termina con una frase motivadora pero dura, estilo Gretchen.
       `;
 
-      const response = await this.ai.models.generateContent({
+      const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt
       });

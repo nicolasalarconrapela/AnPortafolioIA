@@ -2,18 +2,27 @@ import { GoogleGenAI, Chat, Part, Content, Type, Schema } from "@google/genai";
 import { CVProfile } from "../types";
 
 export class GeminiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
   private chat: Chat | null = null;
-  private apiKey: string;
+  private apiKey: string = "";
   
   constructor() {
     const key = process.env.API_KEY;
     if (!key) {
-      throw new Error("API Key not found in environment variables");
+      console.warn("API Key not found in environment variables. Gemini features will be disabled.");
+    } else {
+      this.apiKey = key;
+      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
     }
-    this.apiKey = key;
-    this.ai = new GoogleGenAI({ apiKey: this.apiKey });
   }
+
+  private ensureAI() {
+    if (!this.ai) {
+      throw new Error("Gemini AI not initialized. Please check your API Key configuration.");
+    }
+    return this.ai;
+  }
+
 
   /**
    * Defines the JSON schema for the CV extraction
@@ -116,7 +125,7 @@ export class GeminiService {
       const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío. PROHIBIDO INVENTAR DATOS que no estén explícitos en el documento.`;
 
-      const response = await this.ai.models.generateContent({
+      const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: {
           role: 'user',
@@ -160,7 +169,7 @@ export class GeminiService {
       ${text.substring(0, 50000)}
       `;
 
-      const response = await this.ai.models.generateContent({
+      const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
@@ -202,7 +211,7 @@ export class GeminiService {
       
       Devuelve SOLO el texto mejorado.`;
 
-      const response = await this.ai.models.generateContent({
+      const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt
       });
@@ -249,7 +258,7 @@ export class GeminiService {
         5. Devuelve el JSON con la misma estructura, pero con los textos mejorados y los placeholders insertados donde falte información.
         `;
 
-        const response = await this.ai.models.generateContent({
+        const response = await this.ensureAI().models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: prompt,
             config: {
@@ -285,7 +294,7 @@ export class GeminiService {
     
     Tu misión es exponer la información del candidato de la forma más limpia posible.`;
 
-    this.chat = this.ai.chats.create({
+    this.chat = this.ensureAI().chats.create({
       model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: systemInstruction,
