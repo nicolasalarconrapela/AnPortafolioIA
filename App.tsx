@@ -1482,7 +1482,7 @@ function App() {
                               <button 
                                 onClick={() => setAppState(AppState.WIZARD)}
                                 className="p-2 -ml-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
-                                title="Volver a editar"
+                                title="Volver al editor"
                               >
                                 <ChevronLeft className="w-5 h-5" />
                               </button>
