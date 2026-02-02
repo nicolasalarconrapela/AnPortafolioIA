@@ -41,7 +41,7 @@ export const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, className = "w-1
 
     // Configuración de Logo.dev
     // Se requiere un token. Si no existe en el entorno, se intenta fallback a Clearbit para no romper la UI.
-    const token = import.meta.env.VITE_LOGO_DEV_TOKEN || 'pk_PnQ8GRcqQDK4cwvIP4rxuQ';
+    const token = 'pk_PnQ8GRcqQDK4cwvIP4rxuQ';
     
     if (token) {
         setImgSrc(`https://img.logo.dev/${domain}?token=${token}`);
