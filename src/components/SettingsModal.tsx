@@ -67,7 +67,7 @@ interface SettingsModalProps {
   userKey: string;
 }
 
-type SettingsTab = 'general' | 'account' | 'notifications' | 'privacy';
+type SettingsTab = 'general' | 'account' | 'notifications' | 'privacy' | 'ai';
 type ThemeMode = 'system' | 'light' | 'dark';
 
 interface UserSettings {
@@ -76,6 +76,11 @@ interface UserSettings {
   notifications: {
     jobAlerts: boolean;
     applicationUpdates: boolean;
+  };
+  ai: {
+    enabled: boolean;
+    autoAnalyze: boolean;
+    creativityLevel: 'low' | 'medium' | 'high';
   };
 }
 
@@ -100,6 +105,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     notifications: {
       jobAlerts: true,
       applicationUpdates: true
+    },
+    ai: {
+      enabled: true,
+      autoAnalyze: true,
+      creativityLevel: 'medium'
     }
   });
 
@@ -217,7 +227,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
         settings: {
           theme: settings.theme,
           language: settings.language,
-          notifications: settings.notifications
+          notifications: settings.notifications,
+          ai: settings.ai
         },
         profile: {
           fullName: `${profile.firstName} ${profile.lastName}`.trim() || profile.fullName,
@@ -263,6 +274,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
     setHasChanges(true);
   };
 
+  // Handle AI settings change
+  const handleAiChange = (field: keyof UserSettings['ai'], value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      ai: {
+        ...prev.ai,
+        [field]: value
+      }
+    }));
+    setHasChanges(true);
+  };
+
   const handleGenerateToken = async () => {
     setIsSaving(true);
     try {
@@ -280,6 +303,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
   const tabs: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'general', label: 'General', icon: 'tune' },
     { id: 'account', label: 'Account', icon: 'person' },
+    { id: 'ai', label: 'AI Config', icon: 'smart_toy' },
     { id: 'notifications', label: 'Notifications', icon: 'notifications' },
     { id: 'privacy', label: 'Privacy & Data', icon: 'security' }, // Updated label
   ];
@@ -522,6 +546,71 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </div>
                     </div>
                   </section>
+                </div>
+              )}
+
+              {activeTab === 'ai' && (
+                <div className="space-y-6 animate-fade-in">
+                  <h4 className="text-sm font-bold text-primary uppercase tracking-wider">AI Configuration</h4>
+                  <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
+
+                    {/* Enable AI */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Enable AI Features</p>
+                        <p className="text-sm text-outline">Allow AI to analyze and improve your profile</p>
+                      </div>
+                      <button
+                        onClick={() => handleAiChange('enabled', !settings.ai.enabled)}
+                        disabled={isLoading}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${settings.ai.enabled
+                          ? 'bg-secondary-container'
+                          : 'bg-surface-variant border border-outline-variant'
+                          }`}
+                      >
+                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.enabled ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    {/* Auto Analysis */}
+                    <div className="flex items-center justify-between">
+                       <div>
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Auto Analysis</p>
+                        <p className="text-sm text-outline">Automatically check for improvements on save</p>
+                      </div>
+                      <button
+                        onClick={() => handleAiChange('autoAnalyze', !settings.ai.autoAnalyze)}
+                        disabled={isLoading || !settings.ai.enabled}
+                        className={`w-12 h-6 rounded-full relative transition-colors ${settings.ai.autoAnalyze
+                          ? 'bg-secondary-container'
+                          : 'bg-surface-variant border border-outline-variant'
+                          } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.autoAnalyze ? 'right-1' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    {/* Creativity Level */}
+                    <div>
+                      <p className="text-base font-medium text-[var(--md-sys-color-on-background)] mb-3">Creativity Level</p>
+                      <div className="flex bg-surface-variant rounded-full p-1 max-w-sm">
+                          {(['low', 'medium', 'high'] as const).map((level) => (
+                            <button
+                              key={level}
+                              onClick={() => handleAiChange('creativityLevel', level)}
+                              disabled={isLoading || !settings.ai.enabled}
+                              className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all ${settings.ai.creativityLevel === level
+                                ? 'bg-[var(--md-sys-color-background)] shadow-sm font-bold text-[var(--md-sys-color-on-background)]'
+                                : 'text-outline hover:text-primary'
+                                } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+
+                  </div>
                 </div>
               )}
 
