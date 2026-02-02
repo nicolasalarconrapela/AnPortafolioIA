@@ -18,13 +18,9 @@ import { getWorkspaceByUserFromFirestore, getPublicProfile } from './services/fi
 import { authService } from './services/authService';
 
 
-// Extend ViewState locally if needed or assume it's updated in types.ts
-// For now, we cast strings if types aren't updated yet to avoid breaking compile
-type ExtendedViewState = ViewState | 'privacy-policy';
-
 const AppContent: React.FC = () => {
   // Session State (No LocalStorage)
-  const [view, setView] = useState<ExtendedViewState>('landing');
+  const [view, setView] = useState<ViewState>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -34,7 +30,7 @@ const AppContent: React.FC = () => {
 
   // Route Protection Effect
   useEffect(() => {
-    const protectedViews: ExtendedViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system', 'cv-analysis'];
+    const protectedViews: ViewState[] = ['candidate-dashboard', 'candidate-onboarding', 'design-system', 'cv-analysis'];
 
     // If trying to access a protected view without authentication
     if (protectedViews.includes(view)) {

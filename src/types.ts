@@ -35,7 +35,8 @@ export type ViewState =
   | "candidate-onboarding"
   | "candidate-dashboard"
   | "design-system"
-  | "cv-analysis";
+  | "cv-analysis"
+  | "privacy-policy";
 
 export interface FloatingNodeProps {
   title: string;
