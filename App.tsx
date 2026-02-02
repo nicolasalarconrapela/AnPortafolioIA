@@ -27,7 +27,7 @@ function App() {
     }, []);
 
     const { processFile } = useFileProcessing(geminiServiceRef, setProfile, setAppState, setError, setCurrentStep);
-    const { chat, setChat, input, setInput, loading: donnaLoading, activeTab: donnaActiveTab, setActiveTab: setDonnaActiveTab, handleSend: handleDonnaSend } = useDonna(geminiServiceRef);
+    const { chat, setChat, input, setInput, loading: donnaLoading, activeTab: donnaActiveTab, setActiveTab: setDonnaActiveTab, handleSend: handleDonnaSend, isOffline, setIsOffline, suggestedQuestions } = useDonna(geminiServiceRef, profile);
 
     useEffect(() => {
         if (appState === AppState.DONNA) {
@@ -103,6 +103,9 @@ function App() {
                     onSend={handleDonnaSend}
                     onBack={() => setAppState(AppState.WIZARD)}
                     chatEndRef={chatEndRef}
+                    isOffline={isOffline}
+                    setIsOffline={setIsOffline}
+                    suggestedQuestions={suggestedQuestions}
                 />
             )}
         </>

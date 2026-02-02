@@ -28,7 +28,7 @@ export class GretchenService {
    */
   async auditSection(sectionName: string, data: any): Promise<string> {
     try {
-      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
       const dataStr = JSON.stringify(data, null, 2);
       
       const prompt = `

@@ -122,8 +122,10 @@ export class GeminiService {
    */
   async analyzeCVJSON(base64Image: string, mimeType: string): Promise<CVProfile> {
     try {
-      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío. PROHIBIDO INVENTAR DATOS que no estén explícitos en el documento.`;
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+      const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir', una estricta auditora de datos. Extrae TODA la información del CV adjunto y organízala estrictamente en el esquema JSON proporcionado. Si falta información en una sección, déjala como array vacío o string vacío. PROHIBIDO INVENTAR DATOS que no estén explícitos en el documento.
+      
+      IMPORTANTE: En todos los campos de fecha, utiliza el formato de mes abreviado (ej: 'nov' en lugar de 'noviembre', 'ene' en lugar de 'enero').`;
 
       const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -158,12 +160,14 @@ export class GeminiService {
    */
   async analyzeCVText(text: string): Promise<CVProfile> {
     try {
-      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
       const prompt = `Fecha actual: ${today}. Actúa como 'Señorita Rotenmeir'. Analiza el siguiente texto estructurado (JSON/Texto) que contiene datos curriculares. 
       
       Tu misión es mapear estos datos al esquema estricto de salida. Si es un JSON genérico, adáptalo.
       
-      REGLA DE ORO: NO INVENTES INFORMACIÓN. Si un campo no existe en la entrada, déjalo vacío.
+      REGLAS:
+      1. NO INVENTES INFORMACIÓN. Si un campo no existe, déjalo vacío.
+      2. En todos los campos de fecha, utiliza meses abreviados (ej: 'nov' en lugar de 'noviembre').
       
       DATOS DE ENTRADA:
       ${text.substring(0, 50000)}
@@ -196,7 +200,7 @@ export class GeminiService {
    */
   async askJanice(currentText: string, userInstruction: string, context: string): Promise<string> {
     try {
-      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
       const prompt = `Fecha actual: ${today}. Actúa como Janice, una asistente de carrera amigable.
       
       Contexto: Estamos editando la sección de "${context}".
@@ -205,8 +209,9 @@ export class GeminiService {
       
       REGLAS CRÍTICAS DE EDICIÓN:
       1. Mejora la redacción para que suene profesional.
-      2. MANTÉN LA VERACIDAD: No inventes números, tecnologías o logros que no estén en el "Texto actual".
-      3. Si el texto actual es muy escaso y el usuario pide mejorarlo, NO inventes los detalles. En su lugar, escribe una estructura profesional y usa corchetes para decirle al usuario qué debe rellenar.
+      2. Formato de fechas: Usa meses abreviados ('nov', 'ene', etc.) si aparecen fechas.
+      3. MANTÉN LA VERACIDAD: No inventes números, tecnologías o logros que no estén en el "Texto actual".
+      4. Si el texto actual es muy escaso y el usuario pide mejorarlo, NO inventes los detalles. En su lugar, escribe una estructura profesional y usa corchetes para decirle al usuario qué debe rellenar.
          Ejemplo: "Lideré el desarrollo de [INSERTAR PROYECTO] utilizando [TECNOLOGÍAS], logrando [INSERTAR MÉTRICA DE ÉXITO]."
       
       Devuelve SOLO el texto mejorado.`;
@@ -229,7 +234,7 @@ export class GeminiService {
    */
   async improveSectionBasedOnCritique(sectionName: string, currentData: any, critique: string): Promise<any> {
     try {
-        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
         const dataStr = JSON.stringify(currentData, null, 2);
         const prompt = `
         Fecha actual: ${today}.
@@ -247,8 +252,9 @@ export class GeminiService {
         TU MISIÓN (REGLAS DE SEGURIDAD DE DATOS):
         1. Tu trabajo es reestructurar y pulir, PERO TIENES ESTRICTAMENTE PROHIBIDO INVENTAR DATOS REALES.
         2. No inventes nombres de empresas, fechas, tecnologías específicas o métricas numéricas que no estén en "DATOS ACTUALES".
-        3. Si Gretchen se queja de que falta información (ej: "Falta el stack tecnológico" o "Falta enlace al proyecto"), NO TE LO INVENTES.
-        4. En su lugar, modifica el campo de texto añadiendo un PLACEHOLDER claro y en mayúsculas entre corchetes para que el usuario sepa que debe rellenarlo.
+        3. En campos de fechas, usa SIEMPRE formato abreviado (ej: 'nov' en lugar de 'noviembre').
+        4. Si Gretchen se queja de que falta información (ej: "Falta el stack tecnológico" o "Falta enlace al proyecto"), NO TE LO INVENTES.
+        5. En su lugar, modifica el campo de texto añadiendo un PLACEHOLDER claro y en mayúsculas entre corchetes para que el usuario sepa que debe rellenarlo.
            
            Ejemplos de Placeholders permitidos:
            - "[ACCIÓN REQUERIDA: Listar lenguajes de programación usados]"
@@ -280,7 +286,7 @@ export class GeminiService {
    * Initializes a chat session acting as Donna in her most professional, neutral capacity.
    */
   async initDonnaChat(profile: CVProfile): Promise<void> {
-    const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
     const profileContext = JSON.stringify(profile, null, 2);
     
     const systemInstruction = `Fecha actual: ${today}. Eres Donna. Estás presentando a un candidato a un potencial empleador o cliente.

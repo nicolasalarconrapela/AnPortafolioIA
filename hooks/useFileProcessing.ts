@@ -29,6 +29,26 @@ export const useFileProcessing = (
             Array.isArray(json.projects);
           if (isInternalProfile) {
             setProfile(json);
+            // Backfill dates for existing JSONs if missing
+            if (json.experience) {
+              json.experience = json.experience.map((e: any) => {
+                if (!e.startDate && e.period) {
+                  const parts = e.period
+                    .split("-")
+                    .map((s: string) => s.trim());
+                  if (parts.length >= 1) e.startDate = parts[0];
+                  if (parts.length >= 2) e.endDate = parts[1];
+                  if (
+                    e.endDate?.toLowerCase().includes("present") ||
+                    e.endDate?.toLowerCase().includes("actualidad")
+                  ) {
+                    e.current = true;
+                    e.endDate = "";
+                  }
+                }
+                return e;
+              });
+            }
             setAppState(AppState.WIZARD);
             setCurrentStep(0);
           } else {
@@ -37,6 +57,24 @@ export const useFileProcessing = (
               const result = await geminiServiceRef.current.analyzeCVText(
                 content
               );
+              // Backfill dates if analysis only returned period string
+              if (result.experience) {
+                result.experience = result.experience.map((e) => {
+                  if (!e.startDate && e.period) {
+                    const parts = e.period.split("-").map((s) => s.trim());
+                    if (parts.length >= 1) e.startDate = parts[0];
+                    if (parts.length >= 2) e.endDate = parts[1];
+                    if (
+                      e.endDate?.toLowerCase().includes("present") ||
+                      e.endDate?.toLowerCase().includes("actualidad")
+                    ) {
+                      e.current = true;
+                      e.endDate = "";
+                    }
+                  }
+                  return e;
+                });
+              }
               setProfile(result);
               setAppState(AppState.WIZARD);
               setCurrentStep(0);
@@ -110,14 +148,34 @@ export const useFileProcessing = (
           if (files["Positions.csv"]) {
             const text = await files["Positions.csv"].async("text");
             const data = parseCSV(text);
-            newProfile.experience = data.map((row) => ({
-              company: row["Company Name"] || row["Company"] || "",
-              role: row["Title"] || "",
-              description: row["Description"] || "",
-              period: `${row["Started On"] || ""} - ${
-                row["Finished On"] || "Present"
-              }`,
-            }));
+            newProfile.experience = data.map((row) => {
+              const start =
+                row["Started On"] ||
+                row["Fecha de inicio"] ||
+                row["Start Date"] ||
+                "";
+              const end =
+                row["Finished On"] ||
+                row["Fecha de finalización"] ||
+                row["End Date"] ||
+                "";
+
+              // Try to format date if it looks like "Oct 2020" -> "10/2020" or leave as is if simple
+              // Or better, let it be free text but ensure it's captured
+
+              return {
+                company: row["Company Name"] || row["Company"] || "",
+                role: row["Title"] || "",
+                description: row["Description"] || "",
+                startDate: start,
+                endDate: end,
+                current:
+                  !end ||
+                  end.toLowerCase().includes("present") ||
+                  end.toLowerCase().includes("actualidad"),
+                period: `${start} - ${end || "Present"}`,
+              };
+            });
           }
           if (files["Education.csv"]) {
             const text = await files["Education.csv"].async("text");
