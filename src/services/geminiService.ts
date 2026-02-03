@@ -130,6 +130,35 @@ export class GeminiService {
   }
 
   /**
+   * SEARCH ASSISTANT
+   * Uses Google Search Grounding to find information.
+   */
+  async searchWeb(query: string): Promise<{ text: string; sources: Array<{ title: string; url: string }> }> {
+    try {
+      const response = await this.ensureAI().models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Busca información precisa y breve sobre: "${query}". Responde en español, formato markdown.`,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      const text = response.text || "No encontré resultados.";
+      
+      // Extract grounding metadata safely
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+      const sources = chunks
+        .map((c: any) => c.web ? { title: c.web.title, url: c.web.uri } : null)
+        .filter((s: any) => s !== null) as Array<{ title: string; url: string }>;
+
+      return { text, sources };
+    } catch (error) {
+      console.error("Search error:", error);
+      return { text: "Error al conectar con el buscador.", sources: [] };
+    }
+  }
+
+  /**
    * SEÑORITA ROTENMEIR
    * Initializes analysis extracting JSON data strictly.
    */

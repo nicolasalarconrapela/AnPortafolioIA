@@ -1,3 +1,4 @@
+
 import { MutableRefObject } from "react";
 import JSZip from "jszip";
 import { parseCSV } from "../utils/csvParser";
@@ -9,10 +10,21 @@ export const useFileProcessing = (
   setProfile: (p: CVProfile | null) => void,
   setAppState: (s: AppState) => void,
   setError: (e: string | null) => void,
-  setCurrentStep: (s: number) => void
+  setCurrentStep: (s: number) => void,
+  setFileDataUrl?: (url: string | null) => void // New callback
 ) => {
   const processFile = async (file: File) => {
     setError(null);
+
+    // Create Data URL for visualization
+    if (setFileDataUrl) {
+        const urlReader = new FileReader();
+        urlReader.onload = (e) => {
+            setFileDataUrl(e.target?.result as string);
+        };
+        urlReader.readAsDataURL(file);
+    }
+
     if (
       file.type === "application/json" ||
       file.name.endsWith(".json") ||
@@ -255,6 +267,14 @@ export const useFileProcessing = (
             "No se encontraron documentos válidos dentro del ZIP."
           );
         const base64Data = await validFile.async("base64");
+        
+        // Also set file data url for ZIP extracted files if PDF/Image
+        if (setFileDataUrl && (validFile.name.endsWith(".pdf") || validFile.name.match(/\.(jpg|jpeg|png)$/i))) {
+             const blob = await validFile.async("blob");
+             const url = URL.createObjectURL(blob);
+             setFileDataUrl(url);
+        }
+
         const mimeType = validFile.name.endsWith(".pdf")
           ? "application/pdf"
           : "image/jpeg";

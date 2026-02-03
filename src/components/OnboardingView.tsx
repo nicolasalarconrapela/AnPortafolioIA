@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { loggingService } from '../utils/loggingService';
 import { upsertWorkspaceForUser } from '../services/firestoreWorkspaces';
@@ -20,6 +21,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
   const [profile, setProfile] = useState<CVProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [fileDataUrl, setFileDataUrl] = useState<string | null>(null); // Store visual reference
   
   // Drag & Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -31,7 +33,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
     geminiServiceRef.current = createGeminiService();
   }, []);
 
-  const { processFile } = useFileProcessing(geminiServiceRef, setProfile, setAppState, setError, setCurrentStep);
+  const { processFile } = useFileProcessing(
+      geminiServiceRef, 
+      setProfile, 
+      setAppState, 
+      setError, 
+      setCurrentStep,
+      setFileDataUrl // Pass the setter
+  );
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
@@ -121,6 +130,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onEx
                 setProfile={(p) => setProfile(p)}
                 onExportJSON={handleExportJSON}
                 onFinish={onFinishWizard}
+                fileDataUrl={fileDataUrl} // Pass file reference
             />
         )}
       </div>
