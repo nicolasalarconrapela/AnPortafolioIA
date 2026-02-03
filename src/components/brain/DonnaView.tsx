@@ -20,6 +20,7 @@ interface DonnaViewProps {
     isOffline: boolean;
     setIsOffline: (val: boolean) => void;
     suggestedQuestions: string[];
+    onExportJSON?: () => void;
 }
 
 export const DonnaView: React.FC<DonnaViewProps> = ({
@@ -35,7 +36,8 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
     chatEndRef,
     isOffline,
     setIsOffline,
-    suggestedQuestions
+    suggestedQuestions,
+    onExportJSON
 }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -275,6 +277,17 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                     </div>
                     <span className="hidden sm:inline">Back to Editor</span>
                 </button>
+
+                {onExportJSON && (
+                    <button 
+                        onClick={onExportJSON}
+                        className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-primary bg-slate-100 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-all"
+                        title="Descargar JSON Final"
+                    >
+                        <Download size={14} />
+                        <span className="hidden sm:inline">Download Profile</span>
+                    </button>
+                )}
             </nav>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

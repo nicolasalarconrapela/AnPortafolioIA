@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import {
     CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
@@ -202,6 +203,14 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         <span className="font-display font-medium text-lg hidden md:block">Googlito System</span>
                     </div>
                     <div className="flex items-center gap-3">
+                        <button 
+                            onClick={onExportJSON}
+                            className="p-2 text-outline hover:text-primary hover:bg-surface-variant rounded-full transition-colors"
+                            title="Descargar Perfil JSON"
+                        >
+                            <FileJson size={20} />
+                        </button>
+                        <div className="h-6 w-px bg-outline-variant/50 mx-1 hidden md:block"></div>
                         <span className="hidden md:flex text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100 items-center gap-1.5">
                             <Sparkles className="w-3 h-3" /> Janice Online
                         </span>

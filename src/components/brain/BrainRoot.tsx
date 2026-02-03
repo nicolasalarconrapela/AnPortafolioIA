@@ -118,6 +118,7 @@ function App() {
                     isOffline={isOffline}
                     setIsOffline={setIsOffline}
                     suggestedQuestions={suggestedQuestions}
+                    onExportJSON={handleExportJSON}
                 />
             )}
         </div>

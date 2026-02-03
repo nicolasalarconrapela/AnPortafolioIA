@@ -245,6 +245,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
               isOffline={isOffline}
               setIsOffline={setIsOffline}
               suggestedQuestions={suggestedQuestions}
+              onExportJSON={handleExportJSON}
           />
       )}
     </div>
