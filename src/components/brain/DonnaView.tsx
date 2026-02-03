@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe, MessageSquare, MapPin, X, Mail, Linkedin, User, Diamond, Clock } from 'lucide-react';
+import { ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe, MessageSquare, MapPin, X, Mail, Linkedin, User, Diamond, Clock, Github, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
 import { CVProfile, ChatMessage } from '../../types_brain';
@@ -93,6 +93,16 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         .sort((a, b) => b.years - a.years || b.companies.length - a.companies.length)
         .slice(0, 5); // Take top 5
     }, [profile]);
+
+    const getSocialIcon = (network: string) => {
+        const n = network.toLowerCase();
+        if (n.includes('linkedin')) return <Linkedin size={18} />;
+        if (n.includes('github')) return <Github size={18} />;
+        if (n.includes('twitter') || n.includes('x.com')) return <span className="font-bold text-sm">𝕏</span>;
+        if (n.includes('behance')) return <span className="font-bold text-sm">Be</span>;
+        if (n.includes('dribbble')) return <span className="font-bold text-sm">Dr</span>;
+        return <LinkIcon size={18} />;
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -342,11 +352,11 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                                         )}
                                     </div>
 
-                                    {/* Social Proof: Logos */}
+                                    {/* Social Proof: Logos - CENTERED */}
                                     {profile.experience.length > 0 && (
-                                        <div className="pt-8 mt-4 border-t border-slate-100">
+                                        <div className="pt-8 mt-4 border-t border-slate-100 text-center flex flex-col items-center">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Previously at</p>
-                                            <div className="flex flex-wrap gap-3 opacity-80 hover:opacity-100 transition-opacity">
+                                            <div className="flex flex-wrap justify-center gap-3 opacity-80 hover:opacity-100 transition-opacity">
                                                 {Array.from(new Set(profile.experience.map(e => e.company))).slice(0, 4).map((company, i) => (
                                                     <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
                                                         <CompanyLogo name={company} className="w-5 h-5 rounded-md" />
@@ -387,54 +397,49 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                         </div>
                     </div>
 
-                    {/* Right Column: Hiring Panel (Sticky) */}
+                    {/* Right Column: Socials & Connect (Sticky) */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="sticky top-24 space-y-6">
                             
-                            {/* Hiring Widget */}
+                            {/* Connect Widget (Replaced Snapshot) */}
                             <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-bl-[100px] -mr-10 -mt-10 pointer-events-none"></div>
                                 
                                 <div className="relative z-10">
                                     <h3 className="font-display font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
                                         <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
-                                        Candidate Snapshot
+                                        Connect & Socials
                                     </h3>
                                     
                                     <div className="space-y-4 mb-8">
-                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Briefcase size={18}/></div>
-                                                <div>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Experience</p>
-                                                    <p className="text-sm font-bold text-slate-900">{profile.experience.length} Roles</p>
-                                                </div>
+                                        {(profile.socials && profile.socials.length > 0) ? (
+                                            profile.socials.map((social, i) => (
+                                                <a 
+                                                    key={i} 
+                                                    href={social.url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100"
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors">
+                                                            {getSocialIcon(social.network)}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider truncate">{social.network}</p>
+                                                            <p className="text-sm font-bold text-slate-900 truncate">
+                                                                {social.username || "View Profile"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <ExternalLink size={14} className="text-slate-300 group-hover:text-indigo-400" />
+                                                </a>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                                <p className="text-sm text-slate-400 italic">No social links found</p>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Code size={18}/></div>
-                                                <div>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Core Tech</p>
-                                                    <p className="text-sm font-bold text-slate-900 truncate w-40">
-                                                        {profile.techStack?.languages?.slice(0,2).join(', ') || "Full Stack"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="group flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 transition-colors border border-transparent hover:border-indigo-100">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-white rounded-xl shadow-sm text-slate-600 group-hover:text-indigo-600 transition-colors"><Globe size={18}/></div>
-                                                <div>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Languages</p>
-                                                    <p className="text-sm font-bold text-slate-900">
-                                                        {profile.languages?.[0]?.language || "English"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-3">
@@ -445,6 +450,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                                             <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
                                                 <Mail size={18} />
                                             </Button>
+                                            {/* Fallback generic LinkedIn if not in list */}
                                             <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
                                                 <Linkedin size={18} />
                                             </Button>

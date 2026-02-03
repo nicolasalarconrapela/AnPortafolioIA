@@ -48,5 +48,6 @@ export const cleanProfile = (p: CVProfile): CVProfile => {
     awards: p.awards.filter((a) => !isDirty(a)),
     languages: p.languages.filter((l) => !isDirty(l.language)),
     hobbies: p.hobbies.filter((h) => !isDirty(h)),
+    socials: (p.socials || []).filter((s) => !isDirty(s.url)),
   };
 };

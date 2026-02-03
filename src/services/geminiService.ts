@@ -110,6 +110,18 @@ export class GeminiService {
         hobbies: {
           type: Type.ARRAY,
           items: { type: Type.STRING }
+        },
+        socials: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              network: { type: Type.STRING, description: "Nombre de la red (LinkedIn, GitHub, Website...)" },
+              username: { type: Type.STRING },
+              url: { type: Type.STRING }
+            }
+          },
+          description: "Enlaces a perfiles sociales y portafolios encontrados en el documento."
         }
       },
       required: ["experience", "education", "skills", "techStack", "projects", "languages"]

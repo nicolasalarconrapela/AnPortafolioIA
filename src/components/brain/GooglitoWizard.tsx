@@ -3,11 +3,12 @@ import {
     CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
     Terminal, Code, Heart, Award, Globe, BookOpen, User, FileText,
     Sparkles, X, Plus, ArrowRight, ShieldAlert,
-    Link, Image, Calendar, Trash2, Upload, LayoutGrid, Wand2
+    Link, Image, Calendar, Trash2, Upload, LayoutGrid, Wand2, Share2
 } from 'lucide-react';
 import { Button } from './Button';
 import { CompanyLogo } from './CompanyLogo';
 import { TechIcon } from './TechIcon';
+import { SocialIcon } from './SocialIcon';
 import { SectionHeader } from './SectionHeader';
 import { EmptyState } from './EmptyState';
 import { GretchenModal } from './GretchenModal';
@@ -49,6 +50,13 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         }
     }, [currentStep]);
 
+    const professionalNetworks = [
+        "LinkedIn", "GitHub", "Behance", "Dribbble", "Xing", "ResearchGate",
+        "Academia.edu", "Stack Overflow", "Contra", "Polywork", "Product Hunt",
+        "Indie Hackers", "Lunchclub", "Crunchbase", "Substack", "Slack",
+        "Discord", "Meetup", "Malt", "The Dots"
+    ];
+
     const techSuggestions: Record<string, string[]> = {
         languages: ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'PHP', 'Swift', 'Go', 'Ruby', 'Rust', 'C++', 'HTML', 'CSS', 'SQL', 'Kotlin', 'R'],
         frameworks: ['React', 'Angular', 'Vue', 'Next.js', 'Node.js', 'Spring Boot', '.NET', 'Laravel', 'Django', 'Flask', 'Express', 'Tailwind', 'Bootstrap', 'TensorFlow', 'PyTorch'],
@@ -83,6 +91,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         { id: 'awards', title: 'Logros', icon: <Award size={18} />, desc: 'Premios y certificaciones.', ai: 'Googlito Fame' },
         { id: 'lang', title: 'Idiomas', icon: <Globe size={18} />, desc: '¿Qué lenguas dominas?', ai: 'Googlito Lingua' },
         { id: 'hobbies', title: 'Hobbies', icon: <BookOpen size={18} />, desc: '¿Qué te apasiona?', ai: 'Googlito Life' },
+        { id: 'social', title: 'Redes', icon: <Share2 size={18} />, desc: 'Conecta tus perfiles profesionales.', ai: 'Googlito Network' },
         { id: 'summary', title: 'Perfil', icon: <User size={18} />, desc: 'Descripción del Candidato.', ai: 'Googlito Bio' },
         { id: 'review', title: 'Revisión', icon: <FileText size={18} />, desc: 'Verifica todos los datos.', ai: 'Googlito Auditor' },
     ];
@@ -95,7 +104,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     const getSectionDataForGretchen = (step: number) => {
         switch (step) {
             case 1: return profile.experience; case 2: return profile.skills; case 3: return profile.techStack; case 4: return profile.projects; case 5: return profile.volunteering;
-            case 6: return profile.awards; case 7: return profile.languages; case 8: return profile.hobbies; case 9: return profile.summary; default: return null;
+            case 6: return profile.awards; case 7: return profile.languages; case 8: return profile.hobbies; case 9: return profile.socials; case 10: return profile.summary; default: return null;
         }
     }
 
@@ -104,7 +113,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         switch (currentStep) {
             case 1: newProfile.experience = newData; break; case 2: newProfile.skills = newData; break; case 3: newProfile.techStack = newData; break;
             case 4: newProfile.projects = newData; break; case 5: newProfile.volunteering = newData; break; case 6: newProfile.awards = newData; break;
-            case 7: newProfile.languages = newData; break; case 8: newProfile.hobbies = newData; break; case 9: newProfile.summary = newData.summary || newData; break;
+            case 7: newProfile.languages = newData; break; case 8: newProfile.hobbies = newData; break; case 9: newProfile.socials = newData; break; case 10: newProfile.summary = newData.summary || newData; break;
         }
         setProfile(newProfile);
     }
@@ -116,12 +125,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         let changed = false;
 
         AUTO_DETECT_KEYWORDS.forEach(keyword => {
-            // Escape special characters to prevent "Nothing to repeat" error for C++, C#, etc.
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            
-            // Use stricter boundaries than \b for keywords with symbols
-            // Matches start of line or non-word char -> keyword -> end of line or non-word char
-            // This allows matching "C++" in "Expert in C++" while avoiding "Go" in "Google"
             const regex = new RegExp(`(?:^|[^a-zA-Z0-9_])${escapedKeyword}(?![a-zA-Z0-9_])`, 'i');
             
             if (regex.test(text) && !currentSkills.has(keyword.toLowerCase())) {
@@ -607,6 +611,85 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
 
                     {currentStep === 9 && (
                         <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(profile.socials || []).map((social, idx) => (
+                                    <div key={idx} className="p-4 bg-surface rounded-xl border border-outline-variant/40 flex items-center gap-3 relative group">
+                                        <div className="p-2 bg-surface-variant/50 rounded-lg text-on-surface">
+                                            <SocialIcon network={social.network} className="w-5 h-5" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm text-[var(--md-sys-color-on-background)]">{social.network}</p>
+                                            <input 
+                                                className="w-full bg-transparent border-none p-0 text-xs text-outline outline-none" 
+                                                value={social.url} 
+                                                onChange={(e) => {
+                                                    const newSocials = [...(profile.socials || [])];
+                                                    newSocials[idx].url = e.target.value;
+                                                    setProfile({ ...profile, socials: newSocials });
+                                                }}
+                                            />
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                const newSocials = [...(profile.socials || [])];
+                                                setProfile({ ...profile, socials: newSocials.filter((_, i) => i !== idx) });
+                                            }} 
+                                            className="text-outline hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="p-4 bg-surface-variant/30 rounded-xl border border-dashed border-outline-variant flex flex-col md:flex-row gap-3 items-end md:items-center">
+                                <div className="flex-1 w-full space-y-3 md:space-y-0 md:flex md:gap-3">
+                                    <select 
+                                        className="bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:border-primary w-full md:w-1/3"
+                                        id="new-social-network"
+                                    >
+                                        <option value="">Selecciona Red...</option>
+                                        {professionalNetworks.map(n => <option key={n} value={n}>{n}</option>)}
+                                    </select>
+                                    <input 
+                                        className="bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:border-primary w-full md:flex-1"
+                                        placeholder="URL del perfil (https://...)"
+                                        id="new-social-url"
+                                    />
+                                </div>
+                                <Button 
+                                    onClick={() => {
+                                        const netSelect = document.getElementById('new-social-network') as HTMLSelectElement;
+                                        const urlInput = document.getElementById('new-social-url') as HTMLInputElement;
+                                        if (netSelect.value && urlInput.value) {
+                                            const newSocials = [...(profile.socials || [])];
+                                            let username = '';
+                                            try {
+                                                const urlParts = new URL(urlInput.value).pathname.split('/').filter(Boolean);
+                                                username = urlParts[urlParts.length - 1] || '';
+                                            } catch (e) {}
+
+                                            newSocials.push({
+                                                network: netSelect.value,
+                                                url: urlInput.value,
+                                                username: username
+                                            });
+                                            setProfile({ ...profile, socials: newSocials });
+                                            netSelect.value = '';
+                                            urlInput.value = '';
+                                        }
+                                    }}
+                                    icon={<Plus size={16} />}
+                                    size="sm"
+                                >
+                                    Añadir
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {currentStep === 10 && (
+                        <div className="space-y-6">
                             <div className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 relative shadow-sm">
                                 <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Resumen Ejecutivo</h3>
                                 <textarea className="w-full text-base leading-relaxed text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant rounded-xl p-6 h-64 outline-none resize-none focus:border-primary transition-all" value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })} placeholder="Escribe un resumen profesional..." />
@@ -615,7 +698,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </div>
                     )}
 
-                    {currentStep === 10 && (
+                    {currentStep === 11 && (
                         <div className="space-y-6">
                             <div className="bg-surface-variant text-[var(--md-sys-color-on-background)] p-5 rounded-[20px] flex items-center gap-4 border border-outline-variant/30">
                                 <div className="p-2 bg-[var(--md-sys-color-background)] rounded-lg shadow-sm">
@@ -660,6 +743,20 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                             ))}
                                         </div>
                                     </section>
+
+                                    {(profile.socials && profile.socials.length > 0) && (
+                                        <section>
+                                            <h4 className="font-bold text-primary mb-4 border-b border-outline-variant pb-2 uppercase text-xs tracking-wider">Redes Sociales</h4>
+                                            <ul className="space-y-1">
+                                                {profile.socials.map((s, i) => (
+                                                    <li key={i} className="flex gap-2 text-xs">
+                                                        <span className="font-bold">{s.network}:</span>
+                                                        <span className="text-outline truncate">{s.url}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </section>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -674,11 +771,11 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         <ChevronLeft className="w-4 h-4 mr-2" /> Anterior
                     </Button>
                     <Button 
-                        onClick={currentStep === 10 ? onFinish : () => setCurrentStep(currentStep + 1)} 
+                        onClick={currentStep === 11 ? onFinish : () => setCurrentStep(currentStep + 1)} 
                         className="px-8 shadow-elevation-2"
-                        variant={currentStep === 10 ? 'primary' : 'secondary'}
+                        variant={currentStep === 11 ? 'primary' : 'secondary'}
                     >
-                        {currentStep === 10 ? <>Finalizar <CheckCircle2 className="w-4 h-4 ml-2" /></> : <>Siguiente <ArrowRight className="w-4 h-4 ml-2" /></>}
+                        {currentStep === 11 ? <>Finalizar <CheckCircle2 className="w-4 h-4 ml-2" /></> : <>Siguiente <ArrowRight className="w-4 h-4 ml-2" /></>}
                     </Button>
                 </div>
             </footer>

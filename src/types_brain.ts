@@ -48,6 +48,12 @@ export interface LanguageItem {
   level: string;
 }
 
+export interface SocialItem {
+  network: string; // LinkedIn, GitHub, Behance, Website, Twitter...
+  username?: string;
+  url: string;
+}
+
 export interface CVProfile {
   summary: string; // Brief intro
   experience: ExperienceItem[];
@@ -64,4 +70,5 @@ export interface CVProfile {
   awards: string[];
   languages: LanguageItem[];
   hobbies: string[];
+  socials?: SocialItem[]; // New field for social networks
 }
