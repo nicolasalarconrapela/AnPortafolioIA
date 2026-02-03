@@ -304,6 +304,12 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                                             </span>
                                         </div>
                                         
+                                        {profile.fullName && (
+                                            <h2 className="text-xl font-medium text-slate-500 mb-2">
+                                                {profile.fullName}
+                                            </h2>
+                                        )}
+
                                         <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-[1.1] mb-6 tracking-tight">
                                             {profile.experience[0]?.role || "Senior Technical Professional"}
                                         </h1>

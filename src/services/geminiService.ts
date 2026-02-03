@@ -31,6 +31,7 @@ export class GeminiService {
     return {
       type: Type.OBJECT,
       properties: {
+        fullName: { type: Type.STRING, description: "Nombre completo del candidato." },
         summary: { type: Type.STRING, description: "Un resumen profesional ejecutivo del candidato." },
         experience: {
           type: Type.ARRAY,

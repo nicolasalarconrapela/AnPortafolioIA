@@ -55,6 +55,7 @@ export interface SocialItem {
 }
 
 export interface CVProfile {
+  fullName?: string; // Name of the candidate
   summary: string; // Brief intro
   experience: ExperienceItem[];
   education: EducationItem[]; // Added for the final view

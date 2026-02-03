@@ -57,6 +57,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             // Assuming Onboarding saved it correctly, but providing fallbacks
             const rawProfile = data.profile;
             const safeProfile: CVProfile = {
+                fullName: rawProfile.fullName || "",
                 summary: rawProfile.summary || "",
                 experience: Array.isArray(rawProfile.experience) ? rawProfile.experience : [],
                 education: Array.isArray(rawProfile.education) ? rawProfile.education : [],
@@ -90,7 +91,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   // Initial greeting from Donna
   useEffect(() => {
       if (profile && chat.length === 0) {
-          const name = profile.experience[0]?.role || "Candidato";
+          const name = profile.fullName || profile.experience[0]?.role || "Candidato";
           setChat([{ 
               id: 'intro', 
               role: 'model', 
