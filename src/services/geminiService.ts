@@ -130,32 +130,55 @@ export class GeminiService {
   }
 
   /**
-   * SEARCH ASSISTANT
-   * Uses Google Search Grounding to find information.
+   * PURE SEARCH ENGINE (No AI Summary)
+   * Uses the model only to retrieve and format search results as a JSON list.
    */
-  async searchWeb(query: string): Promise<{ text: string; sources: Array<{ title: string; url: string }> }> {
+  async performSearch(query: string): Promise<Array<{ title: string; url: string; snippet: string }>> {
     try {
+      const prompt = `
+      Actúa como un motor de búsqueda backend.
+      Tu única tarea es buscar en Google sobre: "${query}".
+      
+      Devuelve SOLO un array JSON con los 5-8 resultados más relevantes.
+      NO escribas resúmenes, NO converses. SOLO JSON.
+
+      Formato de salida esperado:
+      [
+        { "title": "Título de la página", "url": "https://...", "snippet": "Breve descripción..." },
+        ...
+      ]
+      `;
+
       const response = await this.ensureAI().models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Busca información precisa y breve sobre: "${query}". Responde en español, formato markdown.`,
+        contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
+          responseMimeType: "application/json"
         },
       });
 
-      const text = response.text || "No encontré resultados.";
+      if (!response.text) return [];
       
-      // Extract grounding metadata safely
-      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-      const sources = chunks
-        .map((c: any) => c.web ? { title: c.web.title, url: c.web.uri } : null)
-        .filter((s: any) => s !== null) as Array<{ title: string; url: string }>;
-
-      return { text, sources };
+      const results = JSON.parse(response.text);
+      return Array.isArray(results) ? results : [];
+      
     } catch (error) {
-      console.error("Search error:", error);
-      return { text: "Error al conectar con el buscador.", sources: [] };
+      console.error("Search API error:", error);
+      return [];
     }
+  }
+
+  /**
+   * SEARCH ASSISTANT (Legacy - Kept for Donna compatibility)
+   */
+  async searchWeb(query: string): Promise<{ text: string; sources: Array<{ title: string; url: string }> }> {
+    // Redirect to pure search if used in new context, or keep for chat
+    const results = await this.performSearch(query);
+    return {
+        text: "Resultados de búsqueda:",
+        sources: results
+    };
   }
 
   /**

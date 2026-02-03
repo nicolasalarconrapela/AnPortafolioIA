@@ -269,26 +269,67 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
     return (
         <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24">
             
-            {/* Top Navigation */}
-            <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-4 md:px-8 py-3 flex items-center justify-between transition-all duration-300">
-                <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors group">
-                    <div className="p-1.5 rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors">
-                        <ChevronLeft size={16} />
-                    </div>
-                    <span className="hidden sm:inline">Back to Editor</span>
-                </button>
+     {/* Top Navigation */}
+        <nav
+        className={[
+            "sticky top-0 z-40",
+            // sticky + blur más robusto (Safari / iOS)
+            "bg-white/80 supports-[backdrop-filter]:bg-white/60 backdrop-blur-xl",
+            "border-b border-slate-200/60",
+            "px-4 md:px-8 py-3",
+            "flex items-center justify-between",
+            "transition-all duration-300",
+            // opcional: dark mode si lo usas
+            "dark:bg-slate-900/70 dark:border-slate-700/60",
+        ].join(" ")}
+        aria-label="Top navigation"
+        >
+        <button
+            type="button"
+            onClick={onBack}
+            className={[
+            "group inline-flex items-center gap-2",
+            "text-sm font-medium text-slate-500 hover:text-slate-900",
+            "transition-colors",
+            // foco accesible
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+            "focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900",
+            "rounded-full",
+            ].join(" ")}
+            aria-label="Back to editor"
+        >
+            <span className="p-1.5 rounded-full bg-slate-100 group-hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:group-hover:bg-slate-700">
+            <ChevronLeft size={16} aria-hidden="true" />
+            </span>
+            <span className="hidden sm:inline">Back to Editor</span>
+        </button>
 
-                {onExportJSON && (
-                    <button 
-                        onClick={onExportJSON}
-                        className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-primary bg-slate-100 hover:bg-primary/10 px-3 py-1.5 rounded-full transition-all"
-                        title="Descargar JSON Final"
-                    >
-                        <Download size={14} />
-                        <span className="hidden sm:inline">Download Profile</span>
-                    </button>
-                )}
-            </nav>
+        {typeof onExportJSON === "function" && (
+            <button
+            type="button"
+            onClick={onExportJSON}
+            className={[
+                "inline-flex items-center gap-2",
+                "text-xs font-bold",
+                "text-slate-600 hover:text-primary",
+                "bg-slate-100 hover:bg-primary/10",
+                "px-3 py-1.5 rounded-full",
+                "transition-all",
+                // foco accesible
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+                "focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900",
+                // dark mode opcional
+                "dark:text-slate-200 dark:bg-slate-800 dark:hover:bg-primary/15",
+            ].join(" ")}
+            title="Descargar JSON Final"
+            aria-label="Download profile as JSON"
+            >
+            <Download size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">Download Profile</span>
+            </button>
+        )}
+        </nav>
+
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
