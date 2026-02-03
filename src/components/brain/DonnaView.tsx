@@ -275,15 +275,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                     </div>
                     <span className="hidden sm:inline">Back to Editor</span>
                 </button>
-                
-                <div className="flex items-center gap-3">
-                     <Button variant="outline" className="hidden sm:flex h-9 text-xs border-slate-200 hover:bg-slate-50 text-slate-600" onClick={() => window.print()}>
-                        <Download size={14} className="mr-2"/> Download PDF
-                     </Button>
-                     <Button className="h-9 text-xs bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 border-none">
-                        Contact Candidate
-                     </Button>
-                </div>
             </nav>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
