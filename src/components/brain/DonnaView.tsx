@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe, MessageSquare, MapPin, X, Mail, Linkedin, User } from 'lucide-react';
+import { ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe, MessageSquare, MapPin, X, Mail, Linkedin, User, Diamond, Clock } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
 import { CVProfile, ChatMessage } from '../../types_brain';
@@ -38,6 +38,61 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
     suggestedQuestions
 }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
+
+    // Calculate detailed skill metrics (Years + Associated Companies)
+    const topSkills = React.useMemo(() => {
+        if (!profile.skills || profile.skills.length === 0) return [];
+
+        const currentYear = new Date().getFullYear();
+
+        return profile.skills.map(skill => {
+            let totalYears = 0;
+            const companies = new Set<string>();
+            const skillLower = skill.toLowerCase();
+
+            // Check experience for matches
+            profile.experience.forEach(exp => {
+                const content = `${exp.role} ${exp.description} ${exp.company}`.toLowerCase();
+                // Check explicitly associated skills first, then content text match
+                const hasExplicitSkill = exp.skills?.some(s => s.toLowerCase() === skillLower);
+                
+                if (hasExplicitSkill || content.includes(skillLower)) {
+                    companies.add(exp.company);
+                    
+                    // Extract years from dates
+                    const startYearMatch = exp.startDate?.match(/(\d{4})/);
+                    const startYear = startYearMatch ? parseInt(startYearMatch[0]) : currentYear;
+                    
+                    let endYear = currentYear;
+                    if (!exp.current && exp.endDate) {
+                        const endYearMatch = exp.endDate.match(/(\d{4})/);
+                        if (endYearMatch) endYear = parseInt(endYearMatch[0]);
+                    }
+                    
+                    // Add duration (min 1 year if matched)
+                    totalYears += Math.max(1, endYear - startYear);
+                }
+            });
+
+            // Check projects for matches (adds context, maybe not years if concurrent)
+            profile.projects.forEach(proj => {
+                 if ((proj.technologies + proj.description + proj.name).toLowerCase().includes(skillLower)) {
+                     // We just mark it as relevant, maybe add a generic "Personal Projects" tag if we wanted
+                 }
+            });
+
+            // If found in experience, use calculated years. If not found but listed in skills, default to 1 or 0 based on logic.
+            // Here we prioritize skills that were actually found in the descriptions.
+            return {
+                name: skill,
+                years: totalYears,
+                companies: Array.from(companies)
+            };
+        })
+        // Sort: Primary by years, Secondary by number of companies associated
+        .sort((a, b) => b.years - a.years || b.companies.length - a.companies.length)
+        .slice(0, 5); // Take top 5
+    }, [profile]);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -255,6 +310,36 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                                         <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl font-light">
                                             {profile.summary || "Experienced professional ready to deliver impact and drive innovation in forward-thinking teams."}
                                         </p>
+
+                                        {/* Top Skills (Googlitos with Tooltip and Years) */}
+                                        {topSkills.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-6 items-center">
+                                                {topSkills.map((skill, i) => (
+                                                    <div key={i} className="group relative cursor-help">
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100/50 transition-colors group-hover:bg-indigo-100 group-hover:border-indigo-200">
+                                                            <Diamond className="w-3 h-3 mr-1.5 opacity-60 fill-current" />
+                                                            {skill.name} <span className="opacity-60 ml-1">({skill.years})</span>
+                                                        </span>
+                                                        
+                                                        {/* Tooltip */}
+                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-800 text-white text-[10px] rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
+                                                            <p className="font-bold mb-1 text-slate-300 uppercase tracking-wider text-[9px]">Experiences:</p>
+                                                            {skill.companies.length > 0 ? (
+                                                                <ul className="list-disc list-inside space-y-0.5">
+                                                                    {skill.companies.slice(0, 3).map((co, c) => (
+                                                                        <li key={c} className="truncate">{co}</li>
+                                                                    ))}
+                                                                    {skill.companies.length > 3 && <li>+ {skill.companies.length - 3} more</li>}
+                                                                </ul>
+                                                            ) : (
+                                                                <p className="italic text-slate-500">General competence</p>
+                                                            )}
+                                                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Social Proof: Logos */}

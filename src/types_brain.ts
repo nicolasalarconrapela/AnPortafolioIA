@@ -1,3 +1,4 @@
+
 export interface ChatMessage {
   id: string;
   role: "user" | "model";
@@ -22,6 +23,7 @@ export interface ExperienceItem {
   period: string;
   description: string;
   logo?: string;
+  skills?: string[];
 }
 
 export interface ProjectItem {

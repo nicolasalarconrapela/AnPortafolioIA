@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
     CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
     Terminal, Code, Heart, Award, Globe, BookOpen, User, FileText,
     Sparkles, X, Plus, ArrowRight, ShieldAlert,
-    Link, Image, Calendar, Trash2, Upload, LayoutGrid
+    Link, Image, Calendar, Trash2, Upload, LayoutGrid, Wand2
 } from 'lucide-react';
 import { Button } from './Button';
 import { CompanyLogo } from './CompanyLogo';
@@ -51,11 +50,22 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     }, [currentStep]);
 
     const techSuggestions: Record<string, string[]> = {
-        languages: ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'PHP', 'Swift', 'Go', 'Ruby', 'Rust', 'C++', 'HTML', 'CSS', 'SQL'],
-        frameworks: ['React', 'Angular', 'Vue', 'Next.js', 'Node.js', 'Spring Boot', '.NET', 'Laravel', 'Django', 'Flask', 'Express'],
-        ides: ['VS Code', 'IntelliJ IDEA', 'WebStorm', 'PyCharm', 'Visual Studio', 'Xcode', 'Android Studio', 'Sublime Text', 'Vim'],
-        tools: ['Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'Google Cloud', 'Jira', 'Slack', 'Figma', 'Postman', 'Jenkins']
+        languages: ['JavaScript', 'TypeScript', 'Python', 'Java', 'C#', 'PHP', 'Swift', 'Go', 'Ruby', 'Rust', 'C++', 'HTML', 'CSS', 'SQL', 'Kotlin', 'R'],
+        frameworks: ['React', 'Angular', 'Vue', 'Next.js', 'Node.js', 'Spring Boot', '.NET', 'Laravel', 'Django', 'Flask', 'Express', 'Tailwind', 'Bootstrap', 'TensorFlow', 'PyTorch'],
+        ides: ['VS Code', 'IntelliJ IDEA', 'WebStorm', 'PyCharm', 'Visual Studio', 'Xcode', 'Android Studio', 'Sublime Text', 'Vim', 'Eclipse'],
+        tools: ['Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'Google Cloud', 'Jira', 'Slack', 'Figma', 'Postman', 'Jenkins', 'Terraform', 'Ansible', 'Notion', 'Trello']
     };
+
+    // Auto-detection master list (Tech + Common Soft Skills/Business)
+    const AUTO_DETECT_KEYWORDS = [
+        ...Object.values(techSuggestions).flat(),
+        'Agile', 'Scrum', 'Kanban', 'Liderazgo', 'Management', 'Gestión de Proyectos', 
+        'Comunicación', 'Inglés', 'Marketing', 'Ventas', 'SaaS', 'B2B', 'B2C', 
+        'SEO', 'SEM', 'Analytics', 'Data Science', 'Machine Learning', 'AI', 
+        'Consultoría', 'Finanzas', 'Contabilidad', 'Recursos Humanos', 'Mentoring',
+        'Testing', 'QA', 'CI/CD', 'DevOps', 'Microservicios', 'API', 'REST', 'GraphQL'
+    ];
+
     const techLabels: Record<string, string> = {
         languages: 'Lenguajes',
         frameworks: 'Frameworks / Librerías',
@@ -98,6 +108,35 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         }
         setProfile(newProfile);
     }
+
+    const handleAutoDetectSkills = (index: number, text: string) => {
+        if (!text) return;
+        const currentSkills = new Set((profile.experience[index].skills || []).map(s => s.toLowerCase()));
+        const newSkills = [...(profile.experience[index].skills || [])];
+        let changed = false;
+
+        AUTO_DETECT_KEYWORDS.forEach(keyword => {
+            // Escape special characters to prevent "Nothing to repeat" error for C++, C#, etc.
+            const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // Use stricter boundaries than \b for keywords with symbols
+            // Matches start of line or non-word char -> keyword -> end of line or non-word char
+            // This allows matching "C++" in "Expert in C++" while avoiding "Go" in "Google"
+            const regex = new RegExp(`(?:^|[^a-zA-Z0-9_])${escapedKeyword}(?![a-zA-Z0-9_])`, 'i');
+            
+            if (regex.test(text) && !currentSkills.has(keyword.toLowerCase())) {
+                newSkills.push(keyword);
+                currentSkills.add(keyword.toLowerCase());
+                changed = true;
+            }
+        });
+
+        if (changed) {
+            const newExp = [...profile.experience];
+            newExp[index].skills = newSkills;
+            setProfile({ ...profile, experience: newExp });
+        }
+    };
 
     const handleAddTech = (cat: string, value: string) => {
         if (!value.trim()) return;
@@ -232,12 +271,18 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                         </div>
                                         
                                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <input 
-                                                className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-lg font-bold text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
-                                                value={exp.role} 
-                                                onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
-                                                placeholder="Cargo / Rol" 
-                                            />
+                                            <div className="relative">
+                                                <input 
+                                                    className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-lg font-bold text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
+                                                    value={exp.role} 
+                                                    onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                                    onBlur={(e) => handleAutoDetectSkills(idx, e.target.value)}
+                                                    placeholder="Cargo / Rol" 
+                                                />
+                                                <div className="absolute right-2 top-3 text-purple-400 opacity-50" title="Googlito Auto-Tagging activo">
+                                                    <Wand2 size={14} />
+                                                </div>
+                                            </div>
                                             <input 
                                                 className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-base text-primary font-medium placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
                                                 value={exp.company} 
@@ -271,14 +316,61 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                             className="w-full bg-surface border border-outline-variant rounded-xl p-4 text-sm leading-relaxed text-[var(--md-sys-color-on-background)] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all h-32" 
                                             value={exp.description} 
                                             onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].description = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                            onBlur={(e) => handleAutoDetectSkills(idx, e.target.value)}
                                             placeholder="Describe tus logros y responsabilidades..." 
                                         />
                                         <button 
                                             onClick={() => openJanice(exp.description, `Experiencia: ${exp.role}`, (txt) => { const newExp = [...profile.experience]; newExp[idx].description = txt; setProfile({ ...profile, experience: newExp }); })} 
-                                            className="absolute bottom-3 right-3 text-xs bg-tertiary-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:opacity-90 transition-opacity font-medium shadow-sm"
+                                            className="absolute bottom-3 right-3 text-xs bg-terti-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:opacity-90 transition-opacity font-medium shadow-sm"
                                         >
                                             <Sparkles size={12} /> Janice
                                         </button>
+                                    </div>
+
+                                    {/* Associated Skills */}
+                                    <div className="mt-4 pt-3 border-t border-outline-variant/20 md:pl-[4.5rem]">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <Star size={12} className="text-primary" />
+                                                <span className="text-xs font-bold text-outline uppercase tracking-wider">Skills asociadas (Mín. 3)</span>
+                                            </div>
+                                            <span className="text-[10px] text-purple-400 font-medium flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                                                <Wand2 size={10} /> Auto-detección activa
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(exp.skills || []).map((skill, sIdx) => (
+                                                <span key={sIdx} className="inline-flex items-center px-2.5 py-1.5 rounded-md bg-surface border border-outline-variant text-xs font-medium text-[var(--md-sys-color-on-background)] group/skill shadow-sm">
+                                                    {skill}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newExp = [...profile.experience];
+                                                            newExp[idx].skills = (newExp[idx].skills || []).filter((_, i) => i !== sIdx);
+                                                            setProfile({ ...profile, experience: newExp });
+                                                        }}
+                                                        className="ml-2 text-outline hover:text-error opacity-50 group-hover/skill:opacity-100 transition-opacity"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                            <input
+                                                className="text-xs bg-transparent border border-dashed border-outline-variant rounded-md px-2.5 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 min-w-[120px] placeholder-outline/50 transition-all hover:bg-surface-variant/30"
+                                                placeholder="+ Añadir Skill (Enter)"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const val = e.currentTarget.value.trim();
+                                                        if (val && !(exp.skills || []).includes(val)) {
+                                                            const newExp = [...profile.experience];
+                                                            newExp[idx].skills = [...(newExp[idx].skills || []), val];
+                                                            setProfile({ ...profile, experience: newExp });
+                                                            e.currentTarget.value = '';
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
 
                                     <button onClick={() => setProfile({ ...profile, experience: profile.experience.filter((_, i) => i !== idx) })} className="absolute top-4 right-4 p-2 text-outline hover:text-error hover:bg-error/10 rounded-full transition-colors opacity-0 group-hover:opacity-100">
@@ -287,7 +379,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                 </div>
                             ))}
                             {profile.experience.length === 0 && <EmptyState text="No se detectó experiencia." />}
-                            <Button variant="outline" onClick={() => setProfile({ ...profile, experience: [...profile.experience, { company: '', role: 'Nuevo Rol', period: '', description: '' }] })} icon={<Plus size={16} />}>Añadir Experiencia</Button>
+                            <Button variant="outline" onClick={() => setProfile({ ...profile, experience: [...profile.experience, { company: '', role: 'Nuevo Rol', period: '', description: '', skills: [] }] })} icon={<Plus size={16} />}>Añadir Experiencia</Button>
                         </div>
                     )}
 

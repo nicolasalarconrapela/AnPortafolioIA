@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { listenWorkspaceByUser } from '../services/firestoreWorkspaces';
 import { SettingsModal } from './SettingsModal';
 import { Button } from './ui/Button';
@@ -15,6 +15,8 @@ export interface ProfileData {
   avatarUrl?: string;
   skills?: string[];
   experiences?: ExperienceData[];
+  // Fallback for compatibility if data comes as 'experience'
+  experience?: ExperienceData[];
 }
 
 export interface ExperienceData {
@@ -44,6 +46,16 @@ const ExperienceCard: React.FC<{ role: string, company: string, period: string, 
     <p className="text-sm text-[var(--md-sys-color-on-background)]/80 leading-relaxed whitespace-pre-wrap">{desc}</p>
   </div>
 );
+
+// Common soft skills keywords for heuristic classification
+const SOFT_SKILLS_KEYWORDS = [
+    'liderazgo', 'leadership', 'comunicación', 'communication', 'teamwork', 'trabajo en equipo',
+    'time management', 'gestión del tiempo', 'adaptability', 'adaptabilidad', 'problem solving',
+    'resolución de problemas', 'empathy', 'empatía', 'creativity', 'creatividad',
+    'critical thinking', 'pensamiento crítico', 'collaboration', 'colaboración',
+    'resilience', 'resiliencia', 'negotiation', 'negociación', 'emotional intelligence',
+    'inteligencia emocional', 'scrum', 'agile', 'kanban', 'mentoring', 'coaching'
+];
 
 export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout, userId, onNavigate }) => {
   const [profile, setProfile] = useState<ProfileData>({
@@ -83,6 +95,58 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       setIsLoading(false);
     }
   }, [userId]);
+
+  const experienceList = profile.experiences || profile.experience || [];
+
+  // Logic to split and rank skills based on frequency in experience
+  const { techSkills, softSkills } = useMemo(() => {
+    if (!profile.skills || profile.skills.length === 0) {
+        return { techSkills: [], softSkills: [] };
+    }
+
+    // 1. Calculate frequency for all skills
+    const scoredSkills = profile.skills.map(skill => {
+        const skillLower = skill.toLowerCase();
+        let occurrences = 0;
+        
+        // Count occurrences in experience (Role + Description + Company)
+        experienceList.forEach(exp => {
+            const content = `${exp.role} ${exp.desc} ${exp.company}`.toLowerCase();
+            // Basic regex word boundary check could be better, but includes is robust enough for now
+            if (content.includes(skillLower)) {
+                occurrences++;
+            }
+        });
+
+        // Heuristic: Is it a soft skill?
+        const isSoft = SOFT_SKILLS_KEYWORDS.some(kw => skillLower.includes(kw));
+
+        // If occurrences is 0 but it's listed in skills, we give it a base score of 0.5 to show it exists
+        // but prioritize those with actual work evidence
+        const score = occurrences > 0 ? occurrences : 0.5;
+
+        return {
+            name: skill,
+            count: occurrences,
+            score,
+            isSoft
+        };
+    });
+
+    // 2. Split and Sort
+    const tech = scoredSkills
+        .filter(s => !s.isSoft)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5); // Top 5 Tech
+
+    const soft = scoredSkills
+        .filter(s => s.isSoft)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3); // Top 3 Soft
+
+    return { techSkills: tech, softSkills: soft };
+
+  }, [profile.skills, experienceList]);
 
   return (
     <div className="min-h-screen bg-surface-variant dark:bg-surface-darkVariant flex flex-col">
@@ -144,19 +208,12 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       {/* Main Portfolio Content */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 md:p-8 space-y-6">
         
-        {/* About Section */}
+        {/* Info & Skills Section */}
         <Card className="p-6 md:p-8 bg-[var(--md-sys-color-background)]">
             <div className="flex flex-col md:flex-row gap-8 items-start">
                 <div className="flex-1">
-                    <h2 className="text-2xl font-display font-bold mb-4 flex items-center gap-2">
-                        <Icon name="person" className="text-primary" />
-                        About Me
-                    </h2>
-                    <p className="text-base leading-relaxed text-[var(--md-sys-color-on-background)]/80 whitespace-pre-wrap">
-                        {profile.bio || "No biography provided yet. Use the AI Assistant to generate one!"}
-                    </p>
-                    
-                    <div className="mt-6 flex flex-wrap gap-4 text-sm text-outline">
+                    {/* Contact Info */}
+                    <div className="flex flex-wrap gap-4 text-sm text-outline mb-4">
                         {profile.location && (
                             <div className="flex items-center gap-1.5">
                                 <Icon name="location_on" size={18} />
@@ -172,19 +229,44 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
                     </div>
                 </div>
                 
-                {/* Skills - Desktop: Right side, Mobile: Bottom */}
-                <div className="w-full md:w-1/3">
-                    <h3 className="text-sm font-bold text-outline uppercase tracking-wider mb-3">Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {profile.skills && profile.skills.length > 0 ? (
-                            profile.skills.map((skill, i) => (
-                                <span key={i} className="px-3 py-1 bg-surface-variant text-[var(--md-sys-color-on-background)] text-xs font-medium rounded-lg border border-outline-variant/50">
-                                    {skill}
-                                </span>
-                            ))
-                        ) : (
-                            <span className="text-sm text-outline italic">No skills added</span>
-                        )}
+                {/* Skills Column - Split Tech/Soft */}
+                <div className="w-full md:w-1/3 flex flex-col gap-6">
+                    {/* Technical Skills - Blue/Primary */}
+                    <div>
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Icon name="code" size={14} /> Top 5 Tech Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {techSkills.length > 0 ? (
+                                techSkills.map((skill, i) => (
+                                    <span key={i} className="px-3 py-1 bg-primary-container text-primary-onContainer text-xs font-bold rounded-lg border border-primary/10 flex items-center gap-1.5" title={`Found in ${skill.count} jobs`}>
+                                        {skill.name}
+                                        {skill.count > 0 && <span className="opacity-60 font-normal text-[10px] ml-0.5">({skill.count})</span>}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-sm text-outline italic">No tech skills detected</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Soft Skills - Orange/Tertiary */}
+                    <div>
+                        <h3 className="text-xs font-bold text-tertiary uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Icon name="diversity_3" size={14} /> Top 3 Soft Skills
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {softSkills.length > 0 ? (
+                                softSkills.map((skill, i) => (
+                                    <span key={i} className="px-3 py-1 bg-tertiary-container text-tertiary-onContainer text-xs font-bold rounded-lg border border-tertiary/10 flex items-center gap-1.5" title={`Found in ${skill.count} jobs`}>
+                                        {skill.name}
+                                        {skill.count > 0 && <span className="opacity-60 font-normal text-[10px] ml-0.5">({skill.count})</span>}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-sm text-outline italic">No soft skills detected</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -198,8 +280,8 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             </h2>
             
             <div className="space-y-2">
-                {profile.experiences && profile.experiences.length > 0 ? (
-                    profile.experiences.map((exp, i) => (
+                {experienceList.length > 0 ? (
+                    experienceList.map((exp, i) => (
                         <ExperienceCard 
                             key={i}
                             role={exp.role}
