@@ -315,10 +315,10 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
           {onEdit && (
             <button
               onClick={onEdit}
-              className="flex items-center gap-2 px-4 py-2 bg-[#424559] hover:bg-[#2D2F3E] text-white rounded-full text-xs font-bold transition-all shadow-md active:scale-95"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 bg-[#424559] hover:bg-[#2D2F3E] text-white rounded-full text-xs font-bold transition-all shadow-md active:scale-95"
             >
               <Edit3 size={14} />
-              Edit Profile
+              <span className="hidden sm:inline">Edit Profile</span>
             </button>
           )}
 
@@ -587,9 +587,9 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
 
       {/* Floating Chat Interface */}
       {isChatOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[400px] h-[600px] max-h-[80vh] bg-white rounded-[24px] shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-fade-scale-up">
+        <div className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 z-50 w-full h-full md:w-[400px] md:h-[600px] md:max-h-[80vh] bg-white md:rounded-[24px] shadow-2xl border-none md:border border-slate-200 flex flex-col overflow-hidden animate-fade-scale-up">
           {/* Chat Header */}
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
+          <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md overflow-hidden ${isOffline ? 'grayscale' : ''}`}>
                 <img src="/donna_avatar.png" alt="Donna AI" className="w-full h-full object-cover" />
