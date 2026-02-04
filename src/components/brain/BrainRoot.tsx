@@ -8,12 +8,18 @@ import { cleanProfile } from '../../utils/profileUtils';
 import { RotenmeirView } from './RotenmeirView';
 import { GooglitoWizard } from './GooglitoWizard';
 import { DonnaView } from './DonnaView';
+import { getWorkspaceChildDocument, upsertWorkspaceChildDocument } from '../../services/firestoreWorkspaces';
 
-function App() {
+interface BrainRootProps {
+    userId: string;
+}
+
+function BrainRoot({ userId }: BrainRootProps) {
     const [appState, setAppState] = useState<AppState>(AppState.IDLE);
     const [currentStep, setCurrentStep] = useState(0);
     const [profile, setProfile] = useState<CVProfile | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Rotenmeir state
     const [isDragging, setIsDragging] = useState(false);
@@ -29,6 +35,75 @@ function App() {
 
     const { processFile } = useFileProcessing(geminiServiceRef, setProfile, setAppState, setError, setCurrentStep);
     const { chat, setChat, input, setInput, loading: donnaLoading, activeTab: donnaActiveTab, setActiveTab: setDonnaActiveTab, handleSend: handleDonnaSend, isOffline, setIsOffline, suggestedQuestions } = useDonna(geminiServiceRef, profile);
+
+    // Load data from Firestore
+    useEffect(() => {
+        if (!userId) {
+            setIsLoaded(true);
+            return;
+        }
+
+        const loadData = async () => {
+            try {
+                const data = await getWorkspaceChildDocument(userId, "brain", "data");
+                if (data) {
+                    if (data.profile) setProfile(data.profile);
+                    if (data.appState) {
+                        setAppState(data.appState as AppState);
+                        // If we are in DONNA state, ensure we scroll to bottom
+                        if (data.appState === AppState.DONNA) {
+                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 500);
+                        }
+                    }
+                    if (typeof data.currentStep === 'number') setCurrentStep(data.currentStep);
+                    if (typeof data.isOffline === 'boolean') setIsOffline(data.isOffline);
+
+                    if (data.chat && Array.isArray(data.chat)) {
+                        const restoredChat = data.chat.map((msg: any) => ({
+                            ...msg,
+                            timestamp: new Date(msg.timestamp)
+                        }));
+                        setChat(restoredChat);
+                    }
+                }
+            } catch (error) {
+                console.error("BrainRoot: Failed to load data", error);
+            } finally {
+                setIsLoaded(true);
+            }
+        };
+
+        loadData();
+    }, [userId, setChat, setIsOffline]); // Added deps
+
+    // Save data to Firestore (Debounced or on change)
+    useEffect(() => {
+        if (!userId || !isLoaded) return;
+
+        // Don't save if in IDLE and no profile (empty state) unless we want to persist "reset"
+        // But if we just loaded IDLE, we might not want to write it back immediately if it didn't change.
+        // Simplified: Save whenever relevant state changes.
+
+        const saveData = async () => {
+            const dataToSave = {
+                profile,
+                appState,
+                chat,
+                currentStep,
+                isOffline,
+                lastUpdated: new Date().toISOString()
+            };
+
+            try {
+                await upsertWorkspaceChildDocument(userId, "brain", "data", dataToSave);
+            } catch (error) {
+                console.error("BrainRoot: Failed to save data", error);
+            }
+        };
+
+        const timeoutId = setTimeout(saveData, 1000); // 1s debounce
+        return () => clearTimeout(timeoutId);
+    }, [userId, isLoaded, profile, appState, chat, currentStep, isOffline]);
 
     useEffect(() => {
         if (appState === AppState.DONNA) {
@@ -125,4 +200,4 @@ function App() {
     );
 }
 
-export default App;
+export default BrainRoot;

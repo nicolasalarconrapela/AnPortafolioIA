@@ -194,7 +194,7 @@ const AppContent: React.FC = () => {
       )}
 
       {view === 'cv-analysis' && (
-        <BrainRoot />
+        <BrainRoot userId={currentUserId} />
       )}
 
       {/* Footer Links (Privacy & Settings) */}
