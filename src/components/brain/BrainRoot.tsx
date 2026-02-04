@@ -15,9 +15,10 @@ interface BrainRootProps {
   onSettings?: () => void;
   onLogout?: () => void;
   onEditProfile?: () => void;
+  shareToken?: string;
 }
 
-function BrainRoot({ userId, onSettings, onLogout, onEditProfile }: BrainRootProps) {
+function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: BrainRootProps) {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<CVProfile | null>(null);
@@ -58,6 +59,17 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile }: BrainRootPro
               setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 500);
             }
           }
+          // The child document 'brain/data' might not have the shareToken, as it is usually on the main workspace doc.
+          // However, we can try to fetch the main workspace doc if needed, or check if 'data.shareToken' was saved here.
+          // Currently, shareToken is on the ROOT workspace doc (getWorkspaceByUserFromFirestore).
+          // BrainRoot only loads 'brain/data' subcollection.
+          // We should probably pass shareToken as a PROP from App.tsx instead of fetching it here again?
+          // OR assume the user provided ID is the userKey, so we can construct the link? No, we need the token.
+
+          // Let's assume for now we don't fetch it here to avoid complexity unless passed.
+          // Wait, 'userId' is the userKey usually.
+          // If we want consistency, we should pass shareToken as a prop.
+
           if (typeof data.currentStep === 'number') setCurrentStep(data.currentStep);
           if (typeof data.isOffline === 'boolean') setIsOffline(data.isOffline);
 
@@ -137,6 +149,17 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile }: BrainRootPro
     downloadAnchorNode.remove();
   };
 
+  const handleShare = () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}/?token=${shareToken}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert("Public Profile Link copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy", err);
+      alert("Link: " + url);
+    });
+  };
+
   const onFinishWizard = async () => {
     if (profile) {
       const cleanedProfile = cleanProfile(profile);
@@ -200,6 +223,7 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile }: BrainRootPro
           onSettings={onSettings}
           onLogout={onLogout}
           onEdit={onEditProfile || (() => setAppState(AppState.WIZARD))}
+          onShare={shareToken ? handleShare : undefined}
         />
       )}
     </div>

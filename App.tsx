@@ -18,10 +18,11 @@ import { loggingService } from './src/utils/loggingService';
 import { getWorkspaceByUserFromFirestore, getPublicProfile } from './src/services/firestoreWorkspaces';
 import { authService } from './src/services/authService';
 
+// Custom type for extended view state
+type ExtendedViewState = ViewState | 'privacy-policy' | 'public-profile';
 
-// Extend ViewState locally if needed or assume it's updated in types.ts
-// For now, we cast strings if types aren't updated yet to avoid breaking compile
-type ExtendedViewState = ViewState | 'privacy-policy';
+import { PublicProfileViewer } from './src/components/brain/PublicProfileViewer';
+import { CVProfile } from './src/types_brain';
 
 const AppContent: React.FC = () => {
   // Session State (No LocalStorage)
@@ -30,6 +31,8 @@ const AppContent: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [publicProfile, setPublicProfile] = useState<CVProfile | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -65,7 +68,14 @@ const AppContent: React.FC = () => {
         if (publicToken) {
           const publicProfileData = await getPublicProfile(publicToken);
           if (publicProfileData && publicProfileData.profile) {
-            setUserProfile(publicProfileData.profile);
+            // Identify if it is a full CVProfile or just UserProfile
+            const p = publicProfileData.profile;
+            if (p.experience || p.education || p.summary) {
+              setPublicProfile(p as CVProfile);
+              setView('public-profile');
+            } else {
+              setUserProfile(p);
+            }
             // We don't set CurrentUserId/IsAuthenticated, so we are in "Public View Mode"
             setIsSessionChecking(false);
             return;
@@ -84,6 +94,9 @@ const AppContent: React.FC = () => {
             const ws = await getWorkspaceByUserFromFirestore(user.uid);
             if (ws && ws.profile) {
               setUserProfile(ws.profile);
+            }
+            if (ws && ws.shareToken) {
+              setShareToken(ws.shareToken);
             }
 
             // 3. Logic to decide if we stay on landing or go to dashboard
@@ -127,6 +140,9 @@ const AppContent: React.FC = () => {
       const ws = await getWorkspaceByUserFromFirestore(user.uid);
       if (ws && ws.profile) {
         setUserProfile(ws.profile);
+      }
+      if (ws && ws.shareToken) {
+        setShareToken(ws.shareToken);
       }
     } catch (e) {
       console.error("Failed to fetch profile on login success", e);
@@ -211,6 +227,7 @@ const AppContent: React.FC = () => {
             userId={currentUserId}
             onLogout={handleLogout}
             onSettings={() => setIsSettingsOpen(true)}
+            shareToken={shareToken || undefined}
           />
           {isSettingsOpen && (
             <SettingsModal
@@ -220,6 +237,10 @@ const AppContent: React.FC = () => {
             />
           )}
         </>
+      )}
+
+      {view === 'public-profile' && publicProfile && (
+        <PublicProfileViewer profile={publicProfile} />
       )}
 
       {/* Footer Links (Privacy & Settings) */}

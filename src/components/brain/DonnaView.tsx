@@ -28,6 +28,7 @@ interface DonnaViewProps {
   onEdit?: () => void;
   onSettings?: () => void;
   onLogout?: () => void;
+  onShare?: () => void;
 }
 
 export const DonnaView: React.FC<DonnaViewProps> = ({
@@ -47,7 +48,8 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
   onExportJSON,
   onEdit,
   onSettings,
-  onLogout
+  onLogout,
+  onShare
 }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -286,29 +288,39 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
       >
         {/* Left Side: Back */}
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="group flex items-center gap-2.5 px-3 py-1.5 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 dark:text-slate-400 dark:hover:text-slate-100"
-            aria-label="Back to editor"
-          >
-            <div className="p-1.5 rounded-full bg-white shadow-sm border border-slate-100 group-hover:border-slate-300 group-hover:shadow transition-all dark:bg-slate-800 dark:border-slate-700">
-              <ChevronLeft size={16} className="text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-100" aria-hidden="true" />
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="group flex items-center gap-2.5 px-3 py-1.5 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 dark:text-slate-400 dark:hover:text-slate-100"
+              aria-label="Back to editor"
+            >
+              <div className="p-1.5 rounded-full bg-white shadow-sm border border-slate-100 group-hover:border-slate-300 group-hover:shadow transition-all dark:bg-slate-800 dark:border-slate-700">
+                <ChevronLeft size={16} className="text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-100" aria-hidden="true" />
+              </div>
+              <span className="hidden sm:inline font-display">Back to Editor</span>
+            </button>
+          )}
+          {!onBack && (
+            <div className="flex items-center gap-2 opacity-70">
+              <Bot size={20} className="text-slate-500" />
+              <span className="font-display font-bold text-slate-700">AnPortafolio</span>
             </div>
-            <span className="hidden sm:inline font-display">Back to Editor</span>
-          </button>
+          )}
         </div>
 
         {/* Right Section Cluster */}
         <div className="flex items-center gap-3">
           {/* Edit Profile Button (Capsule) */}
-          <button
-            onClick={onEdit || onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-[#424559] hover:bg-[#2D2F3E] text-white rounded-full text-xs font-bold transition-all shadow-md active:scale-95"
-          >
-            <Edit3 size={14} />
-            Edit Profile
-          </button>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-2 px-4 py-2 bg-[#424559] hover:bg-[#2D2F3E] text-white rounded-full text-xs font-bold transition-all shadow-md active:scale-95"
+            >
+              <Edit3 size={14} />
+              Edit Profile
+            </button>
+          )}
 
           {/* Download Button (Optional) */}
           {onExportJSON && (
@@ -322,26 +334,44 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </button>
           )}
 
-          {/* Far Right: Actions (Settings & Logout) replaces Preview Mode position */}
-          <div className="flex items-center gap-2 pl-4 border-l border-slate-200/60 ml-1">
-            {/* Settings Button (Circle) */}
+          {/* Share Button (New) */}
+          {onShare && (
             <button
-              onClick={onSettings}
-              className="p-2 bg-white hover:bg-slate-50 text-slate-500 border border-slate-200 rounded-full transition-all shadow-sm hover:shadow active:scale-95 dark:bg-slate-800 dark:border-slate-700"
-              aria-label="Settings"
+              onClick={onShare}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border border-indigo-200"
+              title="Share Public Link"
             >
-              <Settings size={18} />
+              <Globe size={12} />
+              Share
             </button>
+          )}
 
-            {/* Logout Button (Circle - Pinkish) */}
-            <button
-              onClick={onLogout}
-              className="p-2 bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-full transition-all shadow-sm hover:shadow active:scale-95 dark:bg-red-900/20 dark:border-red-900/40"
-              aria-label="Logout"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
+          {/* Far Right: Actions (Settings & Logout) */}
+          {(onSettings || onLogout) && (
+            <div className="flex items-center gap-2 pl-4 border-l border-slate-200/60 ml-1">
+              {/* Settings Button (Circle) */}
+              {onSettings && (
+                <button
+                  onClick={onSettings}
+                  className="p-2 bg-white hover:bg-slate-50 text-slate-500 border border-slate-200 rounded-full transition-all shadow-sm hover:shadow active:scale-95 dark:bg-slate-800 dark:border-slate-700"
+                  aria-label="Settings"
+                >
+                  <Settings size={18} />
+                </button>
+              )}
+
+              {/* Logout Button (Circle - Pinkish) */}
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="p-2 bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-full transition-all shadow-sm hover:shadow active:scale-95 dark:bg-red-900/20 dark:border-red-900/40"
+                  aria-label="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 

@@ -22,6 +22,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentWizardStep, setCurrentWizardStep] = useState(1);
+  const [shareToken, setShareToken] = useState<string | null>(null);
 
   // Gemini & Donna State
   const geminiServiceRef = useRef<GeminiService | null>(null);
@@ -53,6 +54,9 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
         (data) => {
           setIsLoading(false);
           if (data && data.profile) {
+            if (data.shareToken) {
+              setShareToken(data.shareToken);
+            }
             // Map Firestore data to CVProfile structure if needed
             // Assuming Onboarding saved it correctly, but providing fallbacks
             const rawProfile = data.profile;
@@ -150,6 +154,17 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
     downloadAnchorNode.remove();
   };
 
+  const handleShare = () => {
+    if (!shareToken) return;
+    const url = `${window.location.origin}/?token=${shareToken}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert("Public Profile Link copied to clipboard!");
+    }).catch(err => {
+      console.error("Failed to copy", err);
+      alert("Link: " + url);
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
@@ -222,6 +237,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
           onEdit={() => setIsEditing(true)}
           onSettings={() => setIsSettingsOpen(true)}
           onLogout={onLogout}
+          onShare={shareToken ? handleShare : undefined}
         />
       )}
     </div>
