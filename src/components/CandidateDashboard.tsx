@@ -71,7 +71,8 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
               volunteering: Array.isArray(rawProfile.volunteering) ? rawProfile.volunteering : [],
               awards: Array.isArray(rawProfile.awards) ? rawProfile.awards : [],
               languages: Array.isArray(rawProfile.languages) ? rawProfile.languages : [],
-              hobbies: Array.isArray(rawProfile.hobbies) ? rawProfile.hobbies : []
+              hobbies: Array.isArray(rawProfile.hobbies) ? rawProfile.hobbies : [],
+              donnaImage: rawProfile.donnaImage
             };
             setProfile(safeProfile);
 
@@ -139,7 +140,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
     } catch (e) {
       loggingService.error("Error saving profile", e);
-      alert("Error al guardar los cambios.");
+      alert("Error al guardar los cambios." + e);
     }
   };
 

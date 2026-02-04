@@ -409,9 +409,16 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                       </h2>
                     )}
 
-                    <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-[1.1] mb-6 tracking-tight">
-                      {profile.experience[0]?.role || "Senior Technical Professional"}
-                    </h1>
+                    <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 mt-2">
+                      {profile.donnaImage && (
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 shrink-0 bg-slate-100">
+                          <img src={profile.donnaImage} alt={profile.fullName} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-[1.1] tracking-tight">
+                        {profile.experience[0]?.role || "Senior Technical Professional"}
+                      </h1>
+                    </div>
 
                     <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-3xl font-light">
                       {profile.summary || "Experienced professional ready to deliver impact and drive innovation in forward-thinking teams."}

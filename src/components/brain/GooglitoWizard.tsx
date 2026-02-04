@@ -16,6 +16,7 @@ import { GretchenModal } from './GretchenModal';
 import { JaniceModal } from './JaniceModal';
 import { SidePanel } from './SidePanel';
 import { CVProfile } from '../../types_brain';
+import { compressImage } from '../../utils/imageUtils';
 
 interface GooglitoWizardProps {
     currentStep: number;
@@ -40,7 +41,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     const [janiceData, setJaniceData] = useState<{ text: string, context: string, callback: (t: string) => void } | null>(null);
     const [gretchenOpen, setGretchenOpen] = useState(false);
     const [techInputs, setTechInputs] = useState<Record<string, string>>({ languages: '', frameworks: '', ides: '', tools: '' });
-    
+
     // Side Panel State
     const [isPanelOpen, setIsPanelOpen] = useState(true);
 
@@ -74,9 +75,9 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     // Auto-detection master list (Tech + Common Soft Skills/Business)
     const AUTO_DETECT_KEYWORDS = [
         ...Object.values(techSuggestions).flat(),
-        'Agile', 'Scrum', 'Kanban', 'Liderazgo', 'Management', 'Gestión de Proyectos', 
-        'Comunicación', 'Inglés', 'Marketing', 'Ventas', 'SaaS', 'B2B', 'B2C', 
-        'SEO', 'SEM', 'Analytics', 'Data Science', 'Machine Learning', 'AI', 
+        'Agile', 'Scrum', 'Kanban', 'Liderazgo', 'Management', 'Gestión de Proyectos',
+        'Comunicación', 'Inglés', 'Marketing', 'Ventas', 'SaaS', 'B2B', 'B2C',
+        'SEO', 'SEM', 'Analytics', 'Data Science', 'Machine Learning', 'AI',
         'Consultoría', 'Finanzas', 'Contabilidad', 'Recursos Humanos', 'Mentoring',
         'Testing', 'QA', 'CI/CD', 'DevOps', 'Microservicios', 'API', 'REST', 'GraphQL'
     ];
@@ -87,7 +88,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         ides: 'Entornos (IDEs)',
         tools: 'Herramientas / Cloud'
     };
-    
+
     const steps = [
         null,
         { id: 'exp', title: 'Experiencia', icon: <Briefcase size={18} />, desc: 'Define tu trayectoria profesional.', ai: 'Googlito Experto' },
@@ -134,7 +135,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         AUTO_DETECT_KEYWORDS.forEach(keyword => {
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const regex = new RegExp(`(?:^|[^a-zA-Z0-9_])${escapedKeyword}(?![a-zA-Z0-9_])`, 'i');
-            
+
             if (regex.test(text) && !currentSkills.has(keyword.toLowerCase())) {
                 newSkills.push(keyword);
                 currentSkills.add(keyword.toLowerCase());
@@ -198,7 +199,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         <div className="min-h-screen bg-[var(--md-sys-color-background)] flex flex-col text-[var(--md-sys-color-on-background)] overflow-hidden">
             <JaniceModal isOpen={janiceOpen} onClose={() => setJaniceOpen(false)} initialText={janiceData?.text || ''} context={janiceData?.context || ''} onApply={janiceData?.callback || (() => { })} />
             <GretchenModal isOpen={gretchenOpen} onClose={() => setGretchenOpen(false)} sectionName={step.title} sectionData={getSectionDataForGretchen(currentStep)} onApplyFix={handleGretchenFix} />
-            
+
             {/* Top Bar Navigation */}
             <header className="bg-[var(--md-sys-color-background)] border-b border-outline-variant/30 sticky top-0 z-30 backdrop-blur-md bg-opacity-90 flex-none h-[65px]">
                 <div className="px-4 h-full flex items-center justify-between">
@@ -208,7 +209,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </div>
                         <span className="font-display font-medium text-lg hidden md:block">Googlito System</span>
                     </div>
-                    
+
                     {/* Horizontal Scrollable Tabs (Center) */}
                     <div ref={navRef} className="flex-1 flex overflow-x-auto no-scrollbar px-4 h-full items-end gap-1 md:gap-2">
                         {steps.slice(1).map((s, idx) => {
@@ -221,8 +222,8 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                     onClick={() => setCurrentStep(stepIndex)}
                                     className={`
                                         flex items-center gap-2 px-3 py-2 border-b-2 transition-all whitespace-nowrap text-sm font-medium mb-[-1px]
-                                        ${isActive 
-                                            ? 'border-primary text-primary' 
+                                        ${isActive
+                                            ? 'border-primary text-primary'
                                             : 'border-transparent text-outline hover:text-[var(--md-sys-color-on-background)] hover:bg-surface-variant/30 rounded-t-lg'
                                         }
                                     `}
@@ -237,7 +238,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                     </div>
 
                     <div className="flex items-center gap-3">
-                         <button 
+                        <button
                             onClick={() => setIsPanelOpen(!isPanelOpen)}
                             className={`p-2 rounded-full transition-colors ${isPanelOpen ? 'bg-primary text-white' : 'text-outline hover:bg-surface-variant'}`}
                             title="Toggle Context Panel"
@@ -257,12 +258,12 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                 {/* Main Wizard Area */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in pb-24 relative">
                     <div className="max-w-4xl mx-auto">
-                        <SectionHeader 
-                            title={step.title} 
-                            description={step.desc} 
-                            icon={step.icon} 
-                            aiName={step.ai} 
-                            onGretchenClick={() => setGretchenOpen(true)} 
+                        <SectionHeader
+                            title={step.title}
+                            description={step.desc}
+                            icon={step.icon}
+                            aiName={step.ai}
+                            onGretchenClick={() => setGretchenOpen(true)}
                         />
 
                         <div className="space-y-6">
@@ -277,40 +278,37 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                         <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-10 h-10 object-contain" />
                                                         <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity cursor-pointer text-white">
                                                             <Upload size={16} />
-                                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                            <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                                                                 const file = e.target.files?.[0];
                                                                 if (file) {
-                                                                    const reader = new FileReader();
-                                                                    reader.onloadend = () => {
-                                                                        const newExp = [...profile.experience];
-                                                                        newExp[idx].logo = reader.result as string;
-                                                                        setProfile({ ...profile, experience: newExp });
-                                                                    };
-                                                                    reader.readAsDataURL(file);
+                                                                    const compressed = await compressImage(file, 200, 200, 0.8);
+                                                                    const newExp = [...profile.experience];
+                                                                    newExp[idx].logo = compressed;
+                                                                    setProfile({ ...profile, experience: newExp });
                                                                 }
                                                             }} />
                                                         </label>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="relative">
-                                                        <input 
-                                                            className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-lg font-bold text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
-                                                            value={exp.role} 
-                                                            onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                                        <input
+                                                            className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-lg font-bold text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-lg"
+                                                            value={exp.role}
+                                                            onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].role = e.target.value; setProfile({ ...profile, experience: newExp }); }}
                                                             onBlur={(e) => handleAutoDetectSkills(idx, e.target.value)}
-                                                            placeholder="Cargo / Rol" 
+                                                            placeholder="Cargo / Rol"
                                                         />
                                                         <div className="absolute right-2 top-3 text-purple-400 opacity-50" title="Googlito Auto-Tagging activo">
                                                             <Wand2 size={14} />
                                                         </div>
                                                     </div>
-                                                    <input 
-                                                        className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-base text-primary font-medium placeholder-outline/50 outline-none transition-colors rounded-t-lg" 
-                                                        value={exp.company} 
-                                                        onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
-                                                        placeholder="Empresa" 
+                                                    <input
+                                                        className="w-full bg-surface border-b-2 border-outline-variant focus:border-primary px-3 py-2 text-base text-primary font-medium placeholder-outline/50 outline-none transition-colors rounded-t-lg"
+                                                        value={exp.company}
+                                                        onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].company = e.target.value; setProfile({ ...profile, experience: newExp }); }}
+                                                        placeholder="Empresa"
                                                     />
                                                 </div>
                                             </div>
@@ -335,15 +333,15 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
 
                                             {/* Description */}
                                             <div className="relative pl-0 md:pl-[4.5rem]">
-                                                <textarea 
-                                                    className="w-full bg-surface border border-outline-variant rounded-xl p-4 text-sm leading-relaxed text-[var(--md-sys-color-on-background)] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all h-32" 
-                                                    value={exp.description} 
-                                                    onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].description = e.target.value; setProfile({ ...profile, experience: newExp }); }} 
+                                                <textarea
+                                                    className="w-full bg-surface border border-outline-variant rounded-xl p-4 text-sm leading-relaxed text-[var(--md-sys-color-on-background)] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all h-32"
+                                                    value={exp.description}
+                                                    onChange={(e) => { const newExp = [...profile.experience]; newExp[idx].description = e.target.value; setProfile({ ...profile, experience: newExp }); }}
                                                     onBlur={(e) => handleAutoDetectSkills(idx, e.target.value)}
-                                                    placeholder="Describe tus logros y responsabilidades..." 
+                                                    placeholder="Describe tus logros y responsabilidades..."
                                                 />
-                                                <button 
-                                                    onClick={() => openJanice(exp.description, `Experiencia: ${exp.role}`, (txt) => { const newExp = [...profile.experience]; newExp[idx].description = txt; setProfile({ ...profile, experience: newExp }); })} 
+                                                <button
+                                                    onClick={() => openJanice(exp.description, `Experiencia: ${exp.role}`, (txt) => { const newExp = [...profile.experience]; newExp[idx].description = txt; setProfile({ ...profile, experience: newExp }); })}
                                                     className="absolute bottom-3 right-3 text-xs bg-terti-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:opacity-90 transition-opacity font-medium shadow-sm"
                                                 >
                                                     <Sparkles size={12} /> Janice
@@ -409,7 +407,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                             {currentStep === 2 && (
                                 <div className="bg-surface-variant/20 p-6 rounded-[24px] border border-outline-variant/40">
                                     <div className="mb-6 bg-secondary-container/30 p-4 rounded-xl text-sm text-secondary-onContainer border border-secondary-container/50 flex items-start gap-3">
-                                        <Star className="shrink-0 mt-0.5" size={16}/>
+                                        <Star className="shrink-0 mt-0.5" size={16} />
                                         <p>Añade una mezcla de habilidades técnicas (Hard Skills) y blandas (Soft Skills) para un perfil equilibrado.</p>
                                     </div>
                                     <div className="flex flex-wrap gap-3">
@@ -432,9 +430,9 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                         <div key={cat} className="bg-surface p-6 rounded-[24px] border border-outline-variant/40 shadow-sm flex flex-col h-full hover:shadow-elevation-1 transition-shadow">
                                             <div className="flex justify-between items-center mb-6">
                                                 <h3 className="text-sm font-bold text-primary uppercase tracking-wider">{techLabels[cat]}</h3>
-                                                <span className="text-xs font-bold text-secondary-onContainer bg-secondary-container px-2.5 py-1 rounded-full">{ (profile.techStack as any)[cat].length }</span>
+                                                <span className="text-xs font-bold text-secondary-onContainer bg-secondary-container px-2.5 py-1 rounded-full">{(profile.techStack as any)[cat].length}</span>
                                             </div>
-                                            
+
                                             <div className="flex flex-wrap gap-2 mb-6 min-h-[40px]">
                                                 {(profile.techStack as any)[cat]?.map((item: string, idx: number) => (
                                                     <span key={idx} className="group bg-surface-variant/50 text-[var(--md-sys-color-on-background)] px-3 py-1.5 rounded-lg text-xs font-medium border border-outline-variant flex items-center gap-2 hover:bg-surface-variant transition-colors">
@@ -491,11 +489,11 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                         <div key={idx} className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 shadow-sm relative group">
                                             <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                                                 <div className="w-full">
-                                                    <input 
-                                                        className="w-full text-lg font-bold text-primary bg-transparent border-b border-transparent hover:border-outline-variant focus:border-primary p-0 outline-none transition-colors" 
-                                                        value={proj.name} 
-                                                        onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }} 
-                                                        placeholder="Nombre del Proyecto" 
+                                                    <input
+                                                        className="w-full text-lg font-bold text-primary bg-transparent border-b border-transparent hover:border-outline-variant focus:border-primary p-0 outline-none transition-colors"
+                                                        value={proj.name}
+                                                        onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }}
+                                                        placeholder="Nombre del Proyecto"
                                                     />
                                                 </div>
                                                 <div className="flex items-center gap-2 shrink-0">
@@ -523,7 +521,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                     <Code size={16} className="text-outline" />
                                                     <input className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-transparent border-none outline-none placeholder-outline/50" value={proj.technologies} onChange={(e) => { const newP = [...profile.projects]; newP[idx].technologies = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Stack (React, Node, AWS...)" />
                                                 </div>
-                                                
+
                                                 <div className="flex items-start gap-3">
                                                     <Image size={16} className="text-outline mt-1.5" />
                                                     <div className="flex-1 flex flex-wrap gap-2">
@@ -638,9 +636,9 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bold text-sm text-[var(--md-sys-color-on-background)]">{social.network}</p>
-                                                    <input 
-                                                        className="w-full bg-transparent border-none p-0 text-xs text-outline outline-none" 
-                                                        value={social.url} 
+                                                    <input
+                                                        className="w-full bg-transparent border-none p-0 text-xs text-outline outline-none"
+                                                        value={social.url}
                                                         onChange={(e) => {
                                                             const newSocials = [...(profile.socials || [])];
                                                             newSocials[idx].url = e.target.value;
@@ -648,11 +646,11 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                         }}
                                                     />
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={() => {
                                                         const newSocials = [...(profile.socials || [])];
                                                         setProfile({ ...profile, socials: newSocials.filter((_, i) => i !== idx) });
-                                                    }} 
+                                                    }}
                                                     className="text-outline hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
                                                     <X size={16} />
@@ -660,23 +658,23 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                             </div>
                                         ))}
                                     </div>
-                                    
+
                                     <div className="p-4 bg-surface-variant/30 rounded-xl border border-dashed border-outline-variant flex flex-col md:flex-row gap-3 items-end md:items-center">
                                         <div className="flex-1 w-full space-y-3 md:space-y-0 md:flex md:gap-3">
-                                            <select 
+                                            <select
                                                 className="bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:border-primary w-full md:w-1/3"
                                                 id="new-social-network"
                                             >
                                                 <option value="">Selecciona Red...</option>
                                                 {professionalNetworks.map(n => <option key={n} value={n}>{n}</option>)}
                                             </select>
-                                            <input 
+                                            <input
                                                 className="bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:border-primary w-full md:flex-1"
                                                 placeholder="URL del perfil (https://...)"
                                                 id="new-social-url"
                                             />
                                         </div>
-                                        <Button 
+                                        <Button
                                             onClick={() => {
                                                 const netSelect = document.getElementById('new-social-network') as HTMLSelectElement;
                                                 const urlInput = document.getElementById('new-social-url') as HTMLInputElement;
@@ -686,7 +684,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                                                     try {
                                                         const urlParts = new URL(urlInput.value).pathname.split('/').filter(Boolean);
                                                         username = urlParts[urlParts.length - 1] || '';
-                                                    } catch (e) {}
+                                                    } catch (e) { }
 
                                                     newSocials.push({
                                                         network: netSelect.value,
@@ -710,9 +708,63 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                             {currentStep === 10 && (
                                 <div className="space-y-6">
                                     <div className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 relative shadow-sm">
+                                        <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
+                                            {/* Avatar Upload Section */}
+                                            <div className="shrink-0">
+                                                <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Imagen Perfil Donna</h3>
+                                                <div className="relative group/avatar w-32 h-32 rounded-3xl bg-surface-variant overflow-hidden border-2 border-outline-variant border-dashed hover:border-primary transition-all flex items-center justify-center">
+                                                    {profile.donnaImage ? (
+                                                        <img src={profile.donnaImage} alt="Donna Avatar" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-2 text-outline opacity-50">
+                                                            <User size={32} />
+                                                            <span className="text-[10px] uppercase font-bold">Sin foto</span>
+                                                        </div>
+                                                    )}
+                                                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity">
+                                                        <Upload size={24} className="mb-1" />
+                                                        <span className="text-[10px] font-bold uppercase">Subir Foto</span>
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={async (e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) {
+                                                                    const compressed = await compressImage(file, 600, 600, 0.7);
+                                                                    setProfile({ ...profile, donnaImage: compressed });
+                                                                }
+                                                            }}
+                                                        />
+                                                    </label>
+                                                    {profile.donnaImage && (
+                                                        <button
+                                                            onClick={(e) => { e.preventDefault(); setProfile({ ...profile, donnaImage: undefined }); }}
+                                                            className="absolute top-1 right-1 p-1 bg-red-100 text-red-600 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Full Name Input (Optional upgrade if needed, but we have fullName in profile) */}
+                                            <div className="flex-1 w-full">
+                                                <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Nombre Completo</h3>
+                                                <input
+                                                    className="w-full bg-surface-variant/20 border-b-2 border-outline-variant focus:border-primary px-4 py-3 text-2xl font-display font-medium text-[var(--md-sys-color-on-background)] placeholder-outline/50 outline-none transition-colors rounded-t-xl"
+                                                    value={profile.fullName || ''}
+                                                    onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                                                    placeholder="Tu nombre real"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Resumen Ejecutivo</h3>
-                                        <textarea className="w-full text-base leading-relaxed text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant rounded-xl p-6 h-64 outline-none resize-none focus:border-primary transition-all" value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })} placeholder="Escribe un resumen profesional..." />
-                                        <button onClick={() => openJanice(profile.summary, `Resumen Profesional`, (txt) => setProfile({ ...profile, summary: txt }))} className="absolute bottom-5 right-5 text-xs bg-tertiary-container text-tertiary-onContainer px-4 py-2 rounded-full flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow font-medium"><Sparkles size={14} /> Janice: Mejorar Redacción</button>
+                                        <div className="relative">
+                                            <textarea className="w-full text-base leading-relaxed text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant rounded-xl p-6 h-64 outline-none resize-none focus:border-primary transition-all" value={profile.summary} onChange={(e) => setProfile({ ...profile, summary: e.target.value })} placeholder="Escribe un resumen profesional..." />
+                                            <button onClick={() => openJanice(profile.summary, `Resumen Profesional`, (txt) => setProfile({ ...profile, summary: txt }))} className="absolute bottom-5 right-5 text-xs bg-tertiary-container text-tertiary-onContainer px-4 py-2 rounded-full flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow font-medium"><Sparkles size={14} /> Janice: Mejorar Redacción</button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -787,8 +839,8 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                             <Button variant="ghost" onClick={() => { if (currentStep > 0) setCurrentStep(currentStep - 1); }} disabled={currentStep === 0} className="px-4">
                                 <ChevronLeft className="w-4 h-4 mr-2" /> Anterior
                             </Button>
-                            <Button 
-                                onClick={currentStep === 11 ? onFinish : () => setCurrentStep(currentStep + 1)} 
+                            <Button
+                                onClick={currentStep === 11 ? onFinish : () => setCurrentStep(currentStep + 1)}
                                 className="px-8 shadow-elevation-2"
                                 variant={currentStep === 11 ? 'primary' : 'secondary'}
                             >
