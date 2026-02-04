@@ -21,10 +21,16 @@ import { authService } from './services/authService';
 const AppContent: React.FC = () => {
   // Session State (No LocalStorage)
   const [view, setView] = useState<ViewState>('landing');
+  const [prevView, setPrevView] = useState<ViewState>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
+
+  const navigateTo = (nextView: ViewState) => {
+    setPrevView(view);
+    setView(nextView);
+  };
 
   const { openModal } = useConsent();
 
@@ -148,17 +154,17 @@ const AppContent: React.FC = () => {
 
       {view === 'landing' && (
         <LandingView
-          onNavigate={(nextView) => setView(nextView)}
+          onNavigate={(nextView) => navigateTo(nextView)}
           userProfile={userProfile}
         />
       )}
 
       {view === 'design-system' && (
-        <DesignSystemView onBack={() => setView('landing')} />
+        <DesignSystemView onBack={() => setView(prevView)} />
       )}
 
       {view === 'privacy-policy' && (
-        <PrivacyPolicyView onBack={() => setView('landing')} />
+        <PrivacyPolicyView onBack={() => setView(prevView)} />
       )}
 
       {view === 'auth-candidate' && (
@@ -189,7 +195,7 @@ const AppContent: React.FC = () => {
         <CandidateDashboard
           userId={currentUserId}
           onLogout={handleLogout}
-          onNavigate={(v) => setView(v as ViewState)}
+          onNavigate={(v) => navigateTo(v as ViewState)}
         />
       )}
 

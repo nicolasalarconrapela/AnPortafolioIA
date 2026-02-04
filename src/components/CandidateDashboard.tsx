@@ -31,18 +31,18 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
     geminiServiceRef.current = createGeminiService();
   }, []);
 
-  const { 
-    chat, 
-    setChat, 
-    input, 
-    setInput, 
-    loading: donnaLoading, 
-    activeTab: donnaActiveTab, 
-    setActiveTab: setDonnaActiveTab, 
-    handleSend: handleDonnaSend, 
-    isOffline, 
-    setIsOffline, 
-    suggestedQuestions 
+  const {
+    chat,
+    setChat,
+    input,
+    setInput,
+    loading: donnaLoading,
+    activeTab: donnaActiveTab,
+    setActiveTab: setDonnaActiveTab,
+    handleSend: handleDonnaSend,
+    isOffline,
+    setIsOffline,
+    suggestedQuestions
   } = useDonna(geminiServiceRef, profile);
 
   useEffect(() => {
@@ -57,23 +57,23 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             // Assuming Onboarding saved it correctly, but providing fallbacks
             const rawProfile = data.profile;
             const safeProfile: CVProfile = {
-                fullName: rawProfile.fullName || "",
-                summary: rawProfile.summary || "",
-                experience: Array.isArray(rawProfile.experience) ? rawProfile.experience : [],
-                education: Array.isArray(rawProfile.education) ? rawProfile.education : [],
-                skills: Array.isArray(rawProfile.skills) ? rawProfile.skills : [],
-                techStack: rawProfile.techStack || { languages: [], ides: [], frameworks: [], tools: [] },
-                projects: Array.isArray(rawProfile.projects) ? rawProfile.projects : [],
-                volunteering: Array.isArray(rawProfile.volunteering) ? rawProfile.volunteering : [],
-                awards: Array.isArray(rawProfile.awards) ? rawProfile.awards : [],
-                languages: Array.isArray(rawProfile.languages) ? rawProfile.languages : [],
-                hobbies: Array.isArray(rawProfile.hobbies) ? rawProfile.hobbies : []
+              fullName: rawProfile.fullName || "",
+              summary: rawProfile.summary || "",
+              experience: Array.isArray(rawProfile.experience) ? rawProfile.experience : [],
+              education: Array.isArray(rawProfile.education) ? rawProfile.education : [],
+              skills: Array.isArray(rawProfile.skills) ? rawProfile.skills : [],
+              techStack: rawProfile.techStack || { languages: [], ides: [], frameworks: [], tools: [] },
+              projects: Array.isArray(rawProfile.projects) ? rawProfile.projects : [],
+              volunteering: Array.isArray(rawProfile.volunteering) ? rawProfile.volunteering : [],
+              awards: Array.isArray(rawProfile.awards) ? rawProfile.awards : [],
+              languages: Array.isArray(rawProfile.languages) ? rawProfile.languages : [],
+              hobbies: Array.isArray(rawProfile.hobbies) ? rawProfile.hobbies : []
             };
             setProfile(safeProfile);
-            
+
             // Initialize Donna Chat if service available
             if (geminiServiceRef.current && safeProfile.experience.length > 0) {
-               geminiServiceRef.current.initDonnaChat(safeProfile).catch(() => setIsOffline(true));
+              geminiServiceRef.current.initDonnaChat(safeProfile).catch(() => setIsOffline(true));
             }
           }
         },
@@ -90,53 +90,53 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
   // Initial greeting from Donna
   useEffect(() => {
-      if (profile && chat.length === 0) {
-          const name = profile.fullName || profile.experience[0]?.role || "Candidato";
-          setChat([{ 
-              id: 'intro', 
-              role: 'model', 
-              text: `¡Hola! Soy Donna. He preparado el perfil de **${name}**. ¿Qué te gustaría saber?`, 
-              timestamp: new Date() 
-          }]);
-      }
+    if (profile && chat.length === 0) {
+      const name = profile.fullName || profile.experience[0]?.role || "Candidato";
+      setChat([{
+        id: 'intro',
+        role: 'model',
+        text: `¡Hola! Soy Donna. He preparado el perfil de **${name}**. ¿Qué te gustaría saber?`,
+        timestamp: new Date()
+      }]);
+    }
   }, [profile, chat.length, setChat]);
 
   // Scroll chat on new message
   useEffect(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat]);
 
   const handleSaveProfile = async (updatedProfile: CVProfile) => {
-      if (!userId) return;
-      try {
-          const cleaned = cleanProfile(updatedProfile);
-          setProfile(cleaned);
-          
-          await upsertWorkspaceForUser(userId, {
-              profile: {
-                  ...cleaned,
-                  updatedAt: new Date().toISOString()
-              }
-          });
-          
-          loggingService.info("Profile updated via Wizard");
-          setIsEditing(false); // Return to Donna View
-          
-          // Re-init Donna with new data
-          if (geminiServiceRef.current) {
-              await geminiServiceRef.current.initDonnaChat(cleaned);
-              setChat(prev => [...prev, { 
-                  id: Date.now().toString(), 
-                  role: 'model', 
-                  text: "He actualizado mi base de conocimientos con los últimos cambios del perfil.", 
-                  timestamp: new Date() 
-              }]);
-          }
+    if (!userId) return;
+    try {
+      const cleaned = cleanProfile(updatedProfile);
+      setProfile(cleaned);
 
-      } catch (e) {
-          loggingService.error("Error saving profile", e);
-          alert("Error al guardar los cambios.");
+      await upsertWorkspaceForUser(userId, {
+        profile: {
+          ...cleaned,
+          updatedAt: new Date().toISOString()
+        }
+      });
+
+      loggingService.info("Profile updated via Wizard");
+      setIsEditing(false); // Return to Donna View
+
+      // Re-init Donna with new data
+      if (geminiServiceRef.current) {
+        await geminiServiceRef.current.initDonnaChat(cleaned);
+        setChat(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'model',
+          text: "He actualizado mi base de conocimientos con los últimos cambios del perfil.",
+          timestamp: new Date()
+        }]);
       }
+
+    } catch (e) {
+      loggingService.error("Error saving profile", e);
+      alert("Error al guardar los cambios.");
+    }
   };
 
   const handleExportJSON = () => {
@@ -151,28 +151,28 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   };
 
   if (isLoading) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
-              <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-outline text-sm animate-pulse">Cargando perfil...</p>
-              </div>
-          </div>
-      );
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-outline text-sm animate-pulse">Cargando perfil...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!profile) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
-              <div className="text-center">
-                  <p className="text-outline mb-4">No se encontró perfil.</p>
-                  <Button onClick={() => onNavigate?.('candidate-onboarding')}>Ir al Setup</Button>
-                  <div className="mt-4">
-                      <Button variant="text" onClick={onLogout}>Cerrar Sesión</Button>
-                  </div>
-              </div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
+        <div className="text-center">
+          <p className="text-outline mb-4">No se encontró perfil.</p>
+          <Button onClick={() => onNavigate?.('candidate-onboarding')}>Ir al Setup</Button>
+          <div className="mt-4">
+            <Button variant="text" onClick={onLogout}>Cerrar Sesión</Button>
           </div>
-      );
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -181,72 +181,73 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           userKey={userId || ""}
+          onNavigate={onNavigate}
         />
       )}
 
       {/* Floating Header Actions (Settings/Logout) */}
       {!isEditing && (
-          <div className="fixed top-4 right-4 z-50 flex gap-2">
-            <Button
-                variant="filled"
-                className="bg-slate-900/80 backdrop-blur text-white shadow-lg border border-white/10 hover:bg-slate-800"
-                size="sm"
-                icon="edit"
-                onClick={() => setIsEditing(true)}
-            >
-                Edit Profile
-            </Button>
-            <div className="h-8 w-px bg-slate-300/50 mx-1"></div>
-            <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
-                title="Settings"
-            >
-                <span className="material-symbols-outlined text-[20px]">settings</span>
-            </button>
-            <button
-                onClick={onLogout}
-                className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-error hover:bg-error/10 transition-colors"
-                title="Logout"
-            >
-                <span className="material-symbols-outlined text-[20px]">logout</span>
-            </button>
-          </div>
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          <Button
+            variant="filled"
+            className="bg-slate-900/80 backdrop-blur text-white shadow-lg border border-white/10 hover:bg-slate-800"
+            size="sm"
+            icon="edit"
+            onClick={() => setIsEditing(true)}
+          >
+            Edit Profile
+          </Button>
+          <div className="h-8 w-px bg-slate-300/50 mx-1"></div>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
+            title="Settings"
+          >
+            <span className="material-symbols-outlined text-[20px]">settings</span>
+          </button>
+          <button
+            onClick={onLogout}
+            className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-error hover:bg-error/10 transition-colors"
+            title="Logout"
+          >
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+          </button>
+        </div>
       )}
 
       {isEditing ? (
-          <div className="bg-[var(--md-sys-color-background)] min-h-screen">
-              {/* Wizard Mode */}
-              <GooglitoWizard
-                  currentStep={currentWizardStep}
-                  setCurrentStep={setCurrentWizardStep}
-                  profile={profile}
-                  setProfile={setProfile} // Optimistic update
-                  onExportJSON={handleExportJSON}
-                  onFinish={() => handleSaveProfile(profile)}
-              />
-              <div className="fixed top-4 right-4 z-50">
-                  <Button variant="outlined" onClick={() => setIsEditing(false)}>Cancel Editing</Button>
-              </div>
-          </div>
-      ) : (
-          /* Donna Mode (Home) */
-          <DonnaView
-              profile={profile}
-              chatHistory={chat}
-              input={input}
-              setInput={setInput}
-              loading={donnaLoading}
-              activeTab={donnaActiveTab}
-              setActiveTab={setDonnaActiveTab}
-              onSend={handleDonnaSend}
-              onBack={() => setIsEditing(true)} // Back acts as Edit trigger
-              chatEndRef={chatEndRef}
-              isOffline={isOffline}
-              setIsOffline={setIsOffline}
-              suggestedQuestions={suggestedQuestions}
-              onExportJSON={handleExportJSON}
+        <div className="bg-[var(--md-sys-color-background)] min-h-screen">
+          {/* Wizard Mode */}
+          <GooglitoWizard
+            currentStep={currentWizardStep}
+            setCurrentStep={setCurrentWizardStep}
+            profile={profile}
+            setProfile={setProfile} // Optimistic update
+            onExportJSON={handleExportJSON}
+            onFinish={() => handleSaveProfile(profile)}
           />
+          <div className="fixed top-4 right-4 z-50">
+            <Button variant="outlined" onClick={() => setIsEditing(false)}>Cancel Editing</Button>
+          </div>
+        </div>
+      ) : (
+        /* Donna Mode (Home) */
+        <DonnaView
+          profile={profile}
+          chatHistory={chat}
+          input={input}
+          setInput={setInput}
+          loading={donnaLoading}
+          activeTab={donnaActiveTab}
+          setActiveTab={setDonnaActiveTab}
+          onSend={handleDonnaSend}
+          onBack={() => setIsEditing(true)} // Back acts as Edit trigger
+          chatEndRef={chatEndRef}
+          isOffline={isOffline}
+          setIsOffline={setIsOffline}
+          suggestedQuestions={suggestedQuestions}
+          onExportJSON={handleExportJSON}
+        />
       )}
     </div>
   );

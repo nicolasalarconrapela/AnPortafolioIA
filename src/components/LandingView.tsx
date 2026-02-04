@@ -71,9 +71,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfil
 
       <footer className="py-6 text-center text-outline text-sm">
         <p>© 2024 AnPortafolioIA. All rights reserved.</p>
-        <button onClick={() => onNavigate('design-system')} className="mt-2 text-xs hover:text-primary opacity-50 hover:opacity-100 transition-opacity">
-          Internal Design System
-        </button>
       </footer>
     </div>
   );
