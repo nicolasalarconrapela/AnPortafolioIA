@@ -85,6 +85,42 @@ export class GeminiService extends GeminiBase {
   async talkToDonna(text: string): Promise<string> {
     return this.donna.talkToDonna(text);
   }
+  async getSystemStatus(): Promise<
+    Record<string, { status: "online" | "offline"; model: string }>
+  > {
+    const checkService = (service: any) => {
+      try {
+        // Just checking if init happened correctly via base ensureAI equivalent
+        // In the future we could do a lightweight ping.
+        return service.apiKey ? "online" : "offline";
+      } catch {
+        return "offline";
+      }
+    };
+
+    return {
+      "Señorita Rotenmeir": {
+        status: checkService(this.rotenmeir),
+        model: "gemini-3-pro-preview",
+      },
+      Janice: {
+        status: checkService(this.janice),
+        model: "gemini-3-flash-preview",
+      },
+      Googlito: {
+        status: checkService(this.googlito),
+        model: "gemini-3-flash-preview",
+      },
+      "Gretchen Bodinski": {
+        status: checkService(this.gretchen),
+        model: "gemini-3-flash-preview",
+      },
+      Donna: {
+        status: checkService(this.donna),
+        model: "gemini-3-flash-preview",
+      },
+    };
+  }
 }
 
 export const createGeminiService = () => new GeminiService();
