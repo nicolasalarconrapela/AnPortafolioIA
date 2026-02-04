@@ -3,12 +3,14 @@ import { DonnaView } from './DonnaView';
 import { CVProfile, ChatMessage } from '../../types_brain';
 import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { useDonna } from '../../hooks/useDonna';
+import { useAlert } from '../ui/GlobalAlert';
 
 interface PublicProfileViewerProps {
     profile: CVProfile;
 }
 
 export const PublicProfileViewer: React.FC<PublicProfileViewerProps> = ({ profile }) => {
+    const { showAlert } = useAlert();
     // For public view, we might want to support chat if possible, or just mock it.
     // For now, let's try to use useDonna if we can, otherwise manual state.
 
@@ -70,10 +72,10 @@ export const PublicProfileViewer: React.FC<PublicProfileViewerProps> = ({ profil
     const handleShare = () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => {
-            alert("Profile Link copied!");
+            showAlert("Profile Link copied!", 'success');
         }).catch(err => {
             console.error("Failed to copy", err);
-            alert("Link: " + url);
+            showAlert("Link: " + url, 'info');
         });
     };
 

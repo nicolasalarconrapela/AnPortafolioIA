@@ -9,6 +9,7 @@ import { RotenmeirView } from './RotenmeirView';
 import { GooglitoWizard } from './GooglitoWizard';
 import { DonnaView } from './DonnaView';
 import { getWorkspaceChildDocument, upsertWorkspaceChildDocument } from '../../services/firestoreWorkspaces';
+import { useAlert } from '../ui/GlobalAlert';
 
 interface BrainRootProps {
   userId: string;
@@ -20,6 +21,7 @@ interface BrainRootProps {
 
 function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: BrainRootProps) {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
+  const { showAlert } = useAlert();
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<CVProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -153,10 +155,10 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: 
     if (!shareToken) return;
     const url = `${window.location.origin}/?token=${shareToken}`;
     navigator.clipboard.writeText(url).then(() => {
-      alert("Public Profile Link copied to clipboard!");
+      showAlert("Public Profile Link copied to clipboard!", 'success');
     }).catch(err => {
       console.error("Failed to copy", err);
-      alert("Link: " + url);
+      showAlert("Link: " + url, 'info');
     });
   };
 

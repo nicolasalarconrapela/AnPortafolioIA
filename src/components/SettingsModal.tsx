@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
+import { useAlert } from './ui/GlobalAlert';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
 import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
@@ -97,6 +98,7 @@ interface UserProfile {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, onNavigate }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const { openModal } = useConsent();
+  const { showAlert, showConfirm } = useAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for settings
@@ -194,7 +196,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
       loggingService.info('Avatar processed locally. Save changes to persist.');
     } catch (error: any) {
       loggingService.error('Error processing avatar', error);
-      alert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.');
+      showAlert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -202,20 +204,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
 
   const handleDeleteAccount = async () => {
     if (!userKey) return;
-    const confirmDeletion = window.confirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?');
-    if (!confirmDeletion) return;
 
-    setIsDeletingAccount(true);
-    try {
-      await authService.deleteAccount();
-      loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
-      window.location.href = '/';
-    } catch (error: any) {
-      loggingService.error('Failed to delete account', error);
-      alert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.');
-    } finally {
-      setIsDeletingAccount(false);
-    }
+    showConfirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?', async () => {
+      setIsDeletingAccount(true);
+      try {
+        await authService.deleteAccount();
+        loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
+        window.location.href = '/';
+      } catch (error: any) {
+        loggingService.error('Failed to delete account', error);
+        showAlert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.', 'error');
+      } finally {
+        setIsDeletingAccount(false);
+      }
+    }, 'Eliminar Cuenta');
   };
 
   // Save settings to Firestore
@@ -295,7 +297,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
       loggingService.info('Public token generated successfully');
     } catch (error) {
       loggingService.error('Failed to generate token', error);
-      alert('Could not generate public link. Please try again.');
+      showAlert('Could not generate public link. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }

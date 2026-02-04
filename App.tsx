@@ -263,10 +263,14 @@ const AppContent: React.FC = () => {
   );
 };
 
+import { AlertProvider } from './src/components/ui/GlobalAlert';
+
 const App: React.FC = () => {
   return (
     <ConsentProvider>
-      <AppContent />
+      <AlertProvider>
+        <AppContent />
+      </AlertProvider>
     </ConsentProvider>
   );
 };

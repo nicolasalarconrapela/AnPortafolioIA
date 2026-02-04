@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { listenWorkspaceByUser, upsertWorkspaceForUser } from '../services/firestoreWorkspaces';
 import { SettingsModal } from './SettingsModal';
 import { Button } from './ui/Button';
+import { useAlert } from './ui/GlobalAlert';
 import { CVProfile } from '../types_brain';
 import { DonnaView } from './brain/DonnaView';
 import { GooglitoWizard } from './brain/GooglitoWizard';
@@ -18,6 +19,7 @@ interface CandidateDashboardProps {
 
 export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout, userId, onNavigate }) => {
   const [profile, setProfile] = useState<CVProfile | null>(null);
+  const { showAlert } = useAlert();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -130,7 +132,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       loggingService.info("Profile updated via Wizard");
     } catch (e) {
       loggingService.error("Error saving profile to Firestore", e);
-      alert("Error al guardar los cambios en la base de datos: " + e);
+      showAlert("Error al guardar los cambios en la base de datos: " + e, 'error');
       return; // Stop here if save fails
     }
 
@@ -174,10 +176,10 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
     if (!shareToken) return;
     const url = `${window.location.origin}/?token=${shareToken}`;
     navigator.clipboard.writeText(url).then(() => {
-      alert("Public Profile Link copied to clipboard!");
+      showAlert("Public Profile Link copied to clipboard!", 'success');
     }).catch(err => {
       console.error("Failed to copy", err);
-      alert("Link: " + url);
+      showAlert("Link: " + url, 'info');
     });
   };
 
