@@ -639,6 +639,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                     </div>
 
                   </div>
+
+                  {/* AI System Status */}
+                  <div className="mt-8 animate-fade-in delay-100">
+                    <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">AI System Status</h4>
+                    <div className="bg-surface-variant/30 rounded-[20px] p-6 border border-outline-variant/30">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries({
+                          "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: "/rotenmeir.png" },
+                          "Janice": { role: "Writing Assistant", img: "/googlito.jpg" },
+                          "Googlito": { role: "Data Fixer", img: "/googlito.jpg" },
+                          "Gretchen Bodinski": { role: "Auditor", img: "/gretchen.jpg" },
+                          "Donna": { role: "Recruiter Interface", img: "/donna_avatar.png" }
+                        }).map(([name, meta]) => (
+                          <div key={name} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-outline-variant/50">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-outline-variant/30 shadow-sm bg-surface-variant">
+                                <img src={meta.img} alt={name} className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-[var(--md-sys-color-on-background)]">{name}</p>
+                                <p className="text-[10px] text-outline">{meta.role}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-md text-[10px] font-bold border border-green-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                              ONLINE
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-outline mt-4 text-center">
+                        All systems operational. Gemini 3 Models loaded.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 
