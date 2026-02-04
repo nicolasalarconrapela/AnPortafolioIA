@@ -24,6 +24,7 @@ interface GooglitoWizardProps {
     profile: CVProfile;
     setProfile: (p: CVProfile) => void;
     onExportJSON: () => void;
+    onReset?: () => void;
     onFinish: () => void;
     fileDataUrl?: string | null;
 }
@@ -34,6 +35,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
     profile,
     setProfile,
     onExportJSON,
+    onReset,
     onFinish,
     fileDataUrl = null
 }) => {
@@ -208,6 +210,16 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                             <LayoutGrid size={20} />
                         </div>
                         <span className="font-display font-medium text-lg hidden md:block">Googlito System</span>
+                        {onReset && (
+                            <button
+                                onClick={() => { if (confirm("¿Quieres volver a cargar un CV? Se perderán los cambios no guardados.")) onReset(); }}
+                                className="ml-2 text-xs bg-outline-variant/30 hover:bg-outline-variant/50 text-outline px-2 py-1 rounded flex items-center gap-1 transition-colors"
+                                title="Volver a Cargar CV (Señorita Rotenmeir)"
+                            >
+                                <Upload size={12} />
+                                <span className="hidden sm:inline">Nueva Carga</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* Horizontal Scrollable Tabs (Center) */}

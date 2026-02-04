@@ -201,6 +201,7 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: 
           profile={profile}
           setProfile={(p) => setProfile(p)}
           onExportJSON={handleExportJSON}
+          onReset={() => setAppState(AppState.IDLE)}
           onFinish={onFinishWizard}
         />
       )}

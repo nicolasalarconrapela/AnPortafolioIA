@@ -227,6 +227,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             profile={profile}
             setProfile={setProfile} // Optimistic update
             onExportJSON={handleExportJSON}
+            onReset={() => onNavigate?.('cv-analysis')}
             onFinish={() => handleSaveProfile(profile)}
           />
           <div className="fixed top-4 right-4 z-50">
