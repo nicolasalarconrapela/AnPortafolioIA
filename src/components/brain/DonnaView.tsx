@@ -584,8 +584,8 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
           {/* Chat Header */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md ${isOffline ? 'bg-slate-400' : 'bg-indigo-600'}`}>
-                <Bot className="w-6 h-6" />
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md overflow-hidden ${isOffline ? 'grayscale' : ''}`}>
+                <img src="/donna_avatar.png" alt="Donna AI" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-sm">Donna AI</h3>
@@ -677,10 +677,10 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
       {!isChatOpen && (
         <button
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center hover:scale-110 hover:-translate-y-1 transition-all active:scale-95 group border-2 border-white/10"
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-white text-white rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center hover:scale-110 hover:-translate-y-1 transition-all active:scale-95 group border-2 border-slate-100 overflow-hidden"
         >
-          <Bot className="w-7 h-7 group-hover:animate-pulse" />
-          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></span>
+          <img src="/donna_avatar.png" alt="Donna AI" className="w-full h-full object-cover" />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white z-10"></span>
         </button>
       )}
     </div>
