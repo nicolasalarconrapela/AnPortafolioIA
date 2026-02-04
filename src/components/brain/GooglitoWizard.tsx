@@ -208,10 +208,10 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
       <header className="bg-[var(--md-sys-color-background)] border-b border-outline-variant/30 sticky top-0 z-30 backdrop-blur-md bg-opacity-90 flex-none h-[65px]">
         <div className="px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-primary-onContainer">
-              <LayoutGrid size={20} />
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30 shadow-sm">
+              <img src="/googlito.jpg" alt="Googlito System" className="w-full h-full object-cover" />
             </div>
-            <span className="font-display font-medium text-lg hidden md:block">Googlito System</span>
+            <span className="font-display font-medium text-lg hidden md:block ml-1">Googlito System</span>
             {onReset && (
               <button
                 onClick={() => { showConfirm("¿Quieres volver a cargar un CV? Se perderán los cambios no guardados.", () => onReset(), "Nueva Carga"); }}

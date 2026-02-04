@@ -29,6 +29,9 @@ export const SectionHeader = ({
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                         </span>
+                        <div className="w-4 h-4 rounded-full overflow-hidden ring-1 ring-outline/20">
+                            <img src="/googlito.jpg" alt="Googlito" className="w-full h-full object-cover" />
+                        </div>
                         <span className="text-xs font-medium text-outline uppercase tracking-wider">{aiName} Active</span>
                     </div>
                 </div>
