@@ -185,35 +185,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
         />
       )}
 
-      {/* Floating Header Actions (Settings/Logout) */}
-      {!isEditing && (
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
-          <Button
-            variant="filled"
-            className="bg-slate-900/80 backdrop-blur text-white shadow-lg border border-white/10 hover:bg-slate-800"
-            size="sm"
-            icon="edit"
-            onClick={() => setIsEditing(true)}
-          >
-            Edit Profile
-          </Button>
-          <div className="h-8 w-px bg-slate-300/50 mx-1"></div>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
-            title="Settings"
-          >
-            <span className="material-symbols-outlined text-[20px]">settings</span>
-          </button>
-          <button
-            onClick={onLogout}
-            className="w-9 h-9 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center text-error hover:bg-error/10 transition-colors"
-            title="Logout"
-          >
-            <span className="material-symbols-outlined text-[20px]">logout</span>
-          </button>
-        </div>
-      )}
+      {/* Floating Header Actions removed - now using integrated nav in DonnaView */}
 
       {isEditing ? (
         <div className="bg-[var(--md-sys-color-background)] min-h-screen">
@@ -247,6 +219,9 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
           setIsOffline={setIsOffline}
           suggestedQuestions={suggestedQuestions}
           onExportJSON={handleExportJSON}
+          onEdit={() => setIsEditing(true)}
+          onSettings={() => setIsSettingsOpen(true)}
+          onLogout={onLogout}
         />
       )}
     </div>

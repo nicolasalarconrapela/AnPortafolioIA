@@ -71,8 +71,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfil
       </main>
 
       <footer className="py-3 text-center text-outline text-xs opacity-40">
-        <p>© 2026 AnAppWiLos. All rights reserved.<p className="font-mono text-[10px]">v{APP_VERSION}</p>
-      </p>
+        <p>© 2026 AnAppWiLos. All rights reserved.</p>
+        <p className="font-mono text-[10px]">v{APP_VERSION}</p>
       </footer>
     </div>
   );

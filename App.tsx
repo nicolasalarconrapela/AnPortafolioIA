@@ -8,6 +8,7 @@ import { CandidateDashboard } from './src/components/CandidateDashboard';
 import { DesignSystemView } from './src/components/DesignSystemView';
 import { PrivacyPolicyView } from './src/components/legal/PrivacyPolicyView';
 import BrainRoot from './src/components/brain/BrainRoot';
+import { SettingsModal } from './src/components/SettingsModal';
 import { ViewState, UserProfile } from './src/types';
 import { ConsentProvider, useConsent } from './src/components/consent/ConsentContext';
 import { ConsentUI } from './src/components/consent/ConsentUI';
@@ -25,10 +26,17 @@ type ExtendedViewState = ViewState | 'privacy-policy';
 const AppContent: React.FC = () => {
   // Session State (No LocalStorage)
   const [view, setView] = useState<ExtendedViewState>('landing');
+  const [prevView, setPrevView] = useState<ExtendedViewState>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const navigateTo = (nextView: ExtendedViewState) => {
+    setPrevView(view);
+    setView(nextView);
+  };
 
   const { openModal } = useConsent();
 
@@ -152,17 +160,17 @@ const AppContent: React.FC = () => {
 
       {view === 'landing' && (
         <LandingView
-          onNavigate={(nextView) => setView(nextView)}
+          onNavigate={(nextView) => navigateTo(nextView)}
           userProfile={userProfile}
         />
       )}
 
       {view === 'design-system' && (
-        <DesignSystemView onBack={() => setView('landing')} />
+        <DesignSystemView onBack={() => setView(prevView)} />
       )}
 
       {view === 'privacy-policy' && (
-        <PrivacyPolicyView onBack={() => setView('landing')} />
+        <PrivacyPolicyView onBack={() => setView(prevView)} />
       )}
 
       {view === 'auth-candidate' && (
@@ -193,12 +201,25 @@ const AppContent: React.FC = () => {
         <CandidateDashboard
           userId={currentUserId}
           onLogout={handleLogout}
-          onNavigate={(v) => setView(v as ViewState)}
+          onNavigate={(v) => navigateTo(v as ViewState)}
         />
       )}
 
       {view === 'cv-analysis' && (
-        <BrainRoot />
+        <>
+          <BrainRoot
+            userId={currentUserId}
+            onLogout={handleLogout}
+            onSettings={() => setIsSettingsOpen(true)}
+          />
+          {isSettingsOpen && (
+            <SettingsModal
+              onClose={() => setIsSettingsOpen(false)}
+              userKey={currentUserId}
+              onNavigate={(v) => navigateTo(v as ViewState)}
+            />
+          )}
+        </>
       )}
 
       {/* Footer Links (Privacy & Settings) */}
