@@ -4,6 +4,7 @@ import { AvatarScanner } from './AvatarScanner';
 import { ViewState } from '../types';
 import { Button } from './ui/Button';
 import { Icon } from './ui/Icon';
+import { APP_VERSION } from '../version';
 
 interface LandingViewProps {
   onNavigate: (view: ViewState) => void;
@@ -18,7 +19,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfil
       <header className="sticky top-0 z-50 bg-[var(--md-sys-color-background)]/90 backdrop-blur-sm border-b border-outline-variant/20 px-4 py-3 md:px-8 flex items-center justify-between transition-colors">
         <div className="flex items-center gap-2">
           <Icon name="diversity_3" className="text-primary text-2xl md:text-3xl" />
-          <span className="font-display font-medium text-lg md:text-xl tracking-tight">PortafolioIA</span>
+          <span className="font-display font-medium text-lg md:text-xl tracking-tight">AnPortafolioIA</span>
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
@@ -69,8 +70,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfil
 
       </main>
 
-      <footer className="py-6 text-center text-outline text-sm">
-        <p>© 2024 AnPortafolioIA. All rights reserved.</p>
+      <footer className="py-3 text-center text-outline text-xs opacity-40">
+        <p>© 2026 AnAppWiLos. All rights reserved.<p className="font-mono text-[10px]">v{APP_VERSION}</p>
+      </p>
       </footer>
     </div>
   );

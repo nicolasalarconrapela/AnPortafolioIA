@@ -8,6 +8,7 @@ import { Icon } from "./ui/Icon";
 import { authService } from "../services/authService";
 import { loggingService } from "../utils/loggingService";
 import { getWorkspaceByUserFromFirestore } from "../services/firestoreWorkspaces";
+import { APP_VERSION } from "../version";
 
 interface AuthViewProps {
   onNavigate: (state: ViewState) => void;
@@ -175,7 +176,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           <div className="flex items-center gap-3 mb-8 opacity-80">
             <Icon name="diversity_3" className="text-primary text-3xl" />
             <span className="font-display font-medium text-xl tracking-tight text-[var(--md-sys-color-on-background)]">
-              PortafolioIA
+              AnPortafolioIA
             </span>
           </div>
 
@@ -203,7 +204,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
           <div className="lg:hidden flex items-center gap-2 opacity-90">
             <Icon name="diversity_3" className="text-primary text-xl" />
             <span className="font-display font-medium text-lg text-[var(--md-sys-color-on-background)]">
-              PortafolioIA
+              AnPortafolioIA
             </span>
           </div>
         </div>
@@ -338,6 +339,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
             </div>
 
 
+          </div>
+          <div className="mt-auto py-6 text-center opacity-40">
+            <p className="font-mono text-[10px] text-outline">v{APP_VERSION}</p>
           </div>
         </div>
       </div>
