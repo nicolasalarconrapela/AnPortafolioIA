@@ -113,10 +113,13 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
   const handleSaveProfile = async (updatedProfile: CVProfile) => {
     if (!userId) return;
-    try {
-      const cleaned = cleanProfile(updatedProfile);
-      setProfile(cleaned);
 
+    // 1. Prepare data
+    const cleaned = cleanProfile(updatedProfile);
+    setProfile(cleaned);
+
+    try {
+      // 2. Critical: Save to Firestore
       await upsertWorkspaceForUser(userId, {
         profile: {
           ...cleaned,
@@ -125,22 +128,34 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
       });
 
       loggingService.info("Profile updated via Wizard");
-      setIsEditing(false); // Return to Donna View
+    } catch (e) {
+      loggingService.error("Error saving profile to Firestore", e);
+      alert("Error al guardar los cambios en la base de datos: " + e);
+      return; // Stop here if save fails
+    }
 
-      // Re-init Donna with new data
-      if (geminiServiceRef.current) {
+    // 3. UI Update (Success)
+    setIsEditing(false); // Return to Donna View
+
+    // 4. Non-Critical: Re-init AI
+    if (geminiServiceRef.current) {
+      try {
         await geminiServiceRef.current.initDonnaChat(cleaned);
+
+        // Only show confirmation message if AI is working
         setChat(prev => [...prev, {
           id: Date.now().toString(),
           role: 'model',
           text: "He actualizado mi base de conocimientos con los últimos cambios del perfil.",
           timestamp: new Date()
         }]);
-      }
 
-    } catch (e) {
-      loggingService.error("Error saving profile", e);
-      alert("Error al guardar los cambios." + e);
+        setIsOffline(false);
+      } catch (e) {
+        console.warn("Could not re-init Gemini after save, checking offline mode", e);
+        // Fallback to offline mode silently or with a small toast, but don't block the UI
+        setIsOffline(true);
+      }
     }
   };
 
