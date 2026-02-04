@@ -49,8 +49,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
     setIsLogin((prev) => !prev);
     setErrors({});
     setGeneralError(null);
-    setEmail("");
-    setPassword("");
   };
 
   // --- Validation Logic (HEAD) ---
@@ -167,17 +165,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-  // Mantengo tu DEV_SKIP del HEAD (si quieres que vaya a dashboard directo)
-  const handleDevSkip = async () => {
-    setIsLoading(true);
-    setGeneralError(null);
-    try {
-      await new Promise((r) => setTimeout(r, 250));
-      onNavigate("candidate-dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   return (
     <div className="min-h-screen w-full flex bg-[var(--md-sys-color-background)]">
@@ -349,12 +337,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               </p>
             </div>
 
-            {/* Subtle Footer for Dev Tools */}
-            <div className="mt-12 flex justify-center opacity-40 hover:opacity-100 transition-opacity">
-              <button onClick={handleDevSkip} className="text-[10px] text-outline/50 hover:text-primary font-mono" type="button">
-                DEV_SKIP
-              </button>
-            </div>
+
           </div>
         </div>
       </div>
