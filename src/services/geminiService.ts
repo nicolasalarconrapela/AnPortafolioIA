@@ -3,6 +3,7 @@ import { RotenmeirService } from "./ai/rotenmeir";
 import { JaniceService } from "./ai/janice";
 import { GooglitoService } from "./ai/googlito";
 import { DonnaService } from "./ai/donna";
+import { GretchenService } from "./ai/gretchen";
 import { CVProfile } from "../types_brain";
 
 export class GeminiService extends GeminiBase {
@@ -10,6 +11,7 @@ export class GeminiService extends GeminiBase {
   private janice: JaniceService;
   private googlito: GooglitoService;
   private donna: DonnaService;
+  private gretchen: GretchenService;
 
   constructor() {
     super(); // Initializes this.ai and this.apiKey in Base
@@ -20,6 +22,7 @@ export class GeminiService extends GeminiBase {
     this.janice = new JaniceService(key);
     this.googlito = new GooglitoService(key);
     this.donna = new DonnaService(key);
+    this.gretchen = new GretchenService(key);
   }
 
   // --- Shared / Utils ---
@@ -69,6 +72,10 @@ export class GeminiService extends GeminiBase {
       currentData,
       critique,
     );
+  }
+
+  async auditSection(sectionName: string, data: any): Promise<string> {
+    return this.gretchen.auditSection(sectionName, data);
   }
 
   async initDonnaChat(profile: CVProfile): Promise<void> {

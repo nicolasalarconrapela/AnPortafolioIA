@@ -1,40 +1,24 @@
-import { GoogleGenAI } from "@google/genai";
+import { GeminiBase } from "./geminiBase";
 
-export class GretchenService {
-  private ai: GoogleGenAI | null = null;
-  private apiKey: string = "";
-  
-  constructor() {
-    const key = process.env.API_KEY;
-    if (!key) {
-       console.warn("API Key not found for Gretchen. Services disabled.");
-    } else {
-      this.apiKey = key;
-      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
-    }
-  }
-
-  private ensureAI() {
-      if (!this.ai) {
-          throw new Error("Gretchen Service not initialized. Missing API Key.");
-      }
-      return this.ai;
-  }
-
-
+export class GretchenService extends GeminiBase {
   /**
    * GRETCHEN BODINSKI
    * Reviews a full section context and gives harsh but valuable feedback.
    */
   async auditSection(sectionName: string, data: any): Promise<string> {
     try {
-      const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+      const today = new Date().toLocaleDateString("es-ES", {
+        weekday: "long",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
       const dataStr = JSON.stringify(data, null, 2);
-      
+
       const prompt = `
       Fecha actual: ${today}.
       Actúa como Gretchen Bodinski (de Suits).
-      
+
       Tu tarea: Auditar la sección de "${sectionName}" de un CV.
       Datos actuales: ${dataStr}
 
@@ -52,16 +36,17 @@ export class GretchenService {
       `;
 
       const response = await this.ensureAI().models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt
+        model: "gemini-3-flash-preview",
+        contents: prompt,
       });
 
-      return response.text || "Mira, no tengo nada que decir. Y eso me preocupa más que si tuviera quejas.";
+      return (
+        response.text ||
+        "Mira, no tengo nada que decir. Y eso me preocupa más que si tuviera quejas."
+      );
     } catch (error) {
       console.error("Gretchen error:", error);
       return "Estoy ocupada resolviendo problemas reales. Intenta luego.";
     }
   }
 }
-
-export const createGretchenService = () => new GretchenService();

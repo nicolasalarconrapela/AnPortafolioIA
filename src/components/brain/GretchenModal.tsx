@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, CheckCircle2, X, Wrench, Sparkles } from 'lucide-react';
-import { createGretchenService, GretchenService } from '../../services/gretchenService';
 import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { MarkdownView } from './MarkdownView';
 import { Button } from './Button';
@@ -23,11 +22,9 @@ export const GretchenModal = ({
     const [fixedData, setFixedData] = useState<any>(null);
     const [step, setStep] = useState<'IDLE' | 'AUDITING' | 'FIXING' | 'REVIEW'>('IDLE');
 
-    const gretchenServiceRef = useRef<GretchenService | null>(null);
     const geminiServiceRef = useRef<GeminiService | null>(null);
 
     useEffect(() => {
-        gretchenServiceRef.current = createGretchenService();
         geminiServiceRef.current = createGeminiService();
     }, []);
 
@@ -46,11 +43,11 @@ export const GretchenModal = ({
     }
 
     const runAutoFlow = async () => {
-        if (!gretchenServiceRef.current || !geminiServiceRef.current) return;
+        if (!geminiServiceRef.current) return;
         setStep('AUDITING');
         let critique = "";
         try {
-            critique = await gretchenServiceRef.current.auditSection(sectionName, sectionData);
+            critique = await geminiServiceRef.current.auditSection(sectionName, sectionData);
             setAuditResult(critique);
         } catch (e) {
             setAuditResult("Error en auditoría. Gretchen se ha ido a comer.");
