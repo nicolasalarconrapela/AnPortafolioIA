@@ -32,7 +32,7 @@ const SHOULD_ENCRYPT = !isDevelopmentEnvironment();
 
 function forceLogout() {
   loggingService.warn(
-    "FirestoreWorkspaces: 401/404 encountered. Forcing logout."
+    "FirestoreWorkspaces: 401/404 encountered. Forcing logout.",
   );
   // localStorage.removeItem("anportafolio_user_id"); // Removed: We rely on Session Cookie only
   window.location.href = "/";
@@ -121,7 +121,7 @@ const CryptoUtils = {
       enc.encode(secret),
       { name: "PBKDF2" },
       false,
-      ["deriveKey"]
+      ["deriveKey"],
     );
     return window.crypto.subtle.deriveKey(
       {
@@ -133,7 +133,7 @@ const CryptoUtils = {
       keyMaterial,
       { name: "AES-GCM", length: 256 },
       false,
-      ["encrypt", "decrypt"]
+      ["encrypt", "decrypt"],
     );
   },
 
@@ -145,7 +145,7 @@ const CryptoUtils = {
     const encryptedContent = await window.crypto.subtle.encrypt(
       { name: "AES-GCM", iv: iv },
       key,
-      encodedData
+      encodedData,
     );
 
     // Combine IV and Ciphertext
@@ -168,7 +168,7 @@ const CryptoUtils = {
     const decryptedBuffer = await window.crypto.subtle.decrypt(
       { name: "AES-GCM", iv: iv },
       key,
-      data
+      data,
     );
 
     const dec = new TextDecoder();
@@ -208,7 +208,7 @@ function sanitizeForFirestore<T>(value: T): T {
 
 export async function encryptPayload(
   payload: Record<string, unknown>,
-  userKey: string
+  userKey: string,
 ): Promise<string> {
   try {
     const key = await CryptoUtils.deriveKey(userKey);
@@ -221,7 +221,7 @@ export async function encryptPayload(
 
 export async function decryptPayload(
   encryptedPayload: string | undefined,
-  userKey: string
+  userKey: string,
 ): Promise<any | null> {
   if (!encryptedPayload) return null;
   try {
@@ -230,7 +230,7 @@ export async function decryptPayload(
   } catch (error) {
     loggingService.error(
       "FirestoreWorkspaces: error al recuperar payload encriptado.",
-      { error }
+      { error },
     );
     throw new Error("Decryption failed: " + (error as any).message);
   }
@@ -238,7 +238,7 @@ export async function decryptPayload(
 
 async function buildEncryptedEnvelope(
   userKey: string,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ) {
   const docKey = getEncryptedUserKey(userKey);
   const stampedPayload = {
@@ -280,12 +280,12 @@ function getErrorMessage(error: unknown): string {
 
 export async function getWorkspaceByUserFromFirestore(
   userKey: string,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<any | null> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
@@ -324,7 +324,7 @@ export async function getWorkspaceByUserFromFirestore(
             const legacyDecoded = fromBase64Url(data.encryptedPayload);
             decrypted = JSON.parse(legacyDecoded);
             loggingService.warn(
-              "FirestoreWorkspaces: Legacy weak encryption detected. Saving next time will upgrade."
+              "FirestoreWorkspaces: Legacy weak encryption detected. Saving next time will upgrade.",
             );
           } catch (e) {
             // Ignore legacy decrypt fail
@@ -339,7 +339,7 @@ export async function getWorkspaceByUserFromFirestore(
         userKey,
         encryptedUserKey: docKey,
         collection: collectionName,
-      }
+      },
     );
 
     return decrypted ?? data;
@@ -352,7 +352,7 @@ export async function getWorkspaceByUserFromFirestore(
         encryptedUserKey: docKey,
         collection: collectionName,
         error,
-      }
+      },
     );
 
     throw error;
@@ -367,11 +367,11 @@ export function listenWorkspaceByUser(
   userKey: string,
   onData: (data: any | null) => void,
   onError?: (error: Error) => void,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Unsubscribe {
   const collectionName = resolveCollectionName(collectionOverride);
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   let isActive = true;
@@ -432,7 +432,7 @@ export function listenWorkspaceByUser(
       if (response.status === 304) {
         currentInterval = Math.min(
           currentInterval + BACKOFF_STEP,
-          MAX_INTERVAL
+          MAX_INTERVAL,
         );
         schedule(currentInterval);
         return;
@@ -477,7 +477,7 @@ export function listenWorkspaceByUser(
       if (newHash === lastAppliedHash) {
         currentInterval = Math.min(
           currentInterval + BACKOFF_STEP,
-          MAX_INTERVAL
+          MAX_INTERVAL,
         );
       } else {
         lastAppliedHash = newHash;
@@ -493,7 +493,7 @@ export function listenWorkspaceByUser(
       // Non-critical network logs as warnings
       if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
         loggingService.warn(
-          `Workspace Sync: temporary connection issue. Retrying...`
+          `Workspace Sync: temporary connection issue. Retrying...`,
         );
       } else {
         loggingService.error(`Workspace Sync: permanent failure. ${msg}`, {
@@ -512,7 +512,7 @@ export function listenWorkspaceByUser(
   const handleVisibilityChange = () => {
     if (isPageVisible() && isActive) {
       loggingService.debug(
-        "Workspace Sync: Window focused, triggering immediate sync."
+        "Workspace Sync: Window focused, triggering immediate sync.",
       );
       poll();
     }
@@ -538,12 +538,12 @@ export function listenWorkspaceByUser(
 export async function upsertWorkspaceForUser(
   userKey: string,
   data: Record<string, unknown>,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<void> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   const envelope = await buildEncryptedEnvelope(userKey, data);
@@ -566,7 +566,7 @@ export async function upsertWorkspaceForUser(
         userKey,
         encryptedUserKey: docKey,
         collection: collectionName,
-      }
+      },
     );
   } catch (error) {
     const msg = getErrorMessage(error);
@@ -577,7 +577,7 @@ export async function upsertWorkspaceForUser(
         encryptedUserKey: docKey,
         collection: collectionName,
         error,
-      }
+      },
     );
 
     throw error;
@@ -586,12 +586,12 @@ export async function upsertWorkspaceForUser(
 
 export async function deleteWorkspaceForUser(
   userKey: string,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<void> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
@@ -619,7 +619,7 @@ export async function deleteWorkspaceForUser(
         userKey,
         encryptedUserKey: docKey,
         collection: collectionName,
-      }
+      },
     );
   } catch (error) {
     const msg = getErrorMessage(error);
@@ -630,7 +630,7 @@ export async function deleteWorkspaceForUser(
         encryptedUserKey: docKey,
         collection: collectionName,
         error,
-      }
+      },
     );
 
     throw error;
@@ -643,7 +643,7 @@ export async function upsertWorkspaceChildDocument(
   childDocumentId: string,
   data: Record<string, unknown>,
   collectionOverride?: string,
-  merge = true
+  merge = true,
 ): Promise<void> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
@@ -651,9 +651,9 @@ export async function upsertWorkspaceChildDocument(
   const sanitizedChildDocument = sanitizeCollectionSegment(childDocumentId);
 
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}/child/${encodeURIComponent(sanitizedChildCollection)}/${encodeURIComponent(
-    sanitizedChildDocument
+    sanitizedChildDocument,
   )}?collectionOverride=${encodeURIComponent(collectionName)}&merge=${merge}`;
 
   try {
@@ -682,7 +682,7 @@ export async function upsertWorkspaceChildDocument(
         collection: collectionName,
         childCollection: sanitizedChildCollection,
         childDocumentId,
-      }
+      },
     );
   } catch (error) {
     const msg = getErrorMessage(error);
@@ -695,7 +695,7 @@ export async function upsertWorkspaceChildDocument(
         childCollection: sanitizedChildCollection,
         childDocumentId,
         error,
-      }
+      },
     );
 
     throw error;
@@ -706,7 +706,7 @@ export async function deleteWorkspaceChildDocument(
   userKey: string,
   childCollection: string,
   childDocumentId: string,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<void> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
@@ -714,9 +714,9 @@ export async function deleteWorkspaceChildDocument(
   const sanitizedChildDocument = sanitizeCollectionSegment(childDocumentId);
 
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}/child/${encodeURIComponent(sanitizedChildCollection)}/${encodeURIComponent(
-    sanitizedChildDocument
+    sanitizedChildDocument,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
@@ -737,7 +737,7 @@ export async function deleteWorkspaceChildDocument(
         collection: collectionName,
         childCollection: sanitizedChildCollection,
         childDocumentId,
-      }
+      },
     );
   } catch (error) {
     const msg = getErrorMessage(error);
@@ -750,7 +750,7 @@ export async function deleteWorkspaceChildDocument(
         childCollection: sanitizedChildCollection,
         childDocumentId,
         error,
-      }
+      },
     );
 
     throw error;
@@ -761,7 +761,7 @@ export async function getWorkspaceChildDocument(
   userKey: string,
   childCollection: string,
   childDocumentId: string,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<any | null> {
   const collectionName = resolveCollectionName(collectionOverride);
   const docKey = getEncryptedUserKey(userKey);
@@ -769,9 +769,9 @@ export async function getWorkspaceChildDocument(
   const sanitizedChildDocument = sanitizeCollectionSegment(childDocumentId);
 
   const url = `${BACKEND_URL}/api/firestore/workspaces/${encodeURIComponent(
-    userKey
+    userKey,
   )}/child/${encodeURIComponent(sanitizedChildCollection)}/${encodeURIComponent(
-    sanitizedChildDocument
+    sanitizedChildDocument,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
@@ -786,7 +786,7 @@ export async function getWorkspaceChildDocument(
           collection: collectionName,
           childCollection: sanitizedChildCollection,
           childDocumentId,
-        }
+        },
       );
 
       return null;
@@ -816,7 +816,7 @@ export async function getWorkspaceChildDocument(
         userKey,
         encryptedUserKey: docKey,
         collection: collectionName,
-      }
+      },
     );
 
     return decrypted ?? data;
@@ -824,7 +824,7 @@ export async function getWorkspaceChildDocument(
     const msg = getErrorMessage(error);
     loggingService.error(
       `FirestoreWorkspaces: error al leer documento hijo (Backend). ${msg}`,
-      { error }
+      { error },
     );
     throw error;
   }
@@ -832,12 +832,12 @@ export async function getWorkspaceChildDocument(
 
 export async function getPublicProfile(
   shareToken: string,
-  collectionOverride?: string
+  collectionOverride?: string,
 ): Promise<any | null> {
   const collectionName = resolveCollectionName(collectionOverride);
   // Use the new public route which accepts shareToken
   const url = `${BACKEND_URL}/api/public/profile/${encodeURIComponent(
-    shareToken
+    shareToken,
   )}?collectionOverride=${encodeURIComponent(collectionName)}`;
 
   try {
@@ -856,7 +856,40 @@ export async function getPublicProfile(
     }
 
     const data = await response.json();
-    return data; // Returns { profile: ... }
+
+    // Backend returns { profile: { ...workspaceData, userKey } }
+    if (!data || !data.profile) return null;
+
+    const wsData = data.profile;
+    let decryptedWorkspace = null;
+
+    if (wsData.encryptedPayload) {
+      // If we have the key, we can decrypt.
+      // The backend now returns userKey (uid) in the payload for this specific purpose.
+      if (wsData.userKey) {
+        if (wsData.encryptionType === "AES-GCM") {
+          decryptedWorkspace = await decryptPayload(
+            wsData.encryptedPayload,
+            wsData.userKey,
+          );
+        } else if (!wsData.encryptionType) {
+          // Legacy
+          try {
+            const legacyDecoded = fromBase64Url(wsData.encryptedPayload);
+            decryptedWorkspace = JSON.parse(legacyDecoded);
+          } catch {}
+        }
+      } else {
+        loggingService.warn(
+          "PublicProfile: Encrypted data received but no key provided.",
+        );
+      }
+    } else {
+      // Plain text
+      decryptedWorkspace = wsData;
+    }
+
+    return decryptedWorkspace;
   } catch (error) {
     loggingService.error("FirestoreWorkspaces: error fetching public profile", {
       error,

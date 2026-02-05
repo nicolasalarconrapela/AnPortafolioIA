@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
+import { useAlert } from './ui/GlobalAlert';
 import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/firestoreWorkspaces';
 import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
@@ -65,6 +66,7 @@ async function compressImageToBase64(file: File, maxBytes: number): Promise<stri
 interface SettingsModalProps {
   onClose: () => void;
   userKey: string;
+  onNavigate?: (view: any) => void;
 }
 
 type SettingsTab = 'general' | 'account' | 'notifications' | 'privacy' | 'ai';
@@ -93,9 +95,10 @@ interface UserProfile {
   shareToken?: string;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, onNavigate }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const { openModal } = useConsent();
+  const { showAlert, showConfirm } = useAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State for settings
@@ -193,7 +196,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
       loggingService.info('Avatar processed locally. Save changes to persist.');
     } catch (error: any) {
       loggingService.error('Error processing avatar', error);
-      alert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.');
+      showAlert(error?.message || 'Error al procesar la imagen. Intenta con una más pequeña.', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -201,20 +204,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
   const handleDeleteAccount = async () => {
     if (!userKey) return;
-    const confirmDeletion = window.confirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?');
-    if (!confirmDeletion) return;
 
-    setIsDeletingAccount(true);
-    try {
-      await authService.deleteAccount();
-      loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
-      window.location.href = '/';
-    } catch (error: any) {
-      loggingService.error('Failed to delete account', error);
-      alert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.');
-    } finally {
-      setIsDeletingAccount(false);
-    }
+    showConfirm('Eliminar tu cuenta eliminará permanentemente tu perfil, configuraciones y datos. ¿Deseas continuar?', async () => {
+      setIsDeletingAccount(true);
+      try {
+        await authService.deleteAccount();
+        loggingService.info('Cuenta eliminada. Redirigiendo al inicio.');
+        window.location.href = '/';
+      } catch (error: any) {
+        loggingService.error('Failed to delete account', error);
+        showAlert(error?.message || 'No se pudo eliminar la cuenta en este momento. Intenta de nuevo.', 'error');
+      } finally {
+        setIsDeletingAccount(false);
+      }
+    }, 'Eliminar Cuenta');
   };
 
   // Save settings to Firestore
@@ -294,7 +297,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
       loggingService.info('Public token generated successfully');
     } catch (error) {
       loggingService.error('Failed to generate token', error);
-      alert('Could not generate public link. Please try again.');
+      showAlert('Could not generate public link. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -414,6 +417,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </div>
                     </div>
                   </section>
+
+                  {/* Developer Tools (Design System) */}
+                  {onNavigate && (
+                    <section>
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider mb-4">Developer Tools</h4>
+                      <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Internal Design System</p>
+                            <p className="text-sm text-outline">View and test UI components and styles</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              onClose();
+                              onNavigate('design-system');
+                            }}
+                            className="px-4 py-2 rounded-full border border-outline text-primary text-sm font-medium hover:bg-surface-variant transition-colors flex items-center gap-2"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">palette</span>
+                            Open Explorer
+                          </button>
+                        </div>
+                      </div>
+                    </section>
+                  )}
                 </div>
               )}
 
@@ -434,24 +462,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       />
 
                       {profile.avatarUrl ? (
-                         <img
-                            src={profile.avatarUrl}
-                            alt="Profile"
-                            className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : ''}`}
-                         />
+                        <img
+                          src={profile.avatarUrl}
+                          alt="Profile"
+                          className={`w-full h-full object-cover transition-opacity ${isUploading ? 'opacity-50' : ''}`}
+                        />
                       ) : (
-                         <span className={isUploading ? 'opacity-50' : ''}>
-                           {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
-                         </span>
+                        <span className={isUploading ? 'opacity-50' : ''}>
+                          {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}
+                        </span>
                       )}
 
                       {/* Overlay */}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                         {isUploading ? (
-                              <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                         ) : (
-                              <span className="material-symbols-outlined text-white">camera_alt</span>
-                         )}
+                        {isUploading ? (
+                          <div className="w-6 h-6 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          <span className="material-symbols-outlined text-white">camera_alt</span>
+                        )}
                       </div>
                     </div>
 
@@ -461,11 +489,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                       </h4>
                       <p className="text-sm text-outline truncate">{profile.email || 'No email'}</p>
                       <button
-                         onClick={handleAvatarClick}
-                         className="text-xs text-primary hover:underline mt-1 disabled:opacity-50"
-                         disabled={isUploading}
+                        onClick={handleAvatarClick}
+                        className="text-xs text-primary hover:underline mt-1 disabled:opacity-50"
+                        disabled={isUploading}
                       >
-                         Change Photo
+                        Change Photo
                       </button>
                     </div>
                   </div>
@@ -478,18 +506,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
 
                       {!profile.shareToken ? (
                         <div className="flex flex-col items-start gap-2">
-                           <button
-                             onClick={handleGenerateToken}
-                             disabled={isSaving}
-                             className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-                           >
-                             {isSaving ? (
-                               <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                             ) : (
-                               <span className="material-symbols-outlined text-[18px]">link</span>
-                             )}
-                             Generate Public Link
-                           </button>
+                          <button
+                            onClick={handleGenerateToken}
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                          >
+                            {isSaving ? (
+                              <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                              <span className="material-symbols-outlined text-[18px]">link</span>
+                            )}
+                            Generate Public Link
+                          </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -568,13 +596,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                           : 'bg-surface-variant border border-outline-variant'
                           }`}
                       >
-                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.enabled ? 'right-1' : 'left-1'}`} />
+                        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.enabled ? 'right-1' : 'left-1'}`} />
                       </button>
                     </div>
 
                     {/* Auto Analysis */}
                     <div className="flex items-center justify-between">
-                       <div>
+                      <div>
                         <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Auto Analysis</p>
                         <p className="text-sm text-outline">Automatically check for improvements on save</p>
                       </div>
@@ -586,7 +614,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                           : 'bg-surface-variant border border-outline-variant'
                           } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.autoAnalyze ? 'right-1' : 'left-1'}`} />
+                        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings.ai.autoAnalyze ? 'right-1' : 'left-1'}`} />
                       </button>
                     </div>
 
@@ -594,19 +622,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey }
                     <div>
                       <p className="text-base font-medium text-[var(--md-sys-color-on-background)] mb-3">Creativity Level</p>
                       <div className="flex bg-surface-variant rounded-full p-1 max-w-sm">
-                          {(['low', 'medium', 'high'] as const).map((level) => (
-                            <button
-                              key={level}
-                              onClick={() => handleAiChange('creativityLevel', level)}
-                              disabled={isLoading || !settings.ai.enabled}
-                              className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all ${settings.ai.creativityLevel === level
-                                ? 'bg-[var(--md-sys-color-background)] shadow-sm font-bold text-[var(--md-sys-color-on-background)]'
-                                : 'text-outline hover:text-primary'
-                                } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              {level.charAt(0).toUpperCase() + level.slice(1)}
-                            </button>
-                          ))}
+                        {(['low', 'medium', 'high'] as const).map((level) => (
+                          <button
+                            key={level}
+                            onClick={() => handleAiChange('creativityLevel', level)}
+                            disabled={isLoading || !settings.ai.enabled}
+                            className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all ${settings.ai.creativityLevel === level
+                              ? 'bg-[var(--md-sys-color-background)] shadow-sm font-bold text-[var(--md-sys-color-on-background)]'
+                              : 'text-outline hover:text-primary'
+                              } ${(!settings.ai.enabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {level.charAt(0).toUpperCase() + level.slice(1)}
+                          </button>
+                        ))}
                       </div>
                     </div>
 

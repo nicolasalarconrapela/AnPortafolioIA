@@ -28,43 +28,57 @@ router.get('/profile/:token', async (req, res) => {
 
     try {
         const firestore = getFirestore();
-        // Determine collection name based on env, similar to other routes
-        // IMPORTANT: The shareToken is stored in the 'users' (or 'users_dev') collection,
-        // NOT primarily in the workspace collection (though we sync it there).
-        // For public access, we should search the primary user registry.
         const collectionName = process.env.NODE_ENV === 'production' ? 'users' : 'users_dev';
 
-        // Query by shareToken instead of doc ID
+        // 1. Find Query by shareToken
         const snapshot = await firestore.collection(collectionName)
             .where('shareToken', '==', token)
             .limit(1)
             .get();
 
         if (snapshot.empty) {
-            // Fallback: Check workspace collection if not found in main users
-            // This handles cases where maybe it was only written to one place
-            // although our sync logic tries to keep them consistent.
             return res.status(404).json({ error: "Profile not found or invalid token." });
         }
 
-        const docSnap = snapshot.docs[0];
-        const data = docSnap.data();
+        const userDoc = snapshot.docs[0];
+        const targetUid = userDoc.id;
 
-        // Security: ONLY return the profile section
-        // We preferentially use 'profile' structure, but fall back to root fields
-        const publicData = {
-            profile: {
-                fullName: data.displayName || data.profile?.fullName || 'User',
-                avatarUrl: data.photoURL || data.profile?.avatarUrl || '',
-                bio: data.profile?.bio || '',
-                title: data.profile?.title || '',
-                // Add any other public allowed fields here
-            }
+        // 2. Resolve Workspace Collection Path
+        const isDev = process.env.NODE_ENV !== 'production';
+        const workspaceCollection = isDev ? "workspace-development" : "workspace-production";
+        const usersCollection = isDev ? "users-development" : "users-production";
+
+        // Structure: workspace-[env] > global > users-[env] > [uid]
+        const workspaceDocRef = firestore.collection(workspaceCollection)
+            .doc('global')
+            .collection(usersCollection)
+            .doc(targetUid);
+
+        const workspaceSnap = await workspaceDocRef.get();
+
+        if (!workspaceSnap.exists) {
+            console.warn(`[WARN] Public Profile: User ${targetUid} found but workspace missing.`);
+            return res.status(404).json({ error: "Profile data not initialized." });
+        }
+
+        const workspaceData = workspaceSnap.data();
+
+        // 3. Return Data + userKey (uid) for decryption
+        // We do NOT decrypt here. The frontend has the logic.
+        // We strip sensitive fields if necessary, but for now we assume workspace 'profile' is what matters.
+        // If encrypted, workspaceData.encryptedPayload is present.
+        // If plain, workspaceData.profile is present.
+
+        const responseData = {
+            ...workspaceData,
+            userKey: targetUid // Critical for frontend decryption
         };
 
-        // Cache control - Public data can be cached briefly
+        // Cache control
         res.setHeader('Cache-Control', 'public, max-age=60');
-        res.json(publicData);
+        res.json({ profile: responseData }); // Wrap in 'profile' key to match expected structure or adjust frontend
+
+
 
     } catch (error) {
         console.error('[ERROR] Public Profile Get Error:', error);
