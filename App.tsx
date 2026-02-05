@@ -8,6 +8,7 @@ import { CandidateDashboard } from './src/components/CandidateDashboard';
 import { DesignSystemView } from './src/components/DesignSystemView';
 import { PrivacyPolicyView } from './src/components/legal/PrivacyPolicyView';
 import BrainRoot from './src/components/brain/BrainRoot';
+import { SettingsModal } from './src/components/SettingsModal';
 import { ViewState, UserProfile } from './src/types';
 import { ConsentProvider, useConsent } from './src/components/consent/ConsentContext';
 import { ConsentUI } from './src/components/consent/ConsentUI';
@@ -17,18 +18,28 @@ import { loggingService } from './src/utils/loggingService';
 import { getWorkspaceByUserFromFirestore, getPublicProfile } from './src/services/firestoreWorkspaces';
 import { authService } from './src/services/authService';
 
+// Custom type for extended view state
+type ExtendedViewState = ViewState | 'privacy-policy' | 'public-profile';
 
-// Extend ViewState locally if needed or assume it's updated in types.ts
-// For now, we cast strings if types aren't updated yet to avoid breaking compile
-type ExtendedViewState = ViewState | 'privacy-policy';
+import { PublicProfileViewer } from './src/components/brain/PublicProfileViewer';
+import { CVProfile } from './src/types_brain';
 
 const AppContent: React.FC = () => {
   // Session State (No LocalStorage)
   const [view, setView] = useState<ExtendedViewState>('landing');
+  const [prevView, setPrevView] = useState<ExtendedViewState>('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [publicProfile, setPublicProfile] = useState<CVProfile | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const navigateTo = (nextView: ExtendedViewState) => {
+    setPrevView(view);
+    setView(nextView);
+  };
 
   const { openModal } = useConsent();
 
@@ -57,7 +68,14 @@ const AppContent: React.FC = () => {
         if (publicToken) {
           const publicProfileData = await getPublicProfile(publicToken);
           if (publicProfileData && publicProfileData.profile) {
-            setUserProfile(publicProfileData.profile);
+            // Identify if it is a full CVProfile or just UserProfile
+            const p = publicProfileData.profile;
+            if (p.experience || p.education || p.summary) {
+              setPublicProfile(p as CVProfile);
+              setView('public-profile');
+            } else {
+              setUserProfile(p);
+            }
             // We don't set CurrentUserId/IsAuthenticated, so we are in "Public View Mode"
             setIsSessionChecking(false);
             return;
@@ -76,6 +94,9 @@ const AppContent: React.FC = () => {
             const ws = await getWorkspaceByUserFromFirestore(user.uid);
             if (ws && ws.profile) {
               setUserProfile(ws.profile);
+            }
+            if (ws && ws.shareToken) {
+              setShareToken(ws.shareToken);
             }
 
             // 3. Logic to decide if we stay on landing or go to dashboard
@@ -120,6 +141,9 @@ const AppContent: React.FC = () => {
       if (ws && ws.profile) {
         setUserProfile(ws.profile);
       }
+      if (ws && ws.shareToken) {
+        setShareToken(ws.shareToken);
+      }
     } catch (e) {
       console.error("Failed to fetch profile on login success", e);
     }
@@ -152,17 +176,17 @@ const AppContent: React.FC = () => {
 
       {view === 'landing' && (
         <LandingView
-          onNavigate={(nextView) => setView(nextView)}
+          onNavigate={(nextView) => navigateTo(nextView)}
           userProfile={userProfile}
         />
       )}
 
       {view === 'design-system' && (
-        <DesignSystemView onBack={() => setView('landing')} />
+        <DesignSystemView onBack={() => setView(prevView)} />
       )}
 
       {view === 'privacy-policy' && (
-        <PrivacyPolicyView onBack={() => setView('landing')} />
+        <PrivacyPolicyView onBack={() => setView(prevView)} />
       )}
 
       {view === 'auth-candidate' && (
@@ -193,12 +217,30 @@ const AppContent: React.FC = () => {
         <CandidateDashboard
           userId={currentUserId}
           onLogout={handleLogout}
-          onNavigate={(v) => setView(v as ViewState)}
+          onNavigate={(v) => navigateTo(v as ViewState)}
         />
       )}
 
       {view === 'cv-analysis' && (
-        <BrainRoot />
+        <>
+          <BrainRoot
+            userId={currentUserId}
+            onLogout={handleLogout}
+            onSettings={() => setIsSettingsOpen(true)}
+            shareToken={shareToken || undefined}
+          />
+          {isSettingsOpen && (
+            <SettingsModal
+              onClose={() => setIsSettingsOpen(false)}
+              userKey={currentUserId}
+              onNavigate={(v) => navigateTo(v as ViewState)}
+            />
+          )}
+        </>
+      )}
+
+      {view === 'public-profile' && publicProfile && (
+        <PublicProfileViewer profile={publicProfile} />
       )}
 
       {/* Footer Links (Privacy & Settings) */}
@@ -221,10 +263,14 @@ const AppContent: React.FC = () => {
   );
 };
 
+import { AlertProvider } from './src/components/ui/GlobalAlert';
+
 const App: React.FC = () => {
   return (
     <ConsentProvider>
-      <AppContent />
+      <AlertProvider>
+        <AppContent />
+      </AlertProvider>
     </ConsentProvider>
   );
 };

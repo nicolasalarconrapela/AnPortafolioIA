@@ -1,4 +1,3 @@
-
 export interface ChatMessage {
   id: string;
   role: "user" | "model";
@@ -72,4 +71,5 @@ export interface CVProfile {
   languages: LanguageItem[];
   hobbies: string[];
   socials?: SocialItem[]; // New field for social networks
+  donnaImage?: string; // Specific image for the Donna AI Profile view
 }
