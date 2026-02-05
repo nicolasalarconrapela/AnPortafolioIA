@@ -7,6 +7,8 @@ import { upsertWorkspaceForUser, listenWorkspaceByUser } from '../services/fires
 import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
 import { APP_VERSION } from '../utils/appVersion';
+import { createGeminiService } from '../services/geminiService';
+
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
 
@@ -131,6 +133,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
   const [isUploading, setIsUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [aiStatus, setAiStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking'; model: string }> | null>(null);
+  const [isCheckingAI, setIsCheckingAI] = useState(false);
+
 
   // Load settings from Firestore
   useEffect(() => {
@@ -178,6 +183,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
 
     return () => unsubscribe();
   }, [userKey]);
+
+  // Check AI System Status when AI tab is active
+  useEffect(() => {
+    if (activeTab === 'ai' && !aiStatus && !isCheckingAI) {
+      checkAIStatus();
+    }
+  }, [activeTab]);
+
+  const checkAIStatus = async () => {
+    setIsCheckingAI(true);
+    try {
+      const geminiService = createGeminiService();
+      const status = await geminiService.getSystemStatus();
+      setAiStatus(status);
+    } catch (error) {
+      loggingService.error('Failed to check AI status:', error);
+      // Set all to offline on error
+      setAiStatus({
+        "Señorita Rotenmeir": { status: 'offline', model: "gemini-3-pro-preview" },
+        "Janice": { status: 'offline', model: "gemini-3-flash-preview" },
+        "Googlito": { status: 'offline', model: "gemini-3-flash-preview" },
+        "Gretchen Bodinski": { status: 'offline', model: "gemini-3-flash-preview" },
+        "Donna": { status: 'offline', model: "gemini-3-flash-preview" }
+      });
+    } finally {
+      setIsCheckingAI(false);
+    }
+  };
+
 
   // Handle Avatar Upload
   const handleAvatarClick = () => {
@@ -638,6 +672,84 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                       </div>
                     </div>
 
+                  </div>
+
+                  {/* AI System Status */}
+                  <div className="mt-8 animate-fade-in delay-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-bold text-primary uppercase tracking-wider">AI System Status</h4>
+                      <button
+                        onClick={checkAIStatus}
+                        disabled={isCheckingAI}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-primary-container hover:bg-primary-container/80 text-primary-onContainer rounded-full text-xs font-medium transition-all disabled:opacity-50"
+                      >
+                        <span className={`material-symbols-outlined text-sm ${isCheckingAI ? 'animate-spin' : ''}`}>
+                          {isCheckingAI ? 'sync' : 'refresh'}
+                        </span>
+                        {isCheckingAI ? 'Checking...' : 'Check Status'}
+                      </button>
+                    </div>
+                    <div className="bg-surface-variant/30 rounded-[20px] p-6 border border-outline-variant/30">
+                      {!aiStatus ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <div className="w-12 h-12 border-4 border-outline-variant border-t-primary rounded-full animate-spin mb-4"></div>
+                          <p className="text-sm text-outline">Loading AI status...</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.entries({
+                              "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: "/rotenmeir.png" },
+                              "Janice": { role: "Writing Assistant", img: "/googlito.jpg" },
+                              "Googlito": { role: "Data Fixer", img: "/googlito.jpg" },
+                              "Gretchen Bodinski": { role: "Auditor", img: "/gretchen.jpg" },
+                              "Donna": { role: "Recruiter Interface", img: "/donna_avatar.png" }
+                            }).map(([name, meta]) => {
+                              const status = aiStatus[name];
+                              const isOnline = status?.status === 'online';
+
+                              return (
+                                <div key={name} className="flex items-center justify-between p-3 bg-surface rounded-xl border border-outline-variant/50">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-outline-variant/30 shadow-sm bg-surface-variant">
+                                      <img src={meta.img} alt={name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-bold text-[var(--md-sys-color-on-background)]">{name}</p>
+                                      <p className="text-[10px] text-outline">{meta.role}</p>
+                                      {status && (
+                                        <p className="text-[9px] text-outline/60 mt-0.5 font-mono">{status.model}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold border ${isOnline
+                                    ? 'bg-green-50 text-green-700 border-green-100'
+                                    : 'bg-surface-variant/50 text-outline border-outline-variant/30'
+                                    }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-outline/50'}`}></span>
+                                    {isOnline ? 'ONLINE' : 'OFFLINE'}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] text-outline">
+                                {Object.values(aiStatus).every(s => s.status === 'online')
+                                  ? '✓ All systems operational. Gemini API connected.'
+                                  : '⚠ Some AI services are offline. Check your API key configuration.'}
+                              </p>
+                              {process.env.API_KEY ? (
+                                <span className="text-[9px] text-green-600 font-mono px-2 py-1 bg-green-50 rounded">API Key: ●●●●●●</span>
+                              ) : (
+                                <span className="text-[9px] text-outline font-mono px-2 py-1 bg-surface-variant/30 rounded">No API Key</span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
