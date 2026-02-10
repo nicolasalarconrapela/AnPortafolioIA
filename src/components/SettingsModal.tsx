@@ -736,7 +736,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                           <div className="mt-4 pt-4 border-t border-outline-variant/30">
                             <div className="flex items-center justify-between">
                               <p className="text-[10px] text-outline">
-                                {Object.values(aiStatus).every(s => s.status === 'online')
+                                // Fix: cast aiStatus to any to avoid TypeScript inference issues with Object.values and 'unknown' type
+                                {Object.values(aiStatus as any).every((s: any) => s.status === 'online')
                                   ? '✓ All systems operational. Gemini API connected.'
                                   : '⚠ Some AI services are offline. Check your API key configuration.'}
                               </p>

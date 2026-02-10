@@ -14,12 +14,11 @@ interface ErrorBoundaryState {
     error: Error | null;
 }
 
-// Fix: Explicitly extend React.Component and include constructor to ensure 'props' is correctly typed/available
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    public state: ErrorBoundaryState = { hasError: false, error: null };
-
+// Fix: Use Component explicitly from named import to ensure 'this.props' and 'this.state' are correctly typed via generic usage
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {
         super(props);
+        this.state = { hasError: false, error: null };
     }
 
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -39,6 +38,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 </div>
             );
         }
+        // Fix: children is now correctly available on this.props via Component inheritance
         return this.props.children;
     }
 }

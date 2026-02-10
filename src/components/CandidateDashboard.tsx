@@ -33,7 +33,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   useEffect(() => {
     geminiServiceRef.current = createGeminiService();
   }, []);
-
+ 
   const {
     chat,
     setChat,
@@ -218,8 +218,6 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
         />
       )}
 
-      {/* Floating Header Actions removed - now using integrated nav in DonnaView */}
-
       {isEditing ? (
         <div className="bg-[var(--md-sys-color-background)] min-h-screen">
           {/* Wizard Mode */}
@@ -232,9 +230,6 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
             onReset={() => onNavigate?.('cv-analysis')}
             onFinish={() => handleSaveProfile(profile)}
           />
-          <div className="fixed top-4 right-4 z-50">
-            <Button variant="outlined" onClick={() => setIsEditing(false)}>Cancel Editing</Button>
-          </div>
         </div>
       ) : (
         /* Donna Mode (Home) */
