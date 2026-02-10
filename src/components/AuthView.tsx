@@ -17,6 +17,7 @@ interface AuthViewProps {
 }
 
 type FieldErrors = { email?: string; password?: string };
+type UserType = 'candidate' | 'company';
 
 export const AuthView: React.FC<AuthViewProps> = ({
   onNavigate,
@@ -25,6 +26,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
 }) => {
   // UI State
   const [isLogin, setIsLogin] = useState(initialMode === "login");
+  const [userType, setUserType] = useState<UserType>('candidate');
   const [isLoading, setIsLoading] = useState(false);
 
   // Form State
@@ -36,15 +38,25 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  const copy = useMemo(
-    () => ({
-      title: isLogin ? "Sign in" : "Create account",
-      subtitle: isLogin ? "Access your portfolio workspace." : "Join the platform today.",
-      heroTitle: "Your work, simply showcased.",
-      heroText: "The portfolio platform that focuses on what matters: you.",
-    }),
-    [isLogin]
-  );
+  const copy = useMemo(() => {
+    if (userType === 'candidate') {
+      return {
+        title: isLogin ? "Welcome back" : "Join as Talent",
+        subtitle: isLogin ? "Access your portfolio workspace." : "Create your AI-powered portfolio.",
+        heroTitle: "Your career, intelligently showcased.",
+        heroText: "The portfolio platform that focuses on what matters: your skills and potential.",
+        cta: isLogin ? "Continue" : "Start Building"
+      };
+    } else {
+      return {
+        title: isLogin ? "Business Login" : "Register Company",
+        subtitle: isLogin ? "Manage job postings and candidates." : "Start hiring the best talent.",
+        heroTitle: "Find the perfect match, faster.",
+        heroText: "Use AI to discover candidates that fit your culture and technical needs instantly.",
+        cta: isLogin ? "Login to Dashboard" : "Create Business Account"
+      };
+    }
+  }, [isLogin, userType]);
 
   const handleToggle = () => {
     setIsLogin((prev) => !prev);
@@ -154,7 +166,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
       if (isLogin) {
         user = await authService.login(email, password);
       } else {
-        user = await authService.register(email, password);
+        // Pass userType (candidate/company) during registration
+        user = await authService.register(email, password, userType);
       }
       onAuthSuccess(user);
     } catch (err: any) {
@@ -166,17 +179,19 @@ export const AuthView: React.FC<AuthViewProps> = ({
     }
   };
 
-
-
   return (
     <div className="min-h-screen w-full flex bg-[var(--md-sys-color-background)]">
       {/* Left Panel - Minimalist Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-surface-variant/30 relative flex-col justify-center px-20 border-r border-outline-variant/10">
-        <div className="max-w-lg">
+      <div className="hidden lg:flex lg:w-1/2 bg-surface-variant/30 relative flex-col justify-center px-20 border-r border-outline-variant/10 overflow-hidden">
+        {/* Background Decor */}
+        <div className={`absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br rounded-full blur-[100px] opacity-20 -translate-y-1/2 translate-x-1/4 transition-colors duration-700 ${userType === 'candidate' ? 'from-primary to-secondary' : 'from-purple-500 to-indigo-500'}`}></div>
+        <div className={`absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr rounded-full blur-[80px] opacity-20 translate-y-1/3 -translate-x-1/4 transition-colors duration-700 ${userType === 'candidate' ? 'from-secondary to-tertiary' : 'from-indigo-500 to-blue-500'}`}></div>
+
+        <div className="max-w-lg relative z-10">
           <div className="flex items-center gap-3 mb-8 opacity-80">
-            <Icon name="diversity_3" className="text-primary text-3xl" />
+            <Icon name={userType === 'candidate' ? "person_check" : "business_center"} className="text-primary text-3xl" />
             <span className="font-display font-medium text-xl tracking-tight text-[var(--md-sys-color-on-background)]">
-              AnPortafolioIA
+              AnPortafolioIA <span className="opacity-50 mx-2">|</span> <span className="text-sm font-normal uppercase tracking-widest">{userType === 'candidate' ? 'Talent' : 'Business'}</span>
             </span>
           </div>
 
@@ -211,8 +226,32 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
         {/* Content */}
         <div className="flex-1 flex items-center justify-center p-6 sm:p-12 mt-16 lg:mt-0">
-          <div className="w-full max-w-[400px]">
-            <div className="mb-10">
+          <div className="w-full max-w-[420px]">
+            
+            {/* Persona Switcher */}
+            <div className="flex bg-surface-variant/50 p-1 rounded-full mb-8 relative border border-outline-variant/30">
+              <div 
+                className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-slate-700 rounded-full shadow-sm transition-all duration-300 ease-out border border-outline-variant/10 ${userType === 'company' ? 'left-[calc(50%+2px)]' : 'left-1'}`} 
+              />
+              <button 
+                onClick={() => setUserType('candidate')} 
+                className={`flex-1 relative z-10 text-sm font-medium py-2.5 text-center transition-colors rounded-full flex items-center justify-center gap-2 ${userType === 'candidate' ? 'text-primary font-bold' : 'text-outline hover:text-slate-600'}`}
+                type="button"
+              >
+                <Icon name="person" size={18} />
+                Talent
+              </button>
+              <button 
+                onClick={() => setUserType('company')} 
+                className={`flex-1 relative z-10 text-sm font-medium py-2.5 text-center transition-colors rounded-full flex items-center justify-center gap-2 ${userType === 'company' ? 'text-indigo-600 font-bold' : 'text-outline hover:text-slate-600'}`}
+                type="button"
+              >
+                <Icon name="domain" size={18} />
+                Business
+              </button>
+            </div>
+
+            <div className="mb-8">
               <h1 className="font-display text-3xl font-normal text-[var(--md-sys-color-on-background)] mb-2">
                 {copy.title}
               </h1>
@@ -221,8 +260,9 @@ export const AuthView: React.FC<AuthViewProps> = ({
 
             {/* General error (Firebase/back) */}
             {generalError && (
-              <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                {generalError}
+              <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400 flex items-start gap-2">
+                <Icon name="error" className="mt-0.5 shrink-0" />
+                <span>{generalError}</span>
               </div>
             )}
 
@@ -231,7 +271,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
               <Button
                 variant="outlined"
                 fullWidth
-                className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12"
+                className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12 bg-white dark:bg-transparent"
                 aria-label="Sign in with Google"
                 onClick={handleGoogleLogin}
                 loading={isLoading}
@@ -243,35 +283,37 @@ export const AuthView: React.FC<AuthViewProps> = ({
                   alt=""
                   aria-hidden="true"
                 />
-                <span className="font-normal text-[var(--md-sys-color-on-background)]">
+                <span className="font-medium text-[var(--md-sys-color-on-background)]">
                   Continue with Google
                 </span>
               </Button>
 
-              <Button
-                variant="outlined"
-                fullWidth
-                className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12"
-                aria-label="Continue as anonymous user"
-                onClick={handleAnonymousLogin}
-                loading={isLoading}
-                type="button"
-              >
-                <div className="absolute left-4 flex items-center justify-center text-[var(--md-sys-color-on-background)]">
-                  <Icon name="no_accounts" size={20} />
-                </div>
-                <span className="font-normal text-[var(--md-sys-color-on-background)]">
-                  Continue Anonymously
-                </span>
-              </Button>
+              {userType === 'candidate' && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  className="justify-center gap-3 relative border-outline-variant/60 hover:border-outline-variant h-12 bg-white dark:bg-transparent"
+                  aria-label="Continue as anonymous user"
+                  onClick={handleAnonymousLogin}
+                  loading={isLoading}
+                  type="button"
+                >
+                  <div className="absolute left-4 flex items-center justify-center text-outline">
+                    <Icon name="visibility_off" size={20} />
+                  </div>
+                  <span className="font-medium text-[var(--md-sys-color-on-background)]">
+                    Try as Guest
+                  </span>
+                </Button>
+              )}
             </div>
 
             <div className="relative mb-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-outline-variant/30"></div>
               </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-medium">
-                <span className="bg-[var(--md-sys-color-background)] px-2 text-outline/50">Or</span>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold text-outline/40">
+                <span className="bg-[var(--md-sys-color-background)] px-3">Or continue with email</span>
               </div>
             </div>
 
@@ -282,12 +324,13 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 type="text"
                 inputMode="email"
                 autoComplete="email"
-                label="Email"
+                label={userType === 'company' ? "Work Email" : "Email Address"}
                 value={email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 onBlur={handleBlur}
                 error={errors.email}
                 disabled={isLoading}
+                startIcon="mail"
               />
 
               <Input
@@ -302,6 +345,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 endIcon={showPassword ? "visibility_off" : "visibility"}
                 onEndIconClick={() => setShowPassword((v) => !v)}
                 disabled={isLoading}
+                startIcon="lock"
               />
 
               {isLogin && (
@@ -319,17 +363,23 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </div>
               )}
 
-              <Button type="submit" variant="filled" fullWidth loading={isLoading} className="mt-2 h-12">
-                {isLogin ? "Continue" : "Sign Up"}
+              <Button 
+                type="submit" 
+                variant="filled" 
+                fullWidth 
+                loading={isLoading} 
+                className={`mt-2 h-12 text-base ${userType === 'company' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
+              >
+                {copy.cta}
               </Button>
             </form>
 
             <div className="mt-8 text-center">
               <p className="text-sm text-outline">
-                {isLogin ? "New here?" : "Have an account?"}
+                {isLogin ? "New to AnPortafolio?" : "Already have an account?"}
                 <button
                   onClick={handleToggle}
-                  className="ml-2 text-primary font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                  className={`ml-2 font-bold hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded ${userType === 'company' ? 'text-indigo-600 focus-visible:ring-indigo-500' : 'text-primary focus-visible:ring-primary'}`}
                   type="button"
                   disabled={isLoading}
                 >
@@ -337,7 +387,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
                 </button>
               </p>
             </div>
-
 
           </div>
           <div className="mt-auto py-6 text-center opacity-40">

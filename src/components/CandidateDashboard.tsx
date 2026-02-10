@@ -33,7 +33,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   useEffect(() => {
     geminiServiceRef.current = createGeminiService();
   }, []);
- 
+
   const {
     chat,
     setChat,
@@ -185,10 +185,79 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-outline text-sm animate-pulse">Cargando perfil...</p>
+      <div className="min-h-screen bg-[#F8FAFC] pb-20 animate-fade-in">
+        {/* Navigation Skeleton */}
+        <div className="sticky top-0 z-40 bg-white/80 border-b border-slate-200/60 px-4 md:px-8 py-3 flex items-center justify-between">
+          <div className="w-32 h-8 bg-slate-200 rounded-lg animate-pulse" />
+          <div className="flex gap-3 items-center">
+            <div className="hidden md:block w-24 h-9 bg-slate-200 rounded-full animate-pulse" />
+            <div className="w-10 h-10 bg-slate-200 rounded-full animate-pulse" />
+          </div>
+        </div>
+
+        {/* Main Content Skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            
+            {/* Left Column Skeleton */}
+            <div className="lg:col-span-8 space-y-10">
+              {/* Header Card Skeleton */}
+              <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center mb-8">
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] bg-slate-200 animate-pulse shrink-0 rotate-[-3deg]" />
+                  <div className="space-y-4 flex-1 w-full">
+                    <div className="w-3/4 h-10 md:h-14 bg-slate-200 rounded-xl animate-pulse" />
+                    <div className="w-1/3 h-6 bg-slate-100 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="w-full h-4 bg-slate-50 rounded animate-pulse" />
+                  <div className="w-full h-4 bg-slate-50 rounded animate-pulse" />
+                  <div className="w-2/3 h-4 bg-slate-50 rounded animate-pulse" />
+                </div>
+                <div className="flex gap-2 mt-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="w-20 h-6 bg-slate-100 rounded-md animate-pulse" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabs Skeleton */}
+              <div className="flex gap-2 overflow-hidden">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-28 h-10 bg-slate-200 rounded-full animate-pulse opacity-50" />
+                ))}
+              </div>
+
+              {/* Experience List Skeleton */}
+              <div className="space-y-8 pl-4 border-l-2 border-slate-100">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex flex-col md:flex-row gap-6">
+                    <div className="w-16 h-16 bg-slate-200 rounded-2xl shrink-0 animate-pulse" />
+                    <div className="flex-1 space-y-4">
+                      <div className="w-48 h-6 bg-slate-200 rounded animate-pulse" />
+                      <div className="bg-white rounded-2xl p-6 border border-slate-100 space-y-3">
+                        <div className="flex justify-between">
+                          <div className="w-1/3 h-6 bg-slate-200 rounded animate-pulse" />
+                          <div className="w-24 h-4 bg-slate-100 rounded animate-pulse" />
+                        </div>
+                        <div className="w-full h-3 bg-slate-50 rounded animate-pulse mt-4" />
+                        <div className="w-5/6 h-3 bg-slate-50 rounded animate-pulse" />
+                        <div className="w-4/6 h-3 bg-slate-50 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-sm h-72 animate-pulse" />
+              <div className="bg-slate-900/10 rounded-2xl h-24 animate-pulse" />
+            </div>
+
+          </div>
         </div>
       </div>
     );

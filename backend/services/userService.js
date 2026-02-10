@@ -22,6 +22,7 @@ export const syncUserToFirestore = async (uid, userData) => {
 
   const payload = {
     ...userData,
+    role: userData.role || 'candidate', // Default to candidate if not specified
     updatedAt: new Date().toISOString(),
   };
 
@@ -41,7 +42,7 @@ export const syncUserToFirestore = async (uid, userData) => {
     }
 
     await userRef.set(payload, { merge: true });
-    logger.info('User synced to Firestore', { uid, collection: USERS_COLLECTION });
+    logger.info('User synced to Firestore', { uid, collection: USERS_COLLECTION, role: payload.role });
 
     // Also sync shareToken to workspace doc for convenience if it exists
     if (payload.shareToken) {

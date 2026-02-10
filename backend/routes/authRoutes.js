@@ -252,7 +252,7 @@ router.post('/login', async (req, res) => {
  * Register with Email/Password -> Syncs to Firestore -> Sets Session Cookie
  */
 router.post('/register', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     try {
@@ -262,7 +262,8 @@ router.post('/register', async (req, res) => {
         await syncUserToFirestore(data.localId, {
             email: data.email,
             isAnonymous: false,
-            provider: 'password'
+            provider: 'password',
+            role: role || 'candidate' // Persist the role (candidate/company)
         });
 
         await setSessionCookie(res, data.idToken);
@@ -272,9 +273,7 @@ router.post('/register', async (req, res) => {
             user: {
                 uid: data.localId,
                 email: data.email,
-                // Client usually doesn't need idToken if using cookies, but keeping for compatibility if needed
-                // idToken: data.idToken,
-                // refreshToken: data.refreshToken
+                role: role || 'candidate'
             }
         });
     } catch (error) {

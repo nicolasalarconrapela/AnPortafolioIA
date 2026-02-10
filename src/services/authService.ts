@@ -46,11 +46,11 @@ class AuthService {
    * Register with Email and Password
    * Calls POST /api/auth/register
    */
-  async register(email, password) {
+  async register(email, password, role = 'candidate') {
     const response = await fetch(`${BASE_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, role }),
       credentials: "include", // Ensure cookie is set
     });
 
