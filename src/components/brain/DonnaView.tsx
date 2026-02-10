@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import {
   ChevronLeft, Bot, Send, Calendar, Download, Briefcase, Code, Globe,
   MessageSquare, MapPin, X, Mail, Linkedin, User, Diamond, Clock,
-  Github, ExternalLink, Link as LinkIcon, Settings, LogOut, Edit3
+  Github, ExternalLink, Link as LinkIcon, Settings, LogOut, Edit3, Image as ImageIcon
 } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
@@ -52,6 +51,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
   onShare
 }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Calculate detailed skill metrics (Years + Associated Companies)
   const topSkills = React.useMemo(() => {
@@ -88,15 +88,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         }
       });
 
-      // Check projects for matches (adds context, maybe not years if concurrent)
-      profile.projects.forEach(proj => {
-        if ((proj.technologies + proj.description + proj.name).toLowerCase().includes(skillLower)) {
-          // We just mark it as relevant, maybe add a generic "Personal Projects" tag if we wanted
-        }
-      });
-
-      // If found in experience, use calculated years. If not found but listed in skills, default to 1 or 0 based on logic.
-      // Here we prioritize skills that were actually found in the descriptions.
       return {
         name: skill,
         years: totalYears,
@@ -197,48 +188,59 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
       case 'projects':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-            {profile.projects?.map((proj, i) => (
-              <div key={i} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-                {proj.images && proj.images.length > 0 ? (
-                  <div className="h-48 overflow-hidden bg-slate-100 relative group">
-                    <img src={proj.images[0]} alt={proj.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
-                  </div>
-                ) : (
-                  <div className="h-24 bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-100 relative">
-                    <div className="absolute bottom-4 left-6 p-2 bg-white rounded-lg shadow-sm">
-                      <Code className="w-6 h-6 text-slate-400" />
+            {profile.projects?.map((proj, i) => {
+              const [projImgError, setProjImgError] = useState(false);
+              return (
+                <div key={i} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+                  {proj.images && proj.images.length > 0 && !projImgError ? (
+                    <div className="h-48 overflow-hidden bg-slate-100 relative group">
+                      <img 
+                        src={proj.images[0]} 
+                        alt={proj.name} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                        onError={() => setProjImgError(true)}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="h-48 bg-gradient-to-br from-slate-50 to-indigo-50/30 border-b border-slate-100 flex items-center justify-center relative group">
+                      <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:scale-110 transition-transform">
+                        <ImageIcon className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <div className="absolute bottom-4 left-6">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No preview available</p>
+                      </div>
+                    </div>
+                  )}
 
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-bold text-slate-900 text-xl leading-tight">{proj.name}</h4>
-                    {proj.link && (
-                      <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors -mr-2 -mt-2">
-                        <Send className="w-4 h-4" />
-                      </a>
-                    )}
-                  </div>
-
-                  <p className="text-sm text-slate-600 mb-6 leading-relaxed line-clamp-3">{proj.description}</p>
-
-                  <div className="mt-auto pt-4 border-t border-slate-100">
-                    <div className="flex flex-wrap gap-2">
-                      {(proj.technologies || '').split(',').slice(0, 4).map((tech, t) => (
-                        <span key={t} className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                          {tech.trim()}
-                        </span>
-                      ))}
-                      {(proj.technologies || '').split(',').length > 4 && (
-                        <span className="text-[10px] font-bold text-slate-400 px-1 py-1">+{(proj.technologies || '').split(',').length - 4}</span>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-bold text-slate-900 text-xl leading-tight">{proj.name}</h4>
+                      {proj.link && (
+                        <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors -mr-2 -mt-2">
+                          <Send className="w-4 h-4" />
+                        </a>
                       )}
+                    </div>
+
+                    <p className="text-sm text-slate-600 mb-6 leading-relaxed line-clamp-3">{proj.description}</p>
+
+                    <div className="mt-auto pt-4 border-t border-slate-100">
+                      <div className="flex flex-wrap gap-2">
+                        {(proj.technologies || '').split(',').slice(0, 4).map((tech, t) => (
+                          <span key={t} className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                            {tech.trim()}
+                          </span>
+                        ))}
+                        {(proj.technologies || '').split(',').length > 4 && (
+                          <span className="text-[10px] font-bold text-slate-400 px-1 py-1">+{(proj.technologies || '').split(',').length - 4}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         );
       case 'skills':
@@ -286,7 +288,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         className="sticky top-0 z-40 bg-white/80 supports-[backdrop-filter]:bg-white/60 backdrop-blur-xl border-b border-slate-200/60 px-4 md:px-8 py-3 flex items-center justify-between transition-all duration-300 dark:bg-slate-900/70 dark:border-slate-700/60"
         aria-label="Top navigation"
       >
-        {/* Left Side: Back */}
         <div className="flex items-center gap-4">
           {onBack && (
             <button
@@ -309,9 +310,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
           )}
         </div>
 
-        {/* Right Section Cluster */}
         <div className="flex items-center gap-3">
-          {/* Edit Profile Button (Capsule) */}
           {onEdit && (
             <button
               onClick={onEdit}
@@ -322,7 +321,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </button>
           )}
 
-          {/* Download Button (Optional) */}
           {onExportJSON && (
             <button
               onClick={onExportJSON}
@@ -334,7 +332,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </button>
           )}
 
-          {/* Share Button (New) */}
           {onShare && (
             <button
               onClick={onShare}
@@ -346,10 +343,8 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </button>
           )}
 
-          {/* Far Right: Actions (Settings & Logout) */}
           {(onSettings || onLogout) && (
             <div className="flex items-center gap-2 pl-4 border-l border-slate-200/60 ml-1">
-              {/* Settings Button (Circle) */}
               {onSettings && (
                 <button
                   onClick={onSettings}
@@ -360,7 +355,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 </button>
               )}
 
-              {/* Logout Button (Circle - Pinkish) */}
               {onLogout && (
                 <button
                   onClick={onLogout}
@@ -375,16 +369,11 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         </div>
       </nav>
 
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-          {/* Left Column: Profile Content (8 cols) */}
           <div className="lg:col-span-8 space-y-10">
-
-            {/* Above the Fold: Header Card */}
             <div className="bg-white rounded-[32px] p-8 md:p-10 border border-slate-200/60 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-              {/* Decorative background blur */}
               <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
 
               <div className="relative z-10">
@@ -410,11 +399,18 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                     )}
 
                     <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 mt-2">
-                      {profile.donnaImage && (
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 shrink-0 bg-slate-100">
-                          <img src={profile.donnaImage} alt={profile.fullName} className="w-full h-full object-cover" />
-                        </div>
-                      )}
+                      <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 shrink-0 bg-slate-100 flex items-center justify-center">
+                        {profile.donnaImage && !avatarError ? (
+                          <img 
+                            src={profile.donnaImage} 
+                            alt={profile.fullName} 
+                            className="w-full h-full object-cover" 
+                            onError={() => setAvatarError(true)}
+                          />
+                        ) : (
+                          <User size={48} className="text-slate-300" />
+                        )}
+                      </div>
                       <h1 className="text-4xl md:text-6xl font-display font-bold text-slate-900 leading-[1.1] tracking-tight">
                         {profile.experience[0]?.role || "Senior Technical Professional"}
                       </h1>
@@ -424,7 +420,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                       {profile.summary || "Experienced professional ready to deliver impact and drive innovation in forward-thinking teams."}
                     </p>
 
-                    {/* Top Skills (Googlitos with Tooltip and Years) */}
                     {topSkills.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-6 items-center">
                         {topSkills.map((skill, i) => (
@@ -434,7 +429,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                               {skill.name} <span className="opacity-60 ml-1">({skill.years})</span>
                             </span>
 
-                            {/* Tooltip */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-slate-800 text-white text-[10px] rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                               <p className="font-bold mb-1 text-slate-300 uppercase tracking-wider text-[9px]">Experiences:</p>
                               {skill.companies.length > 0 ? (
@@ -455,7 +449,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                     )}
                   </div>
 
-                  {/* Social Proof: Logos - CENTERED */}
                   {profile.experience.length > 0 && (
                     <div className="pt-8 mt-4 border-t border-slate-100 text-center flex flex-col items-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Previously at</p>
@@ -473,7 +466,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
               </div>
             </div>
 
-            {/* Sticky Tabs Navigation */}
             <div className="sticky top-[69px] z-30 bg-[#F8FAFC]/90 backdrop-blur-md py-4 -mx-4 px-4 md:mx-0 md:px-0">
               <div className="flex overflow-x-auto gap-2 no-scrollbar p-1">
                 {['experience', 'education', 'projects', 'skills'].map((tab) => (
@@ -494,17 +486,13 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
               </div>
             </div>
 
-            {/* Dynamic Content */}
             <div className="min-h-[500px]">
               {renderContent()}
             </div>
           </div>
 
-          {/* Right Column: Socials & Connect (Sticky) */}
           <div className="lg:col-span-4 space-y-6">
             <div className="sticky top-24 space-y-6">
-
-              {/* Connect Widget (Replaced Snapshot) */}
               <div className="bg-white rounded-[24px] p-6 border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-bl-[100px] -mr-10 -mt-10 pointer-events-none"></div>
 
@@ -553,7 +541,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                       <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
                         <Mail size={18} />
                       </Button>
-                      {/* Fallback generic LinkedIn if not in list */}
                       <Button variant="outline" className="flex-1 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/50 hover:text-indigo-600">
                         <Linkedin size={18} />
                       </Button>
@@ -562,7 +549,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 </div>
               </div>
 
-              {/* Assistant Teaser */}
               {!isChatOpen && (
                 <div
                   onClick={() => setIsChatOpen(true)}
@@ -585,10 +571,8 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         </div>
       </div>
 
-      {/* Floating Chat Interface */}
       {isChatOpen && (
         <div className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 z-50 w-full h-full md:w-[400px] md:h-[600px] md:max-h-[80vh] bg-white md:rounded-[24px] shadow-2xl border-none md:border border-slate-200 flex flex-col overflow-hidden animate-fade-scale-up">
-          {/* Chat Header */}
           <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md overflow-hidden ${isOffline ? 'grayscale' : ''}`}>
@@ -615,7 +599,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </div>
           </div>
 
-          {/* Chat Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 scrollbar-thin">
             {chatHistory.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -642,7 +625,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             <div ref={chatEndRef} />
           </div>
 
-          {/* Chat Suggestions (Offline/Empty) */}
           {(isOffline || chatHistory.length < 2) && (
             <div className="px-4 py-2 bg-white border-t border-slate-100">
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
@@ -659,7 +641,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
             </div>
           )}
 
-          {/* Chat Input */}
           <div className="p-4 bg-white border-t border-slate-100">
             <form onSubmit={onSend} className="relative flex items-center gap-2">
               <input
@@ -680,7 +661,6 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
         </div>
       )}
 
-      {/* Floating Action Button (FAB) */}
       {!isChatOpen && (
         <button
           onClick={() => setIsChatOpen(true)}

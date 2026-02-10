@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { AvatarScanner } from './AvatarScanner';
 import { ViewState } from '../types';
 import { Button } from './ui/Button';
@@ -12,6 +11,8 @@ interface LandingViewProps {
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfile }) => {
+  const [avatarError, setAvatarError] = useState(false);
+
   return (
     <div className="flex flex-col min-h-screen text-[var(--md-sys-color-on-background)]">
 
@@ -44,8 +45,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate, userProfil
             aria-label={userProfile ? `Profile: ${userProfile.name}` : "Account"}
             title={userProfile ? `Logged in as ${userProfile.name}` : "Log In"}
           >
-            {userProfile?.avatarUrl ? (
-              <img src={userProfile.avatarUrl} alt={userProfile.name || "User"} className="w-full h-full object-cover" />
+            {userProfile?.avatarUrl && !avatarError ? (
+              <img 
+                src={userProfile.avatarUrl} 
+                alt={userProfile.name || "User"} 
+                className="w-full h-full object-cover" 
+                onError={() => setAvatarError(true)}
+              />
             ) : (
               <Icon name="account_circle" size={24} />
             )}

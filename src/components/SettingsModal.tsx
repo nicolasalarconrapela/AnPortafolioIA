@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { StorageSettingsView } from './settings/StorageSettings';
 import { useConsent } from './consent/ConsentContext';
@@ -705,7 +704,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                               "Gretchen Bodinski": { role: "Auditor", img: "/gretchen.jpg" },
                               "Donna": { role: "Recruiter Interface", img: "/donna_avatar.png" }
                             }).map(([name, meta]) => {
-                              const status = aiStatus[name];
+                              // Fix: cast the dynamic indexed object to the known interface type or any to resolve 'unknown' inference error
+                              const status = aiStatus ? (aiStatus as Record<string, any>)[name] : undefined;
                               const isOnline = status?.status === 'online';
 
                               return (

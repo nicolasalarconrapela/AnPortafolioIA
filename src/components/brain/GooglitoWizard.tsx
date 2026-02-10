@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import {
   CheckCircle2, FileJson, ChevronRight, ChevronLeft, Briefcase, Star,
   Terminal, Code, Heart, Award, Globe, BookOpen, User, FileText,
   Sparkles, X, Plus, ArrowRight, ShieldAlert,
-  Link, Image, Calendar, Trash2, Upload, LayoutGrid, Wand2, Share2, Sidebar
+  Link, Image, Calendar, Trash2, Upload, LayoutGrid, Wand2, Share2, Sidebar, Image as ImageIcon
 } from 'lucide-react';
 import { Button } from './Button';
 import { CompanyLogo } from './CompanyLogo';
@@ -224,7 +223,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
             )}
           </div>
 
-          {/* Horizontal Scrollable Tabs (Center) */}
           <div ref={navRef} className="flex-1 flex overflow-x-auto no-scrollbar px-4 h-full items-end gap-1 md:gap-2">
             {steps.slice(1).map((s, idx) => {
               const stepIndex = idx + 1;
@@ -267,9 +265,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
         </div>
       </header>
 
-      {/* Split Content Body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Wizard Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 animate-fade-in pb-24 relative">
           <div className="max-w-4xl mx-auto">
             <SectionHeader
@@ -285,7 +281,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                 <div className="space-y-6">
                   {profile.experience.map((exp, idx) => (
                     <div key={idx} className="bg-surface-variant/20 rounded-[24px] p-6 border border-outline-variant/40 hover:border-outline-variant transition-colors group relative">
-                      {/* Header Inputs */}
                       <div className="flex flex-col md:flex-row gap-4 mb-4">
                         <div className="shrink-0 pt-1">
                           <div className="relative group/logo w-14 h-14 bg-surface rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-outline-variant/30">
@@ -327,7 +322,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </div>
                       </div>
 
-                      {/* Dates */}
                       <div className="flex flex-wrap items-center gap-3 mb-4 pl-0 md:pl-[4.5rem]">
                         <div className="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-lg border border-outline-variant/30">
                           <Calendar size={14} className="text-outline" />
@@ -345,7 +339,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </label>
                       </div>
 
-                      {/* Description */}
                       <div className="relative pl-0 md:pl-[4.5rem]">
                         <textarea
                           className="w-full bg-surface border border-outline-variant rounded-xl p-4 text-sm leading-relaxed text-[var(--md-sys-color-on-background)] focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none transition-all h-32"
@@ -362,7 +355,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </button>
                       </div>
 
-                      {/* Associated Skills */}
                       <div className="mt-4 pt-3 border-t border-outline-variant/20 md:pl-[4.5rem]">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -499,67 +491,79 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
 
               {currentStep === 4 && (
                 <div className="space-y-6">
-                  {profile.projects.map((proj, idx) => (
-                    <div key={idx} className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 shadow-sm relative group">
-                      <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
-                        <div className="w-full">
-                          <input
-                            className="w-full text-lg font-bold text-primary bg-transparent border-b border-transparent hover:border-outline-variant focus:border-primary p-0 outline-none transition-colors"
-                            value={proj.name}
-                            onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }}
-                            placeholder="Nombre del Proyecto"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex items-center gap-2 bg-surface-variant/30 px-3 py-1.5 rounded-lg border border-outline-variant/30">
-                            <Calendar size={14} className="text-outline" />
-                            <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Inicio" value={proj.startDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].startDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
-                            <span className="text-outline">-</span>
-                            <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Fin" value={proj.endDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].endDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                  {profile.projects.map((proj, idx) => {
+                    const [imgErr, setImgErr] = useState<Record<number, boolean>>({});
+                    return (
+                      <div key={idx} className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 shadow-sm relative group">
+                        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
+                          <div className="w-full">
+                            <input
+                              className="w-full text-lg font-bold text-primary bg-transparent border-b border-transparent hover:border-outline-variant focus:border-primary p-0 outline-none transition-colors"
+                              value={proj.name}
+                              onChange={(e) => { const newP = [...profile.projects]; newP[idx].name = e.target.value; setProfile({ ...profile, projects: newP }); }}
+                              placeholder="Nombre del Proyecto"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-2 bg-surface-variant/30 px-3 py-1.5 rounded-lg border border-outline-variant/30">
+                              <Calendar size={14} className="text-outline" />
+                              <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Inicio" value={proj.startDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].startDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                              <span className="text-outline">-</span>
+                              <input className="w-20 text-xs bg-transparent outline-none text-center" placeholder="Fin" value={proj.endDate || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].endDate = e.target.value; setProfile({ ...profile, projects: newP }); }} />
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 mb-4">
-                        <Link size={14} className="text-outline" />
-                        <input className="flex-1 text-sm text-blue-600 bg-transparent border-none outline-none hover:underline placeholder-outline/50" placeholder="https://..." value={proj.link || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].link = e.target.value; setProfile({ ...profile, projects: newP }); }} />
-                      </div>
-
-                      <div className="relative mb-4">
-                        <textarea className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant/30 rounded-xl p-4 h-28 outline-none resize-none focus:border-primary transition-all" value={proj.description} onChange={(e) => { const newP = [...profile.projects]; newP[idx].description = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="¿Qué construiste y cómo?" />
-                        <button onClick={() => openJanice(proj.description, `Proyecto: ${proj.name}`, (txt) => { const newP = [...profile.projects]; newP[idx].description = txt; setProfile({ ...profile, projects: newP }); })} className="absolute bottom-3 right-3 text-xs bg-tertiary-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1 hover:opacity-90 shadow-sm"><Sparkles size={12} /> Janice</button>
-                      </div>
-
-                      <div className="space-y-3 pt-3 border-t border-outline-variant/20">
-                        <div className="flex items-center gap-3">
-                          <Code size={16} className="text-outline" />
-                          <input className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-transparent border-none outline-none placeholder-outline/50" value={proj.technologies} onChange={(e) => { const newP = [...profile.projects]; newP[idx].technologies = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Stack (React, Node, AWS...)" />
+                        <div className="flex items-center gap-2 mb-4">
+                          <Link size={14} className="text-outline" />
+                          <input className="flex-1 text-sm text-blue-600 bg-transparent border-none outline-none hover:underline placeholder-outline/50" placeholder="https://..." value={proj.link || ''} onChange={(e) => { const newP = [...profile.projects]; newP[idx].link = e.target.value; setProfile({ ...profile, projects: newP }); }} />
                         </div>
 
-                        <div className="flex items-start gap-3">
-                          <Image size={16} className="text-outline mt-1.5" />
-                          <div className="flex-1 flex flex-wrap gap-2">
-                            {(proj.images || []).map((img, imgIdx) => (
-                              <div key={imgIdx} className="relative group/img w-20 h-14 bg-surface-variant rounded-lg border border-outline-variant overflow-hidden">
-                                <img src={img} alt="" className="w-full h-full object-cover" />
-                                <button onClick={() => { const newP = [...profile.projects]; newP[idx].images = (newP[idx].images || []).filter((_, i) => i !== imgIdx); setProfile({ ...profile, projects: newP }); }} className="absolute inset-0 bg-black/50 hidden group-hover/img:flex items-center justify-center text-white"><X size={16} /></button>
-                              </div>
-                            ))}
-                            <button
-                              onClick={() => { const url = prompt("URL de la imagen:"); if (url) { const newP = [...profile.projects]; newP[idx].images = [...(newP[idx].images || []), url]; setProfile({ ...profile, projects: newP }); } }}
-                              className="w-20 h-14 bg-surface-variant/30 border border-dashed border-outline-variant rounded-lg flex items-center justify-center text-outline hover:text-primary hover:border-primary transition-colors"
-                            >
-                              <Plus size={20} />
-                            </button>
+                        <div className="relative mb-4">
+                          <textarea className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-surface-variant/20 border border-outline-variant/30 rounded-xl p-4 h-28 outline-none resize-none focus:border-primary transition-all" value={proj.description} onChange={(e) => { const newP = [...profile.projects]; newP[idx].description = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="¿Qué construiste y cómo?" />
+                          <button onClick={() => openJanice(proj.description, `Proyecto: ${proj.name}`, (txt) => { const newP = [...profile.projects]; newP[idx].description = txt; setProfile({ ...profile, projects: newP }); })} className="absolute bottom-3 right-3 text-xs bg-tertiary-container text-tertiary-onContainer px-3 py-1.5 rounded-full flex items-center gap-1 hover:opacity-90 shadow-sm"><Sparkles size={12} /> Janice</button>
+                        </div>
+
+                        <div className="space-y-3 pt-3 border-t border-outline-variant/20">
+                          <div className="flex items-center gap-3">
+                            <Code size={16} className="text-outline" />
+                            <input className="w-full text-sm text-[var(--md-sys-color-on-background)] bg-transparent border-none outline-none placeholder-outline/50" value={proj.technologies} onChange={(e) => { const newP = [...profile.projects]; newP[idx].technologies = e.target.value; setProfile({ ...profile, projects: newP }); }} placeholder="Stack (React, Node, AWS...)" />
+                          </div>
+
+                          <div className="flex items-start gap-3">
+                            <Image size={16} className="text-outline mt-1.5" />
+                            <div className="flex-1 flex flex-wrap gap-2">
+                              {(proj.images || []).map((img, imgIdx) => (
+                                <div key={imgIdx} className="relative group/img w-20 h-14 bg-surface-variant rounded-lg border border-outline-variant overflow-hidden flex items-center justify-center">
+                                  {!imgErr[imgIdx] ? (
+                                    <img 
+                                      src={img} 
+                                      alt="" 
+                                      className="w-full h-full object-cover" 
+                                      onError={() => setImgErr(prev => ({...prev, [imgIdx]: true}))}
+                                    />
+                                  ) : (
+                                    <ImageIcon className="text-slate-300 w-6 h-6" />
+                                  )}
+                                  <button onClick={() => { const newP = [...profile.projects]; newP[idx].images = (newP[idx].images || []).filter((_, i) => i !== imgIdx); setProfile({ ...profile, projects: newP }); }} className="absolute inset-0 bg-black/50 hidden group-hover/img:flex items-center justify-center text-white"><X size={16} /></button>
+                                </div>
+                              ))}
+                              <button
+                                onClick={() => { const url = prompt("URL de la imagen:"); if (url) { const newP = [...profile.projects]; newP[idx].images = [...(newP[idx].images || []), url]; setProfile({ ...profile, projects: newP }); } }}
+                                className="w-20 h-14 bg-surface-variant/30 border border-dashed border-outline-variant rounded-lg flex items-center justify-center text-outline hover:text-primary hover:border-primary transition-colors"
+                              >
+                                <Plus size={20} />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <button onClick={() => setProfile({ ...profile, projects: profile.projects.filter((_, i) => i !== idx) })} className="absolute top-4 right-4 p-2 text-outline hover:text-error hover:bg-error/10 rounded-full transition-colors opacity-0 group-hover:opacity-100">
-                        <X size={18} />
-                      </button>
-                    </div>
-                  ))}
+                        <button onClick={() => setProfile({ ...profile, projects: profile.projects.filter((_, i) => i !== idx) })} className="absolute top-4 right-4 p-2 text-outline hover:text-error hover:bg-error/10 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                          <X size={18} />
+                        </button>
+                      </div>
+                    );
+                  })}
                   <Button variant="outline" onClick={() => setProfile({ ...profile, projects: [...profile.projects, { name: 'Nuevo Proyecto', description: '', technologies: '' }] })} icon={<Plus size={16} />}>Añadir Proyecto</Button>
                 </div>
               )}
@@ -723,7 +727,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                 <div className="space-y-6">
                   <div className="p-6 bg-surface rounded-[24px] border border-outline-variant/40 relative shadow-sm">
                     <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
-                      {/* Avatar Upload Section */}
                       <div className="shrink-0">
                         <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Imagen Perfil Donna</h3>
                         <div className="relative group/avatar w-32 h-32 rounded-3xl bg-surface-variant overflow-hidden border-2 border-outline-variant border-dashed hover:border-primary transition-all flex items-center justify-center">
@@ -762,7 +765,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                         </div>
                       </div>
 
-                      {/* Full Name Input (Optional upgrade if needed, but we have fullName in profile) */}
                       <div className="flex-1 w-full">
                         <h3 className="text-xs font-bold text-primary uppercase mb-4 tracking-wider">Nombre Completo</h3>
                         <input
@@ -848,7 +850,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
               )}
             </div>
 
-            {/* Sticky Footer */}
             <footer className="mt-8 pt-6 border-t border-outline-variant/30 flex justify-between items-center">
               <Button variant="ghost" onClick={() => { if (currentStep > 0) setCurrentStep(currentStep - 1); }} disabled={currentStep === 0} className="px-4">
                 <ChevronLeft className="w-4 h-4 mr-2" /> Anterior
@@ -864,7 +865,6 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
           </div>
         </main>
 
-        {/* Right Side Panel */}
         <SidePanel isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} fileDataUrl={fileDataUrl} />
       </div>
     </div>

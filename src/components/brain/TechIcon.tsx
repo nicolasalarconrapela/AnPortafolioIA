@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Cpu } from "lucide-react";
 
 interface TechIconProps {
   name: string;
@@ -9,6 +10,7 @@ export const TechIcon: React.FC<TechIconProps> = ({
   name,
   className = "w-4 h-4",
 }) => {
+  const [error, setError] = useState(false);
   const normalize = (s: string) => s.toLowerCase().trim();
   const n = normalize(name);
 
@@ -54,7 +56,7 @@ export const TechIcon: React.FC<TechIconProps> = ({
       php: "php.net",
       laravel: "laravel.com",
       typescript: "typescriptlang.org",
-      javascript: "javascript.com", // si prefieres: "js.org"
+      javascript: "javascript.com",
       html: "w3.org",
       css: "w3.org",
       sass: "sass-lang.com",
@@ -68,6 +70,7 @@ export const TechIcon: React.FC<TechIconProps> = ({
       intellij: "jetbrains.com",
       postman: "postman.com",
     };
+    
 
     let domain = map[techName.toLowerCase()];
 
@@ -80,14 +83,16 @@ export const TechIcon: React.FC<TechIconProps> = ({
     return `https://img.logo.dev/${domain}?token=${token}`;
   };
 
+  if (error) {
+    return <Cpu className={`${className} text-slate-300 opacity-60`} />;
+  }
+
   return (
     <img
       src={getLogoUrl(n)}
       alt={name}
       className={`${className} object-contain opacity-80 hover:opacity-100 transition-opacity`}
-      onError={(e) => {
-        e.currentTarget.style.display = "none";
-      }}
+      onError={() => setError(true)}
     />
   );
 };

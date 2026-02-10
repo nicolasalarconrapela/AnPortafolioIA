@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Globe, Mail } from 'lucide-react';
 
@@ -26,11 +25,11 @@ export const SocialIcon: React.FC<SocialIconProps> = ({ network, className = "w-
     const lowerNetwork = network.toLowerCase();
 
     // Structural fallbacks before attempting image load
-    if (lowerNetwork.includes('web') || lowerNetwork.includes('portfolio') || lowerNetwork.includes('site')) return <Globe className={className} />;
-    if (lowerNetwork.includes('mail') || lowerNetwork.includes('email')) return <Mail className={className} />;
+    if (lowerNetwork.includes('web') || lowerNetwork.includes('portfolio') || lowerNetwork.includes('site')) return <Globe className={`${className} text-slate-400`} />;
+    if (lowerNetwork.includes('mail') || lowerNetwork.includes('email')) return <Mail className={`${className} text-slate-400`} />;
 
     if (error) {
-        return <Link className={className} />;
+        return <Globe className={`${className} text-slate-300 opacity-50`} />;
     }
 
     const domain = getDomain(network);
