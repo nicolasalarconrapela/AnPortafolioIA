@@ -8,7 +8,7 @@ import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
 import { CVProfile, ChatMessage } from '../../types_brain';
 import { Button } from './Button';
-import DONNA_AVATAR from '../../assets/ai/donna_avatar.dataimage?raw';
+import DONNA_AVATAR from '../../assets/ai/donna_avatar';
 
 interface DonnaViewProps {
   profile: CVProfile;

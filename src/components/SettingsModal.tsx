@@ -7,11 +7,11 @@ import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
 import { APP_VERSION } from '../utils/appVersion';
 import { createGeminiService } from '../services/geminiService';
-import DONNA_AVATAR from '../assets/ai/donna_avatar.dataimage?raw';
-import ROTENMEIR_AVATAR from '../assets/ai/rotenmeir_avatar.dataimage?raw';
-import GRETCHEN_AVATAR from '../assets/ai/gretchen_avatar.dataimage?raw';
-import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar.dataimage?raw';
-import ELMAESTRO_AVATAR from '../assets/ai/elmaestro_avatar.dataimage?raw';
+import DONNA_AVATAR from '../assets/ai/donna_avatar';
+import ROTENMEIR_AVATAR from '../assets/ai/rotenmeir_avatar';
+import GRETCHEN_AVATAR from '../assets/ai/gretchen_avatar';
+import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar';
+import ELMAESTRO_AVATAR from '../assets/ai/elmaestro_avatar';
 
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve

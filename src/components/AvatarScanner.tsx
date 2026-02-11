@@ -1,5 +1,6 @@
 import React from 'react';
-import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar.dataimage?raw';
+
+import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar';
 
 export const AvatarScanner: React.FC = () => {
   return (

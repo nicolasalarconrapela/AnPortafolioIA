@@ -17,7 +17,8 @@ import { SidePanel } from './SidePanel';
 import { CVProfile } from '../../types_brain';
 import { compressImage } from '../../utils/imageUtils';
 import { useAlert } from '../ui/GlobalAlert';
-import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar.dataimage?raw';
+import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar';
+import GOOGLITO_AVATAR from '../../assets/ai/googlito_avatar';
 
 
 interface GooglitoWizardProps {
@@ -168,6 +169,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
               description={step.desc}
               icon={step.icon}
               aiName={step.ai}
+              aiAvatar={GOOGLITO_AVATAR}
               onGretchenClick={() => setGretchenOpen(true)}
             />
 

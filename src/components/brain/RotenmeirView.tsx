@@ -2,7 +2,7 @@
 import React from 'react';
 import { User, Upload, FileArchive, FileText, CheckCircle } from 'lucide-react';
 import { AppState } from '../../types_brain';
-import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar.dataimage?raw';
+import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar';
 
 interface RotenmeirViewProps {
     appState: AppState;

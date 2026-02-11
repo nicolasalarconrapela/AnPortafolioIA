@@ -4,7 +4,7 @@ import { ShieldAlert, CheckCircle2, X, Wrench, Sparkles } from 'lucide-react';
 import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { MarkdownView } from './MarkdownView';
 import { Button } from './Button';
-import GRETCHEN_AVATAR from '../../assets/ai/gretchen_avatar.dataimage?raw';
+import GRETCHEN_AVATAR from '../../assets/ai/gretchen_avatar';
 
 export const GretchenModal = ({
     isOpen,
