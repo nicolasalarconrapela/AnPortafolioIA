@@ -11,6 +11,7 @@ import DONNA_AVATAR from '../assets/ai/donna_avatar.dataimage?raw';
 import ROTENMEIR_AVATAR from '../assets/ai/rotenmeir_avatar.dataimage?raw';
 import GRETCHEN_AVATAR from '../assets/ai/gretchen_avatar.dataimage?raw';
 import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar.dataimage?raw';
+import ELMAESTRO_AVATAR from '../assets/ai/elmaestro_avatar.dataimage?raw';
 
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
@@ -209,7 +210,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
       // Set all to offline on error
       setAiStatus({
         "Señorita Rotenmeir": { status: 'offline', model: "gemini-3-pro-preview" },
-        "Janice": { status: 'offline', model: "gemini-3-flash-preview" },
+        "El Maestro": { status: 'offline', model: "gemini-3-flash-preview" },
         "Googlito": { status: 'offline', model: "gemini-3-flash-preview" },
         "Gretchen Bodinski": { status: 'offline', model: "gemini-3-flash-preview" },
         "Donna": { status: 'offline', model: "gemini-3-flash-preview" }
@@ -707,7 +708,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.entries({
                               "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: ROTENMEIR_AVATAR },
-                              "Janice": { role: "Writing Assistant", img: GOOGLITO_AVATAR },
+                              "El Maestro": { role: "Writing Assistant", img: ELMAESTRO_AVATAR },
                               "Googlito": { role: "Data Fixer", img: GOOGLITO_AVATAR },
                               "Gretchen Bodinski": { role: "Auditor", img: GRETCHEN_AVATAR },
                               "Donna": { role: "Recruiter Interface", img: DONNA_AVATAR }

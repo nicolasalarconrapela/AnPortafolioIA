@@ -1,6 +1,6 @@
 import { GeminiBase } from "./ai/geminiBase";
 import { RotenmeirService } from "./ai/rotenmeir";
-import { JaniceService } from "./ai/janice";
+import { MaestroService } from "./ai/maestro";
 import { GooglitoService } from "./ai/googlito";
 import { DonnaService } from "./ai/donna";
 import { GretchenService } from "./ai/gretchen";
@@ -8,7 +8,7 @@ import { CVProfile } from "../types_brain";
 
 export class GeminiService extends GeminiBase {
   private rotenmeir: RotenmeirService;
-  private janice: JaniceService;
+  private maestro: MaestroService;
   private googlito: GooglitoService;
   private donna: DonnaService;
   private gretchen: GretchenService;
@@ -19,7 +19,7 @@ export class GeminiService extends GeminiBase {
     // Ideally we pass the key.
     const key = this.apiKey;
     this.rotenmeir = new RotenmeirService(key);
-    this.janice = new JaniceService(key);
+    this.maestro = new MaestroService(key);
     this.googlito = new GooglitoService(key);
     this.donna = new DonnaService(key);
     this.gretchen = new GretchenService(key);
@@ -54,12 +54,12 @@ export class GeminiService extends GeminiBase {
     return this.rotenmeir.analyzeCVText(text);
   }
 
-  async askJanice(
+  async askMaestro(
     currentText: string,
     userInstruction: string,
     context: string,
   ): Promise<string> {
-    return this.janice.askJanice(currentText, userInstruction, context);
+    return this.maestro.askMaestro(currentText, userInstruction, context);
   }
 
   async improveSectionBasedOnCritique(
@@ -97,8 +97,8 @@ export class GeminiService extends GeminiBase {
         status: checkService(this.rotenmeir),
         model: "gemini-3-pro-preview",
       },
-      Janice: {
-        status: checkService(this.janice),
+      "El Maestro": {
+        status: checkService(this.maestro),
         model: "gemini-3-flash-preview",
       },
       Googlito: {
