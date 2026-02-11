@@ -1,4 +1,4 @@
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { loggingService } from './utils/loggingService';
@@ -14,9 +14,12 @@ interface ErrorBoundaryState {
     error: Error | null;
 }
 
-// Fix: Use React.Component explicitly from named import to ensure 'this.props' and 'this.state' are correctly typed via generic usage
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    state: ErrorBoundaryState = { hasError: false, error: null };
+// Fix: Use Component explicitly from named import to ensure 'this.props' and 'this.state' are correctly typed via generic usage
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
 
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         return { hasError: true, error };
