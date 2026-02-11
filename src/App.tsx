@@ -133,8 +133,11 @@ const AppContent: React.FC = () => {
 
   // Handle Logout
   const handleLogout = async () => {
-    // Call backend logout if needed, for now just clear state
-    // Ideally await authService.logout();
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.warn("Logout service call failed", e);
+    }
     setCurrentUserId("");
     setIsAuthenticated(false);
     setUserProfile(null);
