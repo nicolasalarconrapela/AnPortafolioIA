@@ -81,9 +81,8 @@ const AppContent: React.FC = () => {
             }
 
             // 3. Logic to decide if we stay on landing or go to dashboard
-            // Only if we are currently on AUTH page do we Auto-Redirect.
-            // We ALLOW staying on 'landing' to show the user profile there.
-            if (view.startsWith('auth-')) {
+            // If we are on landing or auth pages, and logged in, we redirect.
+            if (view === 'landing' || view.startsWith('auth-')) {
               if (!ws || !ws.profile || !ws.profile.onboardingCompleted) {
                 setView('candidate-onboarding');
               } else {
@@ -93,7 +92,7 @@ const AppContent: React.FC = () => {
           } catch (e) {
             console.warn("Workspace fetch failed", e);
             // Fallback to dashboard if workspace fetch fails but auth is good
-            if (view.startsWith('auth-')) {
+            if (view === 'landing' || view.startsWith('auth-')) {
               setView('candidate-dashboard');
             }
           }
