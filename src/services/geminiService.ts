@@ -89,13 +89,7 @@ export class GeminiService extends GeminiBase {
     Record<string, { status: "online" | "offline"; model: string }>
   > {
     const checkService = (service: any) => {
-      try {
-        // Just checking if init happened correctly via base ensureAI equivalent
-        // In the future we could do a lightweight ping.
-        return service.apiKey ? "online" : "offline";
-      } catch {
-        return "offline";
-      }
+      return service.isActive ? "online" : "offline";
     };
 
     return {
@@ -120,6 +114,13 @@ export class GeminiService extends GeminiBase {
         model: "gemini-3-flash-preview",
       },
     };
+  }
+
+  /**
+   * Returns true if the core AI service is ready to use.
+   */
+  public isGlobalActive(): boolean {
+    return this.isActive;
   }
 }
 

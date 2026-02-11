@@ -190,14 +190,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
     }
   }, [activeTab]);
 
+  const [isAiGlobalActive, setIsAiGlobalActive] = useState(false);
+
   const checkAIStatus = async () => {
     setIsCheckingAI(true);
     try {
       const geminiService = createGeminiService();
       const status = await geminiService.getSystemStatus();
+      setIsAiGlobalActive(geminiService.isGlobalActive());
       setAiStatus(status);
     } catch (error) {
       loggingService.error('Failed to check AI status:', error);
+      setIsAiGlobalActive(false);
       // Set all to offline on error
       setAiStatus({
         "Señorita Rotenmeir": { status: 'offline', model: "gemini-3-pro-preview" },
@@ -741,10 +745,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                                   ? '✓ All systems operational. Gemini API connected.'
                                   : '⚠ Some AI services are offline. Check your API key configuration.'}
                               </p>
-                              {process.env.API_KEY ? (
-                                <span className="text-[9px] text-green-600 font-mono px-2 py-1 bg-green-50 rounded">API Key: ●●●●●●</span>
+                              {isAiGlobalActive ? (
+                                <span className="text-[9px] text-green-600 font-mono px-2 py-1 bg-green-50 rounded flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[10px]">key</span>
+                                  API Key Active
+                                </span>
                               ) : (
-                                <span className="text-[9px] text-outline font-mono px-2 py-1 bg-surface-variant/30 rounded">No API Key</span>
+                                <span className="text-[9px] text-error font-mono px-2 py-1 bg-error-container/20 rounded flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[10px]">no_encryption</span>
+                                  No API Key
+                                </span>
                               )}
                             </div>
                           </div>
