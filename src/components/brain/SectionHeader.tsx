@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShieldAlert, Sparkles } from 'lucide-react';
+import GRETCHEN_AVATAR from '../../assets/ai/gretchen_avatar.dataimage?raw';
 
 export const SectionHeader = ({
     title,
@@ -41,10 +42,10 @@ export const SectionHeader = ({
                 >
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 relative">
                         {!imgError ? (
-                            <img 
-                                src="/gretchen.jpg" 
-                                alt="Gretchen" 
-                                className="w-full h-full object-cover grayscale group-hover/badge:grayscale-0 transition-all" 
+                            <img
+                                src={GRETCHEN_AVATAR}
+                                alt="Gretchen"
+                                className="w-full h-full object-cover grayscale group-hover/badge:grayscale-0 transition-all"
                                 onError={() => setImgError(true)}
                             />
                         ) : (

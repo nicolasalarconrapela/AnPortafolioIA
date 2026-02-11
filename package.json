@@ -1,7 +1,7 @@
 {
   "name": "anportafolioia",
   "private": true,
-  "version": "0.17.2-beta",
+  "version": "0.17.3-beta",
   "type": "module",
   "scripts": {
     "dev": "tsc && vite dev",

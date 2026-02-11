@@ -2,6 +2,7 @@
 import React from 'react';
 import { User, Upload, FileArchive, FileText, CheckCircle } from 'lucide-react';
 import { AppState } from '../../types_brain';
+import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar.dataimage?raw';
 
 interface RotenmeirViewProps {
     appState: AppState;
@@ -31,7 +32,7 @@ export const RotenmeirView: React.FC<RotenmeirViewProps> = ({
                 <div className="text-center mb-10">
                     <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-surface-variant mb-6 shadow-elevation-2 overflow-hidden border-2 border-outline-variant/30 group-hover:scale-105 transition-transform duration-500">
                         <img
-                            src="/rotenmeir.png"
+                            src={ROTENMEIR_AVATAR}
                             alt="Señorita Rotenmeir"
                             className="w-full h-full object-cover"
                         />
@@ -58,7 +59,7 @@ export const RotenmeirView: React.FC<RotenmeirViewProps> = ({
                                     <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                                     <div className="absolute inset-2 rounded-full overflow-hidden bg-surface-variant">
                                         <img
-                                            src="/rotenmeir.png"
+                                            src={ROTENMEIR_AVATAR}
                                             alt="Analizando..."
                                             className="w-full h-full object-cover animate-pulse"
                                         />

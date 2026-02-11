@@ -7,6 +7,10 @@ import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
 import { APP_VERSION } from '../utils/appVersion';
 import { createGeminiService } from '../services/geminiService';
+import DONNA_AVATAR from '../assets/ai/donna_avatar.dataimage?raw';
+import ROTENMEIR_AVATAR from '../assets/ai/rotenmeir_avatar.dataimage?raw';
+import GRETCHEN_AVATAR from '../assets/ai/gretchen_avatar.dataimage?raw';
+import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar.dataimage?raw';
 
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
@@ -702,13 +706,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.entries({
-                              "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: "/rotenmeir.png" },
-                              "Janice": { role: "Writing Assistant", img: "/googlito.jpg" },
-                              "Googlito": { role: "Data Fixer", img: "/googlito.jpg" },
-                              "Gretchen Bodinski": { role: "Auditor", img: "/gretchen.jpg" },
-                              "Donna": { role: "Recruiter Interface", img: "/donna_avatar.png" }
+                              "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: ROTENMEIR_AVATAR },
+                              "Janice": { role: "Writing Assistant", img: GOOGLITO_AVATAR },
+                              "Googlito": { role: "Data Fixer", img: GOOGLITO_AVATAR },
+                              "Gretchen Bodinski": { role: "Auditor", img: GRETCHEN_AVATAR },
+                              "Donna": { role: "Recruiter Interface", img: DONNA_AVATAR }
                             }).map(([name, meta]) => {
-                              // Fix: cast the dynamic indexed object to the known interface type or any to resolve 'unknown' inference error
                               const status = aiStatus ? (aiStatus as Record<string, any>)[name] : undefined;
                               const isOnline = status?.status === 'online';
 
@@ -740,7 +743,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                           <div className="mt-4 pt-4 border-t border-outline-variant/30">
                             <div className="flex items-center justify-between">
                               <p className="text-[10px] text-outline">
-                                // Fix: cast aiStatus to any to avoid TypeScript inference issues with Object.values and 'unknown' type
                                 {Object.values(aiStatus as any).every((s: any) => s.status === 'online')
                                   ? '✓ All systems operational. Gemini API connected.'
                                   : '⚠ Some AI services are offline. Check your API key configuration.'}
