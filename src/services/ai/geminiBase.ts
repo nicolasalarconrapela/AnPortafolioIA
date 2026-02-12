@@ -11,6 +11,7 @@ export class GeminiBase {
     // Priority: Explicit key -> process.env -> import.meta.env (for Vite)
     const key =
       apiKey ||
+      localStorage.getItem("user_gemini_api_key") ||
       process.env.API_KEY ||
       (typeof import.meta !== "undefined" &&
         (import.meta as any).env?.VITE_GEMINI_API_KEY);
@@ -77,7 +78,7 @@ export class GeminiBase {
       `;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],

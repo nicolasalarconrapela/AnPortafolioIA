@@ -139,6 +139,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [aiStatus, setAiStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking'; model: string }> | null>(null);
   const [isCheckingAI, setIsCheckingAI] = useState(false);
+  const [userApiKey, setUserApiKey] = useState('');
+
+  useEffect(() => {
+    setUserApiKey(localStorage.getItem('user_gemini_api_key') || '');
+  }, []);
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setUserApiKey(val);
+    if (val) {
+      localStorage.setItem('user_gemini_api_key', val);
+    } else {
+      localStorage.removeItem('user_gemini_api_key');
+    }
+  };
 
 
   // Load settings from Firestore
@@ -623,6 +638,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                 <div className="space-y-6 animate-fade-in">
                   <h4 className="text-sm font-bold text-primary uppercase tracking-wider">AI Configuration</h4>
                   <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
+
+                    {/* API Key Input */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Google Gemini API Key</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          Get Key <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                        </a>
+                      </div>
+                      <p className="text-sm text-outline mb-3">Required for AI features. Stored locally in your browser.</p>
+                      <input
+                        type="password"
+                        value={userApiKey}
+                        onChange={handleApiKeyChange}
+                        placeholder="AIzaSy..."
+                        className="w-full h-12 px-4 rounded-xl bg-surface-variant/30 border border-outline-variant focus:border-primary outline-none text-sm font-mono"
+                      />
+                    </div>
+
+                    <div className="h-px bg-outline-variant/20 mx-2" />
 
                     {/* Enable AI */}
                     <div className="flex items-center justify-between">

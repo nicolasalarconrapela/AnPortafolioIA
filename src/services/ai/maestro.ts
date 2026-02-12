@@ -37,7 +37,7 @@ export class MaestroService extends GeminiBase {
       Devuelve SOLO el texto mejorado.`;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: prompt,
       });
 

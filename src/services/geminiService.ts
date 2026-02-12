@@ -95,23 +95,23 @@ export class GeminiService extends GeminiBase {
     return {
       "Señorita Rotenmeir": {
         status: checkService(this.rotenmeir),
-        model: "gemini-3-pro-preview",
+        model: "gemini-1.5-pro",
       },
       "El Maestro": {
         status: checkService(this.maestro),
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
       },
       Googlito: {
         status: checkService(this.googlito),
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
       },
       "Gretchen Bodinski": {
         status: checkService(this.gretchen),
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
       },
       Donna: {
         status: checkService(this.donna),
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
       },
     };
   }

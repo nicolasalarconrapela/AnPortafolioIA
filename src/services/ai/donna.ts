@@ -30,7 +30,7 @@ export class DonnaService extends GeminiBase {
     Tu misión es exponer la información del candidato de la forma más limpia posible.`;
 
     this.chat = this.ensureAI().chats.create({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       config: {
         systemInstruction: systemInstruction,
       },
