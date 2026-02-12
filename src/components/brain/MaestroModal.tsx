@@ -4,16 +4,16 @@ import { Sparkles, X, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
 import { createGeminiService } from '../../services/geminiService';
 
-export const JaniceModal = ({ 
-    isOpen, 
-    onClose, 
-    initialText, 
-    context, 
-    onApply 
-}: { 
-    isOpen: boolean; 
-    onClose: () => void; 
-    initialText: string; 
+export const MaestroModal = ({
+    isOpen,
+    onClose,
+    initialText,
+    context,
+    onApply
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    initialText: string;
     context: string;
     onApply: (text: string) => void;
 }) => {
@@ -21,26 +21,26 @@ export const JaniceModal = ({
     const [result, setResult] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const serviceRef = useRef(createGeminiService());
-    
+
     useEffect(() => {
         setResult("");
         setIsLoading(false);
     }, [isOpen]);
-    
+
     if (!isOpen) return null;
-    
-    const handleAskJanice = async () => {
+
+    const handleAskMaestro = async () => {
         setIsLoading(true);
         try {
-            const improved = await serviceRef.current.askJanice(initialText, instruction, context);
+            const improved = await serviceRef.current.askMaestro(initialText, instruction, context);
             setResult(improved);
         } catch (e) {
-            setResult("Lo siento, estoy tomando un café. Inténtalo de nuevo.");
+            setResult("¡Por mis barbas! He tenido un pequeño contratiempo. Inténtalo de nuevo.");
         } finally {
             setIsLoading(false);
         }
     };
-    
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
             <div className="bg-[var(--md-sys-color-background)] rounded-[28px] shadow-elevation-3 w-full max-w-lg overflow-hidden border border-outline-variant/30 max-h-[90vh] flex flex-col animate-fade-scale">
@@ -50,13 +50,13 @@ export const JaniceModal = ({
                             <Sparkles className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-display font-medium text-lg">Hola, soy Janice</h3>
-                            <p className="text-xs opacity-80">Asistente de Redacción IA</p>
+                            <h3 className="font-display font-medium text-lg">Soy El Maestro</h3>
+                            <p className="text-xs opacity-80">Tu guía en el camino del conocimiento</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="hover:bg-black/10 p-2 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+                    <button onClick={onClose} className="hover:bg-black/10 p-2 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
-                
+
                 <div className="p-6 space-y-6 overflow-y-auto">
                     <div>
                         <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">Texto Original</label>
@@ -64,23 +64,23 @@ export const JaniceModal = ({
                             "{initialText || 'Vacío'}"
                         </div>
                     </div>
-                    
+
                     <div>
-                        <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">¿Qué necesitas?</label>
+                        <label className="text-xs font-bold text-outline uppercase tracking-wider mb-2 block">¿Qué sabiduría buscas?</label>
                         <div className="flex flex-col gap-3">
-                            <input 
+                            <input
                                 className="w-full bg-surface border border-outline-variant rounded-xl px-4 py-3 text-sm focus:border-tertiary focus:ring-1 focus:ring-tertiary outline-none transition-all"
                                 value={instruction}
                                 onChange={(e) => setInstruction(e.target.value)}
-                                placeholder="Ej: Hazlo más ejecutivo, corrige ortografía..."
+                                placeholder="Ej: Hazlo más sabio, mejora la gramática..."
                             />
-                            <Button 
-                                onClick={handleAskJanice} 
-                                disabled={isLoading || !initialText} 
+                            <Button
+                                onClick={handleAskMaestro}
+                                disabled={isLoading || !initialText}
                                 className="w-full bg-tertiary text-white hover:bg-tertiary/90"
                                 icon={isLoading ? undefined : <Sparkles size={16} />}
                             >
-                                {isLoading ? 'Pensando...' : 'Mejorar Texto'}
+                                {isLoading ? 'Reflexionando...' : 'Consultar al Maestro'}
                             </Button>
                         </div>
                     </div>
@@ -88,17 +88,17 @@ export const JaniceModal = ({
                     {result && (
                         <div className="animate-fade-in pt-4 border-t border-outline-variant/30">
                             <label className="text-xs font-bold text-green-600 uppercase flex items-center gap-2 mb-2">
-                                <CheckCircle2 className="w-4 h-4"/> Sugerencia de Janice
+                                <CheckCircle2 className="w-4 h-4" /> El Maestro sugiere:
                             </label>
-                            <textarea 
+                            <textarea
                                 className="w-full p-4 text-sm text-[var(--md-sys-color-on-background)] bg-green-50/50 border border-green-200 rounded-xl focus:outline-none focus:border-green-400 h-32 resize-none"
                                 value={result}
                                 onChange={(e) => setResult(e.target.value)}
                             />
                             <div className="mt-4 flex justify-end gap-3">
-                                <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+                                <Button variant="ghost" onClick={onClose}>Más tarde</Button>
                                 <Button onClick={() => { onApply(result); onClose(); }} className="bg-green-600 hover:bg-green-700 text-white">
-                                    Aplicar Cambio
+                                    Seguir su consejo
                                 </Button>
                             </div>
                         </div>

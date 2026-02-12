@@ -8,6 +8,7 @@ import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
 import { CVProfile, ChatMessage } from '../../types_brain';
 import { Button } from './Button';
+import DONNA_AVATAR from '../../assets/ai/donna_avatar';
 
 interface DonnaViewProps {
   profile: CVProfile;
@@ -194,10 +195,10 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 <div key={i} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                   {proj.images && proj.images.length > 0 && !projImgError ? (
                     <div className="h-48 overflow-hidden bg-slate-100 relative group">
-                      <img 
-                        src={proj.images[0]} 
-                        alt={proj.name} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                      <img
+                        src={proj.images[0]}
+                        alt={proj.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         onError={() => setProjImgError(true)}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
@@ -401,10 +402,10 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                     <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8 mt-2">
                       <div className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] overflow-hidden border-4 border-white shadow-2xl rotate-[-3deg] hover:rotate-0 transition-transform duration-500 shrink-0 bg-slate-100 flex items-center justify-center">
                         {profile.donnaImage && !avatarError ? (
-                          <img 
-                            src={profile.donnaImage} 
-                            alt={profile.fullName} 
-                            className="w-full h-full object-cover" 
+                          <img
+                            src={profile.donnaImage}
+                            alt={profile.fullName}
+                            className="w-full h-full object-cover"
                             onError={() => setAvatarError(true)}
                           />
                         ) : (
@@ -576,7 +577,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
           <div className="p-4 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-4 border-b border-slate-100 flex items-center justify-between bg-white z-10">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md overflow-hidden ${isOffline ? 'grayscale' : ''}`}>
-                <img src="/donna_avatar.png" alt="Donna AI" className="w-full h-full object-cover" />
+                <img src={DONNA_AVATAR} alt="Donna AI" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-sm">Donna AI</h3>
@@ -666,7 +667,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
           onClick={() => setIsChatOpen(true)}
           className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-white text-white rounded-full shadow-2xl shadow-slate-900/40 flex items-center justify-center hover:scale-110 hover:-translate-y-1 transition-all active:scale-95 group border-2 border-slate-100 overflow-hidden"
         >
-          <img src="/donna_avatar.png" alt="Donna AI" className="w-full h-full object-cover" />
+          <img src={DONNA_AVATAR} alt="Donna AI" className="w-full h-full object-cover" />
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white z-10"></span>
         </button>
       )}

@@ -3,16 +3,46 @@ import { GoogleGenAI } from "@google/genai";
 export class GeminiBase {
   protected ai: GoogleGenAI | null = null;
   protected apiKey: string = "";
+  public readonly isActive: boolean = false;
+
+  private static hasloggedWarning = false;
 
   constructor(apiKey?: string) {
-    const key = apiKey || process.env.API_KEY;
+    // Priority: Explicit key -> process.env -> import.meta.env (for Vite)
+    const key =
+      apiKey ||
+      localStorage.getItem("user_gemini_api_key") ||
+      process.env.API_KEY ||
+      (typeof import.meta !== "undefined" &&
+        (import.meta as any).env?.VITE_GEMINI_API_KEY);
+
+    // console.debug("🔄 GeminiBase: Checking for API Key...");
+
     if (!key) {
-      console.warn(
-        "API Key not found in environment variables. Gemini features will be disabled.",
-      );
+      if (!GeminiBase.hasloggedWarning) {
+        console.warn(
+          "⚠️ GeminiBase: API Key not found. AI features will be unavailable. " +
+            "Ensure API_KEY (node) or VITE_GEMINI_API_KEY (vite) is set.",
+        );
+        GeminiBase.hasloggedWarning = true;
+      }
+      this.isActive = false;
     } else {
       this.apiKey = key;
-      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+      try {
+        this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+        this.isActive = true;
+        if (!GeminiBase.hasloggedWarning) {
+          console.info("✅ GeminiBase: AI Service initialized successfully.");
+          GeminiBase.hasloggedWarning = true;
+        }
+      } catch (e) {
+        console.error(
+          "❌ GeminiBase: Failed to initialize GoogleGenAI with provided key.",
+          e,
+        );
+        this.isActive = false;
+      }
     }
   }
 
@@ -48,7 +78,7 @@ export class GeminiBase {
       `;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],

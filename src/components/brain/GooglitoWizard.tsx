@@ -12,11 +12,14 @@ import { SocialIcon } from './SocialIcon';
 import { SectionHeader } from './SectionHeader';
 import { EmptyState } from './EmptyState';
 import { GretchenModal } from './GretchenModal';
-import { JaniceModal } from './JaniceModal';
+import { MaestroModal } from './MaestroModal';
 import { SidePanel } from './SidePanel';
 import { CVProfile } from '../../types_brain';
 import { compressImage } from '../../utils/imageUtils';
 import { useAlert } from '../ui/GlobalAlert';
+import ROTENMEIR_AVATAR from '../../assets/ai/rotenmeir_avatar';
+import GOOGLITO_AVATAR from '../../assets/ai/googlito_avatar';
+
 
 interface GooglitoWizardProps {
   currentStep: number;
@@ -40,8 +43,8 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
   fileDataUrl = null
 }) => {
   const { showConfirm } = useAlert();
-  const [janiceOpen, setJaniceOpen] = useState(false);
-  const [janiceData, setJaniceData] = useState<{ text: string, context: string, callback: (t: string) => void } | null>(null);
+  const [maestroOpen, setMaestroOpen] = useState(false);
+  const [maestroData, setMaestroData] = useState<{ text: string, context: string, callback: (t: string) => void } | null>(null);
   const [gretchenOpen, setGretchenOpen] = useState(false);
   const [techInputs, setTechInputs] = useState<Record<string, string>>({ languages: '', frameworks: '', ides: '', tools: '' });
   const [avatarError, setAvatarError] = useState(false);
@@ -91,7 +94,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
 
   return (
     <div className="fixed inset-0 bg-[#F8FAFC] flex flex-col text-slate-900 overflow-hidden">
-      <JaniceModal isOpen={janiceOpen} onClose={() => setJaniceOpen(false)} initialText={janiceData?.text || ''} context={janiceData?.context || ''} onApply={janiceData?.callback || (() => { })} />
+      <MaestroModal isOpen={maestroOpen} onClose={() => setMaestroOpen(false)} initialText={maestroData?.text || ''} context={maestroData?.context || ''} onApply={maestroData?.callback || (() => { })} />
       {/* Fix: getSectionDataForGretchen expects 2 arguments (step, profile) */}
       <GretchenModal isOpen={gretchenOpen} onClose={() => setGretchenOpen(false)} sectionName={step.title} sectionData={getSectionDataForGretchen(currentStep, profile)} onApplyFix={handleGretchenFix} />
 
@@ -99,14 +102,27 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 z-50 shrink-0 h-16 flex items-center">
         <div className="px-4 w-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-             <button 
-                onClick={() => showConfirm("¿Quieres cancelar la edición?", onFinish)} 
-                className="p-2 -ml-2 text-slate-400 hover:text-slate-900 transition-colors"
-             >
-                <X size={20} />
-             </button>
-             <div className="h-6 w-px bg-slate-200 mx-1 hidden xs:block"></div>
-             <span className="font-display font-bold text-slate-900 hidden sm:block">Editor</span>
+            <button
+              onClick={() => showConfirm("¿Quieres cancelar la edición?", onFinish)}
+              className="p-2 -ml-2 text-slate-400 hover:text-slate-900 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="h-6 w-px bg-slate-200 mx-1 hidden xs:block"></div>
+            <span className="font-display font-bold text-slate-900 hidden sm:block">Editor</span>
+
+            {onReset && (
+              <button
+                onClick={() => showConfirm("¿Deseas volver a invocar a la Srta. Rotenmeir? Se perderán los cambios actuales para volver a subir o analizar el documento.", onReset)}
+                className="ml-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all text-xs font-bold border border-slate-200"
+                title="Volver a analizar documento"
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-300">
+                  <img src={ROTENMEIR_AVATAR} alt="Rotenmeir" className="w-full h-full object-cover" />
+                </div>
+                <span className="hidden xs:block whitespace-nowrap">Invocar Sr. Rotenmeier</span>
+              </button>
+            )}
           </div>
 
           <div ref={navRef} className="flex-1 flex overflow-x-auto no-scrollbar gap-1 py-1">
@@ -153,6 +169,7 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
               description={step.desc}
               icon={step.icon}
               aiName={step.ai}
+              aiAvatar={GOOGLITO_AVATAR}
               onGretchenClick={() => setGretchenOpen(true)}
             />
 
@@ -162,65 +179,65 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
                 <div className="space-y-4">
                   {profile.experience.map((exp, idx) => (
                     <div key={idx} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm relative group">
-                        {/* Experience form fields... */}
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center shrink-0 border border-slate-100">
-                                <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-8 h-8" />
-                            </div>
-                            <div className="flex-1 space-y-3">
-                                <input 
-                                    className="w-full text-lg font-bold bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300"
-                                    value={exp.role}
-                                    placeholder="Nombre del Puesto"
-                                    onChange={(e) => {
-                                        const newExp = [...profile.experience];
-                                        newExp[idx].role = e.target.value;
-                                        setProfile({...profile, experience: newExp});
-                                    }}
-                                />
-                                <input 
-                                    className="w-full text-sm font-medium text-primary bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300"
-                                    value={exp.company}
-                                    placeholder="Empresa"
-                                    onChange={(e) => {
-                                        const newExp = [...profile.experience];
-                                        newExp[idx].company = e.target.value;
-                                        setProfile({...profile, experience: newExp});
-                                    }}
-                                />
-                            </div>
+                      {/* Experience form fields... */}
+                      <div className="flex gap-4">
+                        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center shrink-0 border border-slate-100">
+                          <CompanyLogo name={exp.company} logoUrl={exp.logo} className="w-8 h-8" />
                         </div>
-                        <button 
-                            onClick={() => setProfile({...profile, experience: profile.experience.filter((_, i) => i !== idx)})}
-                            className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors"
-                        >
-                            <X size={18} />
-                        </button>
+                        <div className="flex-1 space-y-3">
+                          <input
+                            className="w-full text-lg font-bold bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300"
+                            value={exp.role}
+                            placeholder="Nombre del Puesto"
+                            onChange={(e) => {
+                              const newExp = [...profile.experience];
+                              newExp[idx].role = e.target.value;
+                              setProfile({ ...profile, experience: newExp });
+                            }}
+                          />
+                          <input
+                            className="w-full text-sm font-medium text-primary bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300"
+                            value={exp.company}
+                            placeholder="Empresa"
+                            onChange={(e) => {
+                              const newExp = [...profile.experience];
+                              newExp[idx].company = e.target.value;
+                              setProfile({ ...profile, experience: newExp });
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setProfile({ ...profile, experience: profile.experience.filter((_, i) => i !== idx) })}
+                        className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                   ))}
                   {profile.experience.length === 0 && (
                     <EmptyState text="No se detectó experiencia laboral en el documento." />
                   )}
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full h-14 rounded-2xl border-dashed border-2 hover:border-primary hover:bg-primary/5 text-slate-500 hover:text-primary"
-                    onClick={() => setProfile({...profile, experience: [...profile.experience, { company: '', role: '', period: '', description: '', skills: [] }]})}
+                    onClick={() => setProfile({ ...profile, experience: [...profile.experience, { company: '', role: '', period: '', description: '', skills: [] }] })}
                     icon={<Plus size={20} />}
                   >
                     Añadir Experiencia
                   </Button>
                 </div>
               )}
-              
+
               {/* Other steps handled similarly with clean MD3 components... */}
             </div>
           </div>
         </main>
 
-        <SidePanel 
-          isOpen={isPanelOpen} 
-          onClose={() => setIsPanelOpen(false)} 
-          fileDataUrl={fileDataUrl} 
+        <SidePanel
+          isOpen={isPanelOpen}
+          onClose={() => setIsPanelOpen(false)}
+          fileDataUrl={fileDataUrl}
         />
       </div>
 
@@ -237,21 +254,21 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
           </button>
 
           <div className="flex gap-2">
-            <Button 
-                variant="ghost" 
-                size="sm" 
-                className="hidden sm:flex text-slate-400"
-                onClick={onExportJSON}
-            >
-                <FileJson size={16} className="mr-2"/> JSON
-            </Button>
-            
             <Button
-                onClick={currentStep === 11 ? onFinish : () => setCurrentStep(currentStep + 1)}
-                className="h-12 px-8 rounded-2xl shadow-xl shadow-indigo-200/50 bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px]"
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex text-slate-400"
+              onClick={onExportJSON}
             >
-                {currentStep === 11 ? 'Activar Donna' : 'Siguiente'}
-                <ArrowRight size={18} className="ml-2" />
+              <FileJson size={16} className="mr-2" /> JSON
+            </Button>
+
+            <Button
+              onClick={currentStep === 11 ? onFinish : () => setCurrentStep(currentStep + 1)}
+              className="h-12 px-8 rounded-2xl shadow-xl shadow-indigo-200/50 bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px]"
+            >
+              {currentStep === 11 ? 'Activar Donna' : 'Siguiente'}
+              <ArrowRight size={18} className="ml-2" />
             </Button>
           </div>
         </div>
@@ -262,13 +279,13 @@ export const GooglitoWizard: React.FC<GooglitoWizardProps> = ({
 
 // Helper internal to avoid large file diffs if logic is simple
 const getSectionDataForGretchen = (step: number, profile: CVProfile) => {
-    switch (step) {
-      case 1: return profile.experience;
-      case 2: return profile.skills;
-      default: return null;
-    }
+  switch (step) {
+    case 1: return profile.experience;
+    case 2: return profile.skills;
+    default: return null;
+  }
 };
 
 const handleGretchenFix = (newData: any) => {
-    // Shared with logic from previous turns
+  // Shared with logic from previous turns
 };

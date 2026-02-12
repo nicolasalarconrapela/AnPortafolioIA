@@ -47,7 +47,7 @@ export class GooglitoService extends GeminiBase {
         `;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",

@@ -4,6 +4,7 @@ import { ShieldAlert, CheckCircle2, X, Wrench, Sparkles } from 'lucide-react';
 import { createGeminiService, GeminiService } from '../../services/geminiService';
 import { MarkdownView } from './MarkdownView';
 import { Button } from './Button';
+import GRETCHEN_AVATAR from '../../assets/ai/gretchen_avatar';
 
 export const GretchenModal = ({
     isOpen,
@@ -99,7 +100,7 @@ export const GretchenModal = ({
                             <div className="relative">
                                 <div className="w-24 h-24 border-4 border-surface-variant border-t-error rounded-full animate-spin"></div>
                                 <div className="absolute inset-2 rounded-full overflow-hidden bg-surface-variant">
-                                    <img src="/gretchen.jpg" className="w-full h-full object-cover" alt="Gretchen Auditando" />
+                                    <img src={GRETCHEN_AVATAR} className="w-full h-full object-cover" alt="Gretchen Auditando" />
                                 </div>
                             </div>
                             <p className="text-outline font-medium text-lg animate-pulse">"Déjame ver qué desastre has hecho aquí..."</p>
@@ -111,7 +112,7 @@ export const GretchenModal = ({
                             <div className="flex flex-col md:flex-row items-start gap-6">
                                 <div className="flex items-center gap-4 md:block text-center shrink-0">
                                     <div className="w-14 h-14 rounded-full border-2 border-error/30 overflow-hidden mx-auto shadow-elevation-1 group-hover:scale-105 transition-transform">
-                                        <img src="/gretchen.jpg" className="w-full h-full object-cover" alt="Gretchen Bodinski" />
+                                        <img src={GRETCHEN_AVATAR} className="w-full h-full object-cover" alt="Gretchen Bodinski" />
                                     </div>
                                     <h4 className="font-bold text-error text-xs uppercase tracking-wide mt-2">Gretchen</h4>
                                 </div>

@@ -143,7 +143,7 @@ export class RotenmeirService extends GeminiBase {
       IMPORTANTE: En todos los campos de fecha, utiliza el formato de mes abreviado (ej: 'nov' en lugar de 'noviembre', 'ene' en lugar de 'enero').`;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-pro-preview",
+        model: "gemini-1.5-pro",
         contents: {
           role: "user",
           parts: [
@@ -194,7 +194,7 @@ export class RotenmeirService extends GeminiBase {
       `;
 
       const response = await this.ensureAI().models.generateContent({
-        model: "gemini-3-pro-preview",
+        model: "gemini-1.5-pro",
         contents: prompt,
         config: {
           responseMimeType: "application/json",

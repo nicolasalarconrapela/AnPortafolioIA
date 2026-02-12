@@ -7,6 +7,11 @@ import { authService } from '../services/authService';
 import { loggingService } from '../utils/loggingService';
 import { APP_VERSION } from '../utils/appVersion';
 import { createGeminiService } from '../services/geminiService';
+import DONNA_AVATAR from '../assets/ai/donna_avatar';
+import ROTENMEIR_AVATAR from '../assets/ai/rotenmeir_avatar';
+import GRETCHEN_AVATAR from '../assets/ai/gretchen_avatar';
+import GOOGLITO_AVATAR from '../assets/ai/googlito_avatar';
+import ELMAESTRO_AVATAR from '../assets/ai/elmaestro_avatar';
 
 
 const MAX_AVATAR_BASE64_BYTES = 300 * 1024; // Firestore document limit reserve
@@ -134,6 +139,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [aiStatus, setAiStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking'; model: string }> | null>(null);
   const [isCheckingAI, setIsCheckingAI] = useState(false);
+  const [userApiKey, setUserApiKey] = useState('');
+
+  useEffect(() => {
+    setUserApiKey(localStorage.getItem('user_gemini_api_key') || '');
+  }, []);
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setUserApiKey(val);
+    if (val) {
+      localStorage.setItem('user_gemini_api_key', val);
+    } else {
+      localStorage.removeItem('user_gemini_api_key');
+    }
+  };
 
 
   // Load settings from Firestore
@@ -190,18 +210,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
     }
   }, [activeTab]);
 
+  const [isAiGlobalActive, setIsAiGlobalActive] = useState(false);
+
   const checkAIStatus = async () => {
     setIsCheckingAI(true);
     try {
       const geminiService = createGeminiService();
       const status = await geminiService.getSystemStatus();
+      setIsAiGlobalActive(geminiService.isGlobalActive());
       setAiStatus(status);
     } catch (error) {
       loggingService.error('Failed to check AI status:', error);
+      setIsAiGlobalActive(false);
       // Set all to offline on error
       setAiStatus({
         "Señorita Rotenmeir": { status: 'offline', model: "gemini-3-pro-preview" },
-        "Janice": { status: 'offline', model: "gemini-3-flash-preview" },
+        "El Maestro": { status: 'offline', model: "gemini-3-flash-preview" },
         "Googlito": { status: 'offline', model: "gemini-3-flash-preview" },
         "Gretchen Bodinski": { status: 'offline', model: "gemini-3-flash-preview" },
         "Donna": { status: 'offline', model: "gemini-3-flash-preview" }
@@ -615,6 +639,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                   <h4 className="text-sm font-bold text-primary uppercase tracking-wider">AI Configuration</h4>
                   <div className="bg-surface-variant/30 rounded-[20px] p-4 md:p-6 border border-outline-variant/30 space-y-6">
 
+                    {/* API Key Input */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-base font-medium text-[var(--md-sys-color-on-background)]">Google Gemini API Key</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          Get Key <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                        </a>
+                      </div>
+                      <p className="text-sm text-outline mb-3">Required for AI features. Stored locally in your browser.</p>
+                      <input
+                        type="password"
+                        value={userApiKey}
+                        onChange={handleApiKeyChange}
+                        placeholder="AIzaSy..."
+                        className="w-full h-12 px-4 rounded-xl bg-surface-variant/30 border border-outline-variant focus:border-primary outline-none text-sm font-mono"
+                      />
+                    </div>
+
+                    <div className="h-px bg-outline-variant/20 mx-2" />
+
                     {/* Enable AI */}
                     <div className="flex items-center justify-between">
                       <div>
@@ -698,13 +742,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                         <>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.entries({
-                              "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: "/rotenmeir.png" },
-                              "Janice": { role: "Writing Assistant", img: "/googlito.jpg" },
-                              "Googlito": { role: "Data Fixer", img: "/googlito.jpg" },
-                              "Gretchen Bodinski": { role: "Auditor", img: "/gretchen.jpg" },
-                              "Donna": { role: "Recruiter Interface", img: "/donna_avatar.png" }
+                              "Señorita Rotenmeir": { role: "Parser & Data Extraction", img: ROTENMEIR_AVATAR },
+                              "El Maestro": { role: "Writing Assistant", img: ELMAESTRO_AVATAR },
+                              "Googlito": { role: "Data Fixer", img: GOOGLITO_AVATAR },
+                              "Gretchen Bodinski": { role: "Auditor", img: GRETCHEN_AVATAR },
+                              "Donna": { role: "Recruiter Interface", img: DONNA_AVATAR }
                             }).map(([name, meta]) => {
-                              // Fix: cast the dynamic indexed object to the known interface type or any to resolve 'unknown' inference error
                               const status = aiStatus ? (aiStatus as Record<string, any>)[name] : undefined;
                               const isOnline = status?.status === 'online';
 
@@ -736,15 +779,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, userKey, 
                           <div className="mt-4 pt-4 border-t border-outline-variant/30">
                             <div className="flex items-center justify-between">
                               <p className="text-[10px] text-outline">
-                                // Fix: cast aiStatus to any to avoid TypeScript inference issues with Object.values and 'unknown' type
                                 {Object.values(aiStatus as any).every((s: any) => s.status === 'online')
                                   ? '✓ All systems operational. Gemini API connected.'
                                   : '⚠ Some AI services are offline. Check your API key configuration.'}
                               </p>
-                              {process.env.API_KEY ? (
-                                <span className="text-[9px] text-green-600 font-mono px-2 py-1 bg-green-50 rounded">API Key: ●●●●●●</span>
+                              {isAiGlobalActive ? (
+                                <span className="text-[9px] text-green-600 font-mono px-2 py-1 bg-green-50 rounded flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[10px]">key</span>
+                                  API Key Active
+                                </span>
                               ) : (
-                                <span className="text-[9px] text-outline font-mono px-2 py-1 bg-surface-variant/30 rounded">No API Key</span>
+                                <span className="text-[9px] text-error font-mono px-2 py-1 bg-error-container/20 rounded flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[10px]">no_encryption</span>
+                                  No API Key
+                                </span>
                               )}
                             </div>
                           </div>

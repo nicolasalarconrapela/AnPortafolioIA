@@ -53,24 +53,27 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: 
       try {
         const data = await getWorkspaceChildDocument(userId, "brain", "data");
         if (data) {
-          if (data.profile) setProfile(data.profile);
+          // IMPORTANT: Load profile FIRST, then appState.
+          // If appState is WIZARD/DONNA but profile is missing, fall back to IDLE
+          // to prevent a white screen (no view renders when profile is null).
+          const loadedProfile = data.profile || null;
+          if (loadedProfile) setProfile(loadedProfile);
+
           if (data.appState) {
-            setAppState(data.appState as AppState);
-            // If we are in DONNA state, ensure we scroll to bottom
-            if (data.appState === AppState.DONNA) {
-              setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 500);
+            const targetState = data.appState as AppState;
+            const needsProfile = targetState === AppState.WIZARD || targetState === AppState.DONNA;
+
+            if (needsProfile && !loadedProfile) {
+              // Profile-dependent state but no profile → reset to IDLE
+              console.warn("BrainRoot: appState was", targetState, "but profile is missing. Resetting to IDLE.");
+              setAppState(AppState.IDLE);
+            } else {
+              setAppState(targetState);
+              if (targetState === AppState.DONNA) {
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 500);
+              }
             }
           }
-          // The child document 'brain/data' might not have the shareToken, as it is usually on the main workspace doc.
-          // However, we can try to fetch the main workspace doc if needed, or check if 'data.shareToken' was saved here.
-          // Currently, shareToken is on the ROOT workspace doc (getWorkspaceByUserFromFirestore).
-          // BrainRoot only loads 'brain/data' subcollection.
-          // We should probably pass shareToken as a PROP from App.tsx instead of fetching it here again?
-          // OR assume the user provided ID is the userKey, so we can construct the link? No, we need the token.
-
-          // Let's assume for now we don't fetch it here to avoid complexity unless passed.
-          // Wait, 'userId' is the userKey usually.
-          // If we want consistency, we should pass shareToken as a prop.
 
           if (typeof data.currentStep === 'number') setCurrentStep(data.currentStep);
           if (typeof data.isOffline === 'boolean') setIsOffline(data.isOffline);
@@ -97,9 +100,13 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: 
   useEffect(() => {
     if (!userId || !isLoaded) return;
 
-    // Don't save if in IDLE and no profile (empty state) unless we want to persist "reset"
-    // But if we just loaded IDLE, we might not want to write it back immediately if it didn't change.
-    // Simplified: Save whenever relevant state changes.
+    // SAFETY: Don't save if appState requires a profile but profile is null.
+    // This prevents overwriting valid Firestore data with empty/broken state.
+    const needsProfile = appState === AppState.WIZARD || appState === AppState.DONNA;
+    if (needsProfile && !profile) {
+      console.warn("BrainRoot: Skipping save — appState is", appState, "but profile is null.");
+      return;
+    }
 
     const saveData = async () => {
       const dataToSave = {
@@ -185,17 +192,20 @@ function BrainRoot({ userId, onSettings, onLogout, onEditProfile, shareToken }: 
 
   return (
     <div className="w-full min-h-screen bg-[var(--md-sys-color-background)] transition-colors duration-300">
-      {(appState === AppState.IDLE || appState === AppState.ANALYZING || appState === AppState.ERROR) && (
-        <RotenmeirView
-          appState={appState}
-          error={error}
-          isDragging={isDragging}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onFileUpload={handleFileUpload}
-        />
-      )}
+      {/* Show RotenmeirView for IDLE/ANALYZING/ERROR states, OR as a fallback
+          when appState requires a profile (WIZARD/DONNA) but profile is null */}
+      {((appState === AppState.IDLE || appState === AppState.ANALYZING || appState === AppState.ERROR) ||
+        ((appState === AppState.WIZARD || appState === AppState.DONNA) && !profile)) && (
+          <RotenmeirView
+            appState={appState === AppState.WIZARD || appState === AppState.DONNA ? AppState.IDLE : appState}
+            error={error}
+            isDragging={isDragging}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onFileUpload={handleFileUpload}
+          />
+        )}
       {appState === AppState.WIZARD && profile && (
         <GooglitoWizard
           currentStep={currentStep}
