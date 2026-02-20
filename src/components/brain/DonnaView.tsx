@@ -550,23 +550,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 </div>
               </div>
 
-              {!isChatOpen && (
-                <div
-                  onClick={() => setIsChatOpen(true)}
-                  className="bg-slate-900 text-white p-5 rounded-2xl shadow-xl shadow-slate-900/10 cursor-pointer hover:bg-slate-800 transition-all group flex items-center justify-between transform hover:-translate-y-1"
-                >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                      <p className="font-bold text-sm">Donna AI is Online</p>
-                    </div>
-                    <p className="text-xs text-slate-400">Ask anything about this candidate.</p>
-                  </div>
-                  <div className="p-2.5 bg-white/10 rounded-xl group-hover:bg-white/20 transition-colors">
-                    <MessageSquare size={20} />
-                  </div>
-                </div>
-              )}
+              
             </div>
           </div>
         </div>
