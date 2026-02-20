@@ -15,8 +15,9 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      "process.env.API_KEY": JSON.stringify(env.GEMINI_API_KEY),
-      "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY),
+      // Legacy fallback: inject Gemini key for code that reads process.env
+      // The canonical way is import.meta.env.VITE_GEMINI_API_KEY (automatic in Vite)
+      "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY || ""),
     },
     resolve: {
       alias: {

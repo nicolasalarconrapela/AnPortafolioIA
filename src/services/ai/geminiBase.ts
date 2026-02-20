@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { env } from "../../utils/env";
 
 export class GeminiBase {
   protected ai: GoogleGenAI | null = null;
@@ -8,13 +9,8 @@ export class GeminiBase {
   private static hasloggedWarning = false;
 
   constructor(apiKey?: string) {
-    // Priority: Explicit key -> process.env -> import.meta.env (for Vite)
-    const key =
-      apiKey ||
-      localStorage.getItem("user_gemini_api_key") ||
-      process.env.API_KEY ||
-      (typeof import.meta !== "undefined" &&
-        (import.meta as any).env?.VITE_GEMINI_API_KEY);
+    // Priority: Explicit key → centralized env (handles localStorage, VITE_, process.env)
+    const key = apiKey || env.GEMINI_API_KEY;
 
     // console.debug("🔄 GeminiBase: Checking for API Key...");
 

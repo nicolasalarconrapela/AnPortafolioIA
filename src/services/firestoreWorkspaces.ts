@@ -7,28 +7,8 @@ const DEFAULT_TEST_COLLECTION = "workspace-test";
 
 export type Unsubscribe = () => void;
 
-function resolveEnv() {
-  return typeof import.meta !== "undefined"
-    ? (import.meta as any).env
-    : undefined;
-}
-
-function isDevelopmentEnvironment(): boolean {
-  const env = resolveEnv();
-  if (typeof env?.DEV === "boolean") {
-    return env.DEV;
-  }
-
-  const mode = (env?.MODE as string | undefined) ?? process?.env?.NODE_ENV;
-  if (mode) {
-    return mode.toLowerCase() === "development";
-  }
-
-  return false;
-}
-
 // Encryption enabled in production/non-dev environments
-const SHOULD_ENCRYPT = !isDevelopmentEnvironment();
+const SHOULD_ENCRYPT = !env.IS_DEV;
 
 function forceLogout() {
   loggingService.warn(
@@ -41,8 +21,7 @@ function forceLogout() {
 function resolveWorkspaceCollection(): string {
   // STRICT: Always return workspace-[mode] to ensure correct backend nesting
   // Structure: workspace-development -> global -> users -> [uid]
-  const isDev = isDevelopmentEnvironment();
-  return isDev ? "workspace-development" : "workspace-production";
+  return env.IS_DEV ? "workspace-development" : "workspace-production";
 }
 
 const WORKSPACE_COLLECTION = resolveWorkspaceCollection();
