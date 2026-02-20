@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from '../App';
 import { loggingService } from './utils/loggingService';
 
 loggingService.info("Main entry point loaded");
