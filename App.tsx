@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Background } from './src/components/Background';
 import { LandingView } from './src/components/LandingView';
+import { SplashScreen } from './src/components/SplashScreen';
 import { AuthView } from './src/components/AuthView';
 import { OnboardingView } from './src/components/OnboardingView';
 import { CandidateDashboard } from './src/components/CandidateDashboard';
@@ -35,6 +36,15 @@ const AppContent: React.FC = () => {
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // 🧪 TEST: Splash screen preview (set to 0 to disable)
+  const SPLASH_TEST_MS = 0
+  const [splashTestActive, setSplashTestActive] = useState(SPLASH_TEST_MS > 0);
+  useEffect(() => {
+    if (SPLASH_TEST_MS <= 0) return;
+    const t = setTimeout(() => setSplashTestActive(false), SPLASH_TEST_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   const navigateTo = (nextView: ExtendedViewState) => {
     setPrevView(view);
@@ -166,9 +176,8 @@ const AppContent: React.FC = () => {
     setView('landing');
   };
 
-  if (isSessionChecking) {
-    // Simple Loading State
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  if (isSessionChecking || splashTestActive) {
+    return <SplashScreen />;
   }
 
   return (

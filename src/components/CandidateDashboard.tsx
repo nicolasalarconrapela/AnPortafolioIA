@@ -33,7 +33,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
   useEffect(() => {
     geminiServiceRef.current = createGeminiService();
   }, []);
- 
+
   const {
     chat,
     setChat,
@@ -185,10 +185,31 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({ onLogout
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--md-sys-color-background)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-outline text-sm animate-pulse">Cargando perfil...</p>
+      <div className="min-h-screen flex flex-col bg-[var(--md-sys-color-background)]">
+        {/* Skeleton header */}
+        <div className="px-4 py-3 md:px-8 flex items-center justify-between border-b border-outline-variant/15">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-outline-variant/20 animate-pulse" />
+            <div className="w-24 h-4 rounded-lg bg-outline-variant/20 animate-pulse" />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-outline-variant/20 animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-outline-variant/20 animate-pulse" />
+          </div>
+        </div>
+        {/* Skeleton content */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
+          <div className="w-20 h-20 rounded-full bg-outline-variant/20 animate-pulse" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-48 h-5 rounded-lg bg-outline-variant/20 animate-pulse" />
+            <div className="w-32 h-4 rounded-lg bg-outline-variant/20 animate-pulse" style={{ animationDelay: '0.2s' }} />
+          </div>
+          <div className="w-full max-w-lg flex flex-col gap-3 mt-6">
+            <div className="w-full h-14 rounded-2xl bg-outline-variant/15 animate-pulse" style={{ animationDelay: '0.3s' }} />
+            <div className="w-full h-14 rounded-2xl bg-outline-variant/15 animate-pulse" style={{ animationDelay: '0.4s' }} />
+            <div className="w-full h-14 rounded-2xl bg-outline-variant/15 animate-pulse" style={{ animationDelay: '0.5s' }} />
+          </div>
+          <p className="text-outline/50 text-sm mt-4 animate-pulse">Cargando perfil...</p>
         </div>
       </div>
     );
