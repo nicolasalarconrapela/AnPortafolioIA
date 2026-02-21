@@ -62,6 +62,9 @@ export const LogViewer: React.FC = () => {
   useEffect(() => {
     checkHealth();
 
+    // Periodic health check every 30 seconds
+    const healthInterval = setInterval(() => checkHealth(), 30_000);
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         loggingService.debug('Tab visible, checking health...');
@@ -78,6 +81,7 @@ export const LogViewer: React.FC = () => {
     window.addEventListener('online', handleOnline);
 
     return () => {
+      clearInterval(healthInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnline);
     };
