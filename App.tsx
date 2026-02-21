@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Background } from './src/components/Background';
 import { LandingView } from './src/components/LandingView';
 import { SplashScreen } from './src/components/SplashScreen';
+import { AppSkeleton } from './src/components/AppSkeleton';
 import { AuthView } from './src/components/AuthView';
 import { OnboardingView } from './src/components/OnboardingView';
 import { CandidateDashboard } from './src/components/CandidateDashboard';
@@ -37,14 +38,14 @@ const AppContent: React.FC = () => {
   const [isSessionChecking, setIsSessionChecking] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // 🧪 TEST: Splash screen preview (set to 0 to disable)
-  const SPLASH_TEST_MS = 0
-  const [splashTestActive, setSplashTestActive] = useState(SPLASH_TEST_MS > 0);
+  // Show skeleton immediately; upgrade to full SplashScreen after 5s
+  const SPLASH_DELAY_MS = 5000;
+  const [showFullSplash, setShowFullSplash] = useState(false);
   useEffect(() => {
-    if (SPLASH_TEST_MS <= 0) return;
-    const t = setTimeout(() => setSplashTestActive(false), SPLASH_TEST_MS);
+    if (!isSessionChecking) return; // already done, no need to escalate
+    const t = setTimeout(() => setShowFullSplash(true), SPLASH_DELAY_MS);
     return () => clearTimeout(t);
-  }, []);
+  }, [isSessionChecking]);
 
   const navigateTo = (nextView: ExtendedViewState) => {
     setPrevView(view);
@@ -176,8 +177,9 @@ const AppContent: React.FC = () => {
     setView('landing');
   };
 
-  if (isSessionChecking || splashTestActive) {
-    return <SplashScreen />;
+  if (isSessionChecking) {
+    // Skeleton first; full SplashScreen only after 5 s delay
+    return showFullSplash ? <SplashScreen /> : <AppSkeleton />;
   }
 
   return (
