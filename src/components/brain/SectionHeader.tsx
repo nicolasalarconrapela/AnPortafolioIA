@@ -12,7 +12,7 @@ export const SectionHeader = ({
 }: {
   title: string,
   description: string,
-  icon: React.ReactElement,
+  icon: React.ReactElement<{ size?: number }>,
   aiName: string,
   aiAvatar?: string,
   onGretchenClick: () => void
