@@ -6,9 +6,67 @@ import {
 } from 'lucide-react';
 import { CompanyLogo } from './CompanyLogo';
 import { MarkdownView } from './MarkdownView';
-import { CVProfile, ChatMessage } from '../../types_brain';
+import { CVProfile, ChatMessage, ProjectItem } from '../../types_brain';
 import { Button } from './Button';
 import DONNA_AVATAR from '../../assets/ai/donna_avatar';
+
+// ── ProjectCard ───────────────────────────────────────────────────────
+// Extracted from DonnaView to comply with React Rules of Hooks.
+// Each card manages its own image-error state.
+const ProjectCard: React.FC<{ proj: ProjectItem }> = ({ proj }) => {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+      {proj.images && proj.images.length > 0 && !imgError ? (
+        <div className="h-48 overflow-hidden bg-slate-100 relative group">
+          <img
+            src={proj.images[0]}
+            alt={proj.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            onError={() => setImgError(true)}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+        </div>
+      ) : (
+        <div className="h-48 bg-gradient-to-br from-slate-50 to-indigo-50/30 border-b border-slate-100 flex items-center justify-center relative group">
+          <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:scale-110 transition-transform">
+            <ImageIcon className="w-8 h-8 text-slate-300" />
+          </div>
+          <div className="absolute bottom-4 left-6">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No preview available</p>
+          </div>
+        </div>
+      )}
+
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-3">
+          <h4 className="font-bold text-slate-900 text-xl leading-tight">{proj.name}</h4>
+          {proj.link && (
+            <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors -mr-2 -mt-2">
+              <Send className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+
+        <p className="text-sm text-slate-600 mb-6 leading-relaxed line-clamp-3">{proj.description}</p>
+
+        <div className="mt-auto pt-4 border-t border-slate-100">
+          <div className="flex flex-wrap gap-2">
+            {(proj.technologies || '').split(',').slice(0, 4).map((tech, t) => (
+              <span key={t} className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                {tech.trim()}
+              </span>
+            ))}
+            {(proj.technologies || '').split(',').length > 4 && (
+              <span className="text-[10px] font-bold text-slate-400 px-1 py-1">+{(proj.technologies || '').split(',').length - 4}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface DonnaViewProps {
   profile: CVProfile;
@@ -189,59 +247,9 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
       case 'projects':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-            {profile.projects?.map((proj, i) => {
-              const [projImgError, setProjImgError] = useState(false);
-              return (
-                <div key={i} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-                  {proj.images && proj.images.length > 0 && !projImgError ? (
-                    <div className="h-48 overflow-hidden bg-slate-100 relative group">
-                      <img
-                        src={proj.images[0]}
-                        alt={proj.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        onError={() => setProjImgError(true)}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
-                    </div>
-                  ) : (
-                    <div className="h-48 bg-gradient-to-br from-slate-50 to-indigo-50/30 border-b border-slate-100 flex items-center justify-center relative group">
-                      <div className="p-4 bg-white rounded-2xl shadow-sm group-hover:scale-110 transition-transform">
-                        <ImageIcon className="w-8 h-8 text-slate-300" />
-                      </div>
-                      <div className="absolute bottom-4 left-6">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No preview available</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-bold text-slate-900 text-xl leading-tight">{proj.name}</h4>
-                      {proj.link && (
-                        <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:bg-primary/10 p-2 rounded-full transition-colors -mr-2 -mt-2">
-                          <Send className="w-4 h-4" />
-                        </a>
-                      )}
-                    </div>
-
-                    <p className="text-sm text-slate-600 mb-6 leading-relaxed line-clamp-3">{proj.description}</p>
-
-                    <div className="mt-auto pt-4 border-t border-slate-100">
-                      <div className="flex flex-wrap gap-2">
-                        {(proj.technologies || '').split(',').slice(0, 4).map((tech, t) => (
-                          <span key={t} className="text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                            {tech.trim()}
-                          </span>
-                        ))}
-                        {(proj.technologies || '').split(',').length > 4 && (
-                          <span className="text-[10px] font-bold text-slate-400 px-1 py-1">+{(proj.technologies || '').split(',').length - 4}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {profile.projects?.map((proj, i) => (
+              <ProjectCard key={i} proj={proj} />
+            ))}
           </div>
         );
       case 'skills':
@@ -550,7 +558,7 @@ export const DonnaView: React.FC<DonnaViewProps> = ({
                 </div>
               </div>
 
-              
+
             </div>
           </div>
         </div>
