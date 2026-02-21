@@ -1,7 +1,7 @@
 {
   "name": "anportafolioia",
   "private": true,
-  "version": "0.19.8-beta",
+  "version": "0.20.0-beta",
   "type": "module",
   "scripts": {
     "dev": "tsc && vite dev",
@@ -13,7 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@google/genai": "^1.39.0",
+    "@google/genai": "^1.42.0",
     "firebase": "^12.8.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
@@ -34,5 +34,9 @@
     "postcss": "^8.4.38",
     "typescript": "^5.2.2",
     "vite": "^7.3.1"
+  },
+  "overrides": {
+    "minimatch": "^10.2.1",
+    "glob": "^11.0.0"
   }
 }
